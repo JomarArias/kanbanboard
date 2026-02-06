@@ -9,8 +9,8 @@ Bash
 
 cd backend
 npm install
-# Crear un archivo .env con la variable:
-# MONGO_URI=()
+Crear un archivo .env con la variable:
+MONGO_URI=()
 npm run dev
 
 3. Configurar el Frontend:
