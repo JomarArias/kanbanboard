@@ -1,4 +1,4 @@
-🚀 CRM Kanban Pro - Setup Guide
+🚀 CRM Kanban 
 
 Requisitos: Node.js v20+, MongoDB (Local o Atlas).
 
