@@ -20,8 +20,19 @@ export class KanbanColumnComponent {
   @Input() cards: Kanban[] = [];
   @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
   @Output() addCard = new EventEmitter<void>();
+  @Output() editCard = new EventEmitter<Kanban>();
+  @Output() deleteCard = new EventEmitter<string>();
+
 
   onDrop(event: CdkDragDrop<Kanban[]>) {
     this.drop.emit(event);
+  }
+
+  onEditCard(card: Kanban) {
+    this.editCard.emit(card);
+  }
+
+  onDeleteCard(cardId: string) {
+    this.deleteCard.emit(cardId);
   }
 }
