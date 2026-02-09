@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   CdkDragDrop,
@@ -9,6 +9,7 @@ import {
 import { CardModule } from 'primeng/card';
 import { KanbanColumnComponent } from '../../components/kanban-column/kanban-column.component';
 import { Kanban } from '../../../../core/models/kanban.model';
+import { StorageService } from '../../../../core/services/storage.service';
 
 @Component({
   selector: 'app-kanban-board',
@@ -20,26 +21,62 @@ import { Kanban } from '../../../../core/models/kanban.model';
     class: 'block h-full'
   }
 })
-export class KanbanBoardComponent {
-  //datos de prueba
-  todo: Kanban[] = [
-    { id: '1', title: 'prueba 1', task: 'tarea 1', listId: 'todo', order: '1', updatedAt: new Date() },
-    { id: '2', title: 'prueba 2', task: 'tarea 2', listId: 'todo', order: '2', updatedAt: new Date() },
-    { id: '3', title: 'prueba 3', task: 'tarea 3', listId: 'todo', order: '3', updatedAt: new Date() },
-  ];
+export class KanbanBoardComponent implements OnInit {
+  boardData: { todo: Kanban[]; inProgress: Kanban[]; done: Kanban[];[key: string]: Kanban[] } = {
+    todo: [],
+    inProgress: [],
+    done: [],
+  };
 
-  inProgress: Kanban[] = [
-    { id: '4', title: 'prueba 4', task: 'tarea 4', listId: 'inProgress', order: '1', updatedAt: new Date() },
-    { id: '5', title: 'prueba 5', task: 'tarea 5', listId: 'inProgress', order: '2', updatedAt: new Date() },
-    { id: '6', title: 'prueba 6', task: 'tarea 6', listId: 'inProgress', order: '3', updatedAt: new Date() },
-  ];
+  constructor(private storageService: StorageService) { }
 
-  done: Kanban[] = [
-    { id: '7', title: 'prueba 7', task: 'tarea 7', listId: 'done', order: '1', updatedAt: new Date() },
-    { id: '8', title: 'prueba 8', task: 'tarea 8', listId: 'done', order: '2', updatedAt: new Date() },
-    { id: '9', title: 'prueba 9', task: 'tarea 9', listId: 'done', order: '3', updatedAt: new Date() },
-  ];
+  ngOnInit(): void {
+    const savedData = this.storageService.get('boardData');
+    if (savedData && Object.keys(savedData).length > 0) {
+      this.boardData = savedData;
+    }
+  }
 
+  private saveData() {
+    this.storageService.save('boardData', this.boardData);
+  }
+
+  addCard(columnKey: string) {
+    if (!this.boardData[columnKey]) return;
+
+    const newCard: Kanban = {
+      id: Date.now().toString(),
+      title: 'New Card',
+      task: 'New Task',
+      listId: columnKey,
+      order: '0',
+      updatedAt: new Date()
+    };
+
+    this.boardData[columnKey].push(newCard);
+    this.saveData();
+  }
+
+  onDeleteCard(cardId: string) {
+    if (!confirm('¿Estás seguro de que quieres borrar esta tarjeta?')) return;
+
+    for (const key of Object.keys(this.boardData)) {
+      const index = this.boardData[key].findIndex(c => c.id === cardId);
+      if (index !== -1) {
+        this.boardData[key].splice(index, 1);
+        this.saveData();
+        return;
+      }
+    }
+  }
+
+  onEditCard(card: Kanban) {
+    const newTitle = prompt('Editar título:', card.title);
+    if (newTitle && newTitle !== card.title) {
+      card.title = newTitle;
+      this.saveData();
+    }
+  }
 
   drop(event: CdkDragDrop<Kanban[]>) {
     if (event.previousContainer === event.container) {
@@ -51,13 +88,15 @@ export class KanbanBoardComponent {
         event.previousIndex,
         event.currentIndex
       );
+
+      const item = event.container.data[event.currentIndex];
+      item.listId = event.container.id;
     }
 
-
-    console.log('Nueva posición detectada');
+    this.saveData();
   }
 
   onAddCard(listId: string) {
-    console.log('Add card to list:', listId);
+    this.addCard(listId);
   }
 }

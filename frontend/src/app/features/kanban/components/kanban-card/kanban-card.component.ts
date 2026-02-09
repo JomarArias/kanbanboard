@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Kanban } from '../../../../core/models/kanban.model';
 
 @Component({
@@ -13,4 +13,14 @@ import { Kanban } from '../../../../core/models/kanban.model';
 })
 export class KanbanCardComponent {
   @Input() card!: Kanban;
+  @Output() edit = new EventEmitter<Kanban>();
+  @Output() delete = new EventEmitter<string>();
+
+  onEdit() {
+    this.edit.emit(this.card);
+  }
+
+  onDelete() {
+    this.delete.emit(this.card.id);
+  }
 }
