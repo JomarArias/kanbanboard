@@ -1,0 +1,16 @@
+<div class="p-6 h-screen flex flex-col items-center">
+    <h1 class="text-3xl font-bold mb-6">Kanban Board</h1>
+
+    <div class="flex gap-6 overflow-x-auto h-full pb-4" cdkDropListGroup>
+
+        <app-kanban-column title="Por Hacer" listId="todoList" [cards]="todo" (drop)="drop($event)"
+            (addCard)="onAddCard('todo')"></app-kanban-column>
+
+        <app-kanban-column title="En Proceso" listId="inProgressList" [cards]="inProgress" (drop)="drop($event)"
+            (addCard)="onAddCard('inProgress')"></app-kanban-column>
+
+        <app-kanban-column title="Terminado" listId="doneList" [cards]="done" (drop)="drop($event)"
+            (addCard)="onAddCard('done')"></app-kanban-column>
+
+    </div>
+</div>
