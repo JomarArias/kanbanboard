@@ -1,0 +1,57 @@
+# List cards in a list
+GET http://localhost:3000/lists/todo/cards
+###
+GET http://localhost:3000/lists/inProgress/cards
+###
+GET http://localhost:3000/lists/done/cards
+
+###
+
+# Create card
+POST http://localhost:3000/cards
+Content-Type: application/json
+
+{
+  "listId": "todo",
+  "title": "Mi tarjeta",
+  "task": "Detalle de la tarea"
+}
+
+###
+
+# Update card (replace :id)
+PUT http://localhost:3000/cards/698b9cdabec95e4e97c55cfe
+Content-Type: application/json
+
+{
+  "title": "Titulo actualizado",
+  "task": "Detalle actualizado"
+}
+
+###
+
+# Move card (replace cardId and optionally prevOrder/nextOrder)
+PUT http://localhost:3000/cards/move
+Content-Type: application/json
+
+{
+  "cardId": "698b9ac0bec95e4e97c55cf6",
+  "listId": "inProgress",
+  "prevOrder": null,
+  "nextOrder": null
+}
+###
+PUT http://localhost:3000/cards/move
+Content-Type: application/json
+
+{
+  "cardId": "698b9ac0bec95e4e97c55cf6",
+  "listId": "done",
+  "prevOrder": null,
+  "nextOrder": null
+}
+
+###
+
+# Delete card (replace :id)
+DELETE http://localhost:3000/cards/698b9cdabec95e4e97c55cfe
