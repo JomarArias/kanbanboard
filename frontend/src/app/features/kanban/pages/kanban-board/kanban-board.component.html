@@ -1,5 +1,12 @@
 <div class="p-6 h-screen flex flex-col items-center">
-    <h1 class="text-3xl font-bold mb-6">Kanban Board</h1>
+    <div class="flex items-center gap-4 mb-6">
+        <h1 class="text-3xl font-bold">Kanban Board</h1>
+    </div>
+
+    <p-speedDial [model]="items" direction="up"
+        [style]="{ position: 'fixed', bottom: '2rem', right: '2rem' }"></p-speedDial>
+
+    <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
 
     <div class="flex gap-6 overflow-x-auto h-full pb-4" cdkDropListGroup>
 
@@ -16,4 +23,22 @@
             (deleteCard)="onDeleteCard($event)"></app-kanban-column>
 
     </div>
+
+    <p-dialog header="Editar Tarjeta" [(visible)]="displayEditDialog" [modal]="true" [style]="{ width: '400px' }"
+        [draggable]="false" [resizable]="false">
+        <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+                <label for="title" class="font-semibold">Título</label>
+                <input pInputText id="title" [(ngModel)]="editingCard.title" class="w-full" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label for="task" class="font-semibold">Tarea</label>
+                <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full"></textarea>
+            </div>
+        </div>
+        <ng-template pTemplate="footer">
+            <p-button label="Cancelar" icon="pi pi-times" (onClick)="displayEditDialog = false" text="true"></p-button>
+            <p-button label="Guardar" icon="pi pi-check" (onClick)="saveEditedCard()" autofocus="true"></p-button>
+        </ng-template>
+    </p-dialog>
 </div>

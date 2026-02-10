@@ -23,6 +23,7 @@
   "private": true,
   "packageManager": "npm@10.9.2",
   "dependencies": {
+    "@angular/animations": "19.0.0",
     "@angular/cdk": "19.0.0",
     "@angular/common": "19.0.0",
     "@angular/compiler": "19.0.0",
@@ -30,11 +31,12 @@
     "@angular/forms": "19.0.0",
     "@angular/platform-browser": "19.0.0",
     "@angular/router": "19.0.0",
-    "@angular/animations": "19.0.0",
+    "@primeng/themes": "^21.0.4",
+    "primeicons": "^7.0.0",
     "primeng": "^19.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.14.0"
+    "zone.js": "~0.15.0"
   },
   "devDependencies": {
     "@angular/build": "19.0.0",
