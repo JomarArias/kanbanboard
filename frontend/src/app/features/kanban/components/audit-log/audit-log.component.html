@@ -1,0 +1,26 @@
+<p-sidebar [(visible)]="visible" (visibleChange)="onVisibleChange($event)" position="right" [style]="{width:'400px'}">
+    <h3>Historial de Acciones</h3>
+    <p-table [value]="logs" [scrollable]="true" scrollHeight="flex">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Acción</th>
+                <th>Detalle</th>
+                <th>Hora</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-log>
+            <tr>
+                <td>
+                    <span [ngClass]="{
+                        'text-green-600': log.action === 'CREATE',
+                        'text-blue-600': log.action === 'UPDATE',
+                        'text-red-600': log.action === 'DELETE',
+                        'text-orange-600': log.action === 'MOVE'
+                    }" class="font-bold">{{ log.action }}</span>
+                </td>
+                <td>{{ log.details }}</td>
+                <td class="text-sm text-gray-500">{{ log.timestamp | date:'shortTime' }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-sidebar>
