@@ -5,4 +5,5 @@ export interface Kanban {
     listId: string;
     order: string;
     updatedAt: Date;
+    isNew?: boolean;
 }

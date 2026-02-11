@@ -1,12 +1,10 @@
-<div class="kanban-card p-3 bg-white rounded shadow-sm mb-2 cursor-move hover:shadow-md transition-shadow group">
+<div class="kanban-card p-3 bg-white rounded shadow-sm mb-2 cursor-move hover:shadow-md transition-shadow group"
+    [class.new-card]="card.isNew">
     <div class="font-bold text-gray-800 mb-2">{{ card.title }}</div>
     <div class="text-gray-600 mb-2">{{ card.task }}</div>
     <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button (click)="onEdit()" class="text-blue-500 hover:text-blue-700 text-sm">
-            Editar
-        </button>
-        <button (click)="onDelete()" class="text-red-500 hover:text-red-700 text-sm">
-            Borrar
-        </button>
+        <p-button (click)="onEdit()" class="text-blue-500 hover:text-blue-700 text-sm" icon="pi pi-pencil"></p-button>
+        <p-button (click)="onDelete($event)" class="text-red-500 hover:text-red-700 text-sm"
+            icon="pi pi-trash"></p-button>
     </div>
 </div>
