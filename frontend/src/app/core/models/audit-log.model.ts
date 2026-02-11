@@ -1,6 +1,6 @@
 export interface AuditLog {
-    id: string;
+    _id: string;
     action: 'CREATE' | 'UPDATE' | 'DELETE' | 'MOVE';
     details: string;
-    timestamp: Date;
+    timestamp: string;
 }

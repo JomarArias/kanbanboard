@@ -6,7 +6,7 @@
 
     <div cdkDropList [id]="listId" [cdkDropListData]="cards" (cdkDropListDropped)="onDrop($event)"
         class="flex-1 overflow-y-auto min-h-[100px]">
-        @for (card of cards; track card.id) {
+        @for (card of cards; track card._id) {
         <div cdkDrag [cdkDragData]="card" class="mb-3">
             <app-kanban-card [card]="card" (edit)="onEditCard($event)"
                 (delete)="onDeleteCard($event)"></app-kanban-card>
