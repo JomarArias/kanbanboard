@@ -67,6 +67,7 @@ export const createCard = async (req: Request, res: Response) => {
       : LexoRank.middle().toString();
 
     const card = await Card.create({ listId, title, task, order });
+    console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
     await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`);
     return res.status(201).json(card);
   } catch (err) {
@@ -87,6 +88,7 @@ export const updateCard = async (req: Request, res: Response) => {
       { title, task },
       { new: true }
     );
+    console.log(`[BACKEND] Card updated: ${card?.title}`);
 
     if (!card) return sendError(res, 404, "Tarjeta no encontrada");
     await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`);
@@ -103,6 +105,7 @@ export const deleteCard = async (req: Request, res: Response) => {
 
     const card = await Card.findByIdAndDelete(id);
     if (!card) return sendError(res, 404, "Tarjeta no encontrada");
+    console.log(`[BACKEND] Card deleted: ${card.title}`);
 
     await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`);
     return res.json({ ok: true });
@@ -157,6 +160,7 @@ export const moveCard = async (req: Request, res: Response) => {
       { listId, order },
       { new: true }
     );
+    console.log(`[BACKEND] Card moved: ${card?.title} to ${listId}`);
 
     if (!card) return sendError(res, 404, "Tarjeta no encontrada");
     await saveAuditLog("MOVE", `Tarjeta "${cardBeforeMove.title}" movida a ${listId}`);

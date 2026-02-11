@@ -15,7 +15,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { FormsModule } from '@angular/forms';
 import { KanbanColumnComponent } from '../../components/kanban-column/kanban-column.component';
 import { Kanban } from '../../../../core/models/kanban.model';
-import { StorageService } from '../../../../core/services/storage.service';
+import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { AuditLog } from '../../../../core/models/audit-log.model';
 import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
 import { SpeedDialModule } from 'primeng/speeddial';
@@ -51,29 +51,27 @@ export class KanbanBoardComponent implements OnInit {
   };
 
   displayEditDialog: boolean = false;
-  editingCard: Kanban = { id: '', title: '', task: '', listId: '', order: '', updatedAt: new Date() };
+  editingCard: Kanban = { _id: '', title: '', task: '', listId: '', order: '' };
 
   auditLogs: AuditLog[] = [];
   displayAuditLog: boolean = false;
   items: MenuItem[] = [];
 
-  constructor(private storageService: StorageService, private messageService: MessageService) { }
+  constructor(
+    private kanbanFacade: KanbanFacadeService,
+    private messageService: MessageService
+  ) { }
 
   ngOnInit(): void {
-    const savedData = this.storageService.get('boardData');
-    if (savedData && Object.keys(savedData).length > 0) {
-      this.boardData = savedData;
-    }
-    const savedLogs = this.storageService.get('auditLogs');
-    if (savedLogs) {
-      this.auditLogs = savedLogs;
-    }
+    this.loadCards();
+    this.loadAuditLogs();
 
     this.items = [
       {
         icon: 'pi pi-history',
         command: () => {
           this.displayAuditLog = true;
+          this.loadAuditLogs();
         },
         tooltipOptions: {
           tooltipLabel: 'Ver Historial'
@@ -82,52 +80,58 @@ export class KanbanBoardComponent implements OnInit {
     ];
   }
 
-  private saveData() {
-    this.storageService.save('boardData', this.boardData);
-    this.storageService.save('auditLogs', this.auditLogs);
+  loadCards() {
+    ['todo', 'inProgress', 'done'].forEach(listId => {
+      this.kanbanFacade.getCards(listId).subscribe({
+        next: (cards) => {
+          this.boardData[listId] = cards;
+        },
+        error: (err) => console.error(err)
+      });
+    });
   }
 
-  private logAction(action: 'CREATE' | 'UPDATE' | 'DELETE' | 'MOVE', details: string) {
-    const log: AuditLog = {
-      id: Date.now().toString(),
-      action,
-      details,
-      timestamp: new Date()
-    };
-    this.auditLogs.unshift(log);
-    this.saveData();
+  loadAuditLogs() {
+    this.kanbanFacade.getAuditLogs().subscribe({
+      next: (logs) => {
+        this.auditLogs = logs;
+      },
+      error: (err) => console.error(err)
+    });
   }
 
   addCard(columnKey: string) {
-    if (!this.boardData[columnKey]) return;
-
-    const newCard: Kanban = {
-      id: Date.now().toString(),
+    const newCard: Partial<Kanban> = {
       title: 'New Card',
       task: 'New Task',
-      listId: columnKey,
-      updatedAt: new Date(),
-      isNew: true,
-      order: ''
+      listId: columnKey
     };
 
-    this.boardData[columnKey].push(newCard);
-    this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta agregada' });
-    this.logAction('CREATE', `Tarjeta "${newCard.title}" creada en lista ${columnKey}`);
-    this.saveData();
+    this.kanbanFacade.createCard(newCard).subscribe({
+      next: (card) => {
+        this.boardData[columnKey].push(card);
+        this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta agregada' });
+        this.loadAuditLogs();
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear la tarjeta' })
+    });
   }
 
   onDeleteCard(cardId: string) {
-    for (const key of Object.keys(this.boardData)) {
-      const index = this.boardData[key].findIndex(c => c.id === cardId);
-      if (index !== -1) {
-        this.boardData[key].splice(index, 1);
-        this.saveData();
-        this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta eliminada' });
-        this.logAction('DELETE', `Tarjeta eliminada de lista ${key}`);
-        return;
-      }
-    }
+    this.kanbanFacade.deleteCard(cardId).subscribe({
+      next: () => {
+        for (const key of Object.keys(this.boardData)) {
+          const index = this.boardData[key].findIndex(c => c._id === cardId);
+          if (index !== -1) {
+            this.boardData[key].splice(index, 1);
+            this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta eliminada' });
+            this.loadAuditLogs();
+            return;
+          }
+        }
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar la tarjeta' })
+    });
   }
 
   onEditCard(card: Kanban) {
@@ -141,22 +145,39 @@ export class KanbanBoardComponent implements OnInit {
       return;
     }
 
-    for (const key of Object.keys(this.boardData)) {
-      const index = this.boardData[key].findIndex(c => c.id === this.editingCard.id);
-      if (index !== -1) {
-        this.boardData[key][index] = { ...this.editingCard, updatedAt: new Date() };
-        this.saveData();
-        this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta actualizada' });
-        this.logAction('UPDATE', `Tarjeta "${this.editingCard.title}" actualizada`);
-        this.displayEditDialog = false;
-        return;
-      }
-    }
+    this.kanbanFacade.updateCard(this.editingCard._id, { title: this.editingCard.title, task: this.editingCard.task }).subscribe({
+      next: (updatedCard) => {
+        for (const key of Object.keys(this.boardData)) {
+          const index = this.boardData[key].findIndex(c => c._id === updatedCard._id);
+          if (index !== -1) {
+            this.boardData[key][index] = updatedCard;
+            this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta actualizada' });
+            this.displayEditDialog = false;
+            this.loadAuditLogs();
+            return;
+          }
+        }
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar la tarjeta' })
+    });
   }
 
   drop(event: CdkDragDrop<Kanban[]>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      // Reorder within same list logic if needed by backend (LexoRank handles this via updates)
+      // For now triggering a move update to save order
+      const card = event.container.data[event.currentIndex];
+      const prevCard = event.container.data[event.currentIndex - 1];
+      const nextCard = event.container.data[event.currentIndex + 1];
+
+      this.kanbanFacade.moveCard(card._id, card.listId, prevCard?.order, nextCard?.order).subscribe({
+        next: (res) => {
+          card.order = res.order;
+          this.loadAuditLogs();
+        }
+      });
+
     } else {
       transferArrayItem(
         event.previousContainer.data,
@@ -165,12 +186,23 @@ export class KanbanBoardComponent implements OnInit {
         event.currentIndex
       );
 
-      const item = event.container.data[event.currentIndex];
-      item.listId = event.container.id;
-      this.logAction('MOVE', `Tarjeta "${item.title}" movida a ${event.container.id}`);
-    }
+      const card = event.container.data[event.currentIndex];
+      const newListId = event.container.id; // Ensure this ID matches what backend expects
+      const prevCard = event.container.data[event.currentIndex - 1];
+      const nextCard = event.container.data[event.currentIndex + 1];
 
-    this.saveData();
+      this.kanbanFacade.moveCard(card._id, newListId, prevCard?.order, nextCard?.order).subscribe({
+        next: (res) => {
+          card.listId = newListId;
+          card.order = res.order;
+          this.loadAuditLogs();
+        },
+        error: () => {
+          // Revert move on error?
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' });
+        }
+      });
+    }
   }
 
   onAddCard(listId: string) {
