@@ -1,0 +1,17 @@
+.cdk-drag-preview {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  border-radius: 8px;
+  background: white;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+  background: #cbd5e1;
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+}
+
+.cdk-drop-list-receiving {
+  background-color: #e2e8f0; // Resaltado al arrastrar sobre una columna
+  transition: background-color 0.2s ease;
+}

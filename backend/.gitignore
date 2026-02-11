@@ -1,0 +1,16 @@
+# general
+.vscode/
+.env
+
+# backend
+backend/node_modules/
+backend/build/
+
+node_modules/
+build/
+.env
+
+
+# frontend
+frontend/node_modules/
+frontend/dist/
