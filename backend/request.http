@@ -4,6 +4,14 @@ GET http://localhost:3000/lists/todo/cards
 GET http://localhost:3000/lists/inProgress/cards
 ###
 GET http://localhost:3000/lists/done/cards
+###
+
+# 
+# Lista de registros de auditoría (primero el más reciente). Parámetros de paginación opcionales:
+# ?limit=100&offset=0
+GET http://localhost:3000/audit-logs
+###
+GET http://localhost:3000/audit-logs?limit=20&offset=0
 
 ###
 
@@ -18,19 +26,31 @@ Content-Type: application/json
 }
 
 ###
-
-# Update card (replace :id)
-PUT http://localhost:3000/cards/698b9cdabec95e4e97c55cfe
+# Create card en done
+POST http://localhost:3000/cards
 Content-Type: application/json
 
 {
-  "title": "Titulo actualizado",
+  "listId": "done",
+  "title": "Mi tarjeta",
+  "task": "Detalle de la tarea"
+}
+
+###
+
+# * Update card (replace :id)
+PUT http://localhost:3000/cards/
+Content-Type: application/json
+
+{
+  "title": "Esto es una prueba",
   "task": "Detalle actualizado"
 }
 
 ###
 
-# Move card (replace cardId and optionally prevOrder/nextOrder)
+# Mover la tarjeta al principio (la lista de destinos contiene tarjetas):
+# prevOrder debe ser nulo y nextOrder debe ser el primer orden de tarjeta
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
 
@@ -38,8 +58,22 @@ Content-Type: application/json
   "cardId": "698b9ac0bec95e4e97c55cf6",
   "listId": "inProgress",
   "prevOrder": null,
+  "nextOrder": "0|i00007:"
+}
+###
+
+# Mover la carta al final (la lista de destinos contiene cartas):
+# * prevOrder debe ser el último orden de cartas y nextOrder debe ser nulo
+PUT http://localhost:3000/cards/move
+Content-Type: application/json
+
+{
+  "cardId": "698b9ac0bec95e4e97c55cf6",
+  "listId": "done",
+  "prevOrder": "0|i0000f:",
   "nextOrder": null
 }
+
 ###
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
@@ -51,7 +85,8 @@ Content-Type: application/json
   "nextOrder": null
 }
 
+
 ###
 
 # Delete card (replace :id)
-DELETE http://localhost:3000/cards/698b9cdabec95e4e97c55cfe
+DELETE http://localhost:3000/cards/698ba0b1d1c5e3b15cb30501
