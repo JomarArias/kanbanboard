@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import { LexoRank } from "lexorank";
 import { isValidObjectId } from "mongoose";
+import { AuditLog, AuditLogAction } from "../models/audit-log.js";
 import { Card } from "../models/card.js";
 
 const sendError = (res: Response, status: number, message: string, details?: unknown) => {
@@ -9,12 +10,44 @@ const sendError = (res: Response, status: number, message: string, details?: unk
   return res.status(status).json({ ok: false, message });
 };
 
+const saveAuditLog = async (action: AuditLogAction, details: string) => {
+  await AuditLog.create({
+    action,
+    details,
+    timestamp: new Date()
+  });
+};
+
+export const listAuditLogs = async (req: Request, res: Response) => {
+  try {
+    const limit = Number(req.query.limit ?? 100);
+    const offset = Number(req.query.offset ?? 0);
+
+    if (!Number.isInteger(limit) || limit <= 0 || limit > 500) {
+      return sendError(res, 400, "limit debe ser un entero entre 1 y 500");
+    }
+
+    if (!Number.isInteger(offset) || offset < 0) {
+      return sendError(res, 400, "offset debe ser un entero mayor o igual a 0");
+    }
+
+    const logs = await AuditLog.find()
+      .sort({ timestamp: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit);
+
+    return res.json(logs);
+  } catch (err) {
+    return sendError(res, 500, "Error listando historial", err);
+  }
+};
+
 export const listCardsByList = async (req: Request, res: Response) => {
   try {
     const { listId } = req.params;
     if (!listId) return sendError(res, 400, "listId es requerido");
 
-    const cards = await Card.find({ listId }).sort({ order: 1 });
+    const cards = await Card.find({ listId }).sort({ order: 1, _id: 1 });
     return res.json(cards);
   } catch (err) {
     return sendError(res, 500, "Error listando tarjetas", err);
@@ -34,6 +67,7 @@ export const createCard = async (req: Request, res: Response) => {
       : LexoRank.middle().toString();
 
     const card = await Card.create({ listId, title, task, order });
+    await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`);
     return res.status(201).json(card);
   } catch (err) {
     return sendError(res, 500, "Error creando tarjeta", err);
@@ -55,6 +89,7 @@ export const updateCard = async (req: Request, res: Response) => {
     );
 
     if (!card) return sendError(res, 404, "Tarjeta no encontrada");
+    await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`);
     return res.json(card);
   } catch (err) {
     return sendError(res, 500, "Error actualizando tarjeta", err);
@@ -69,6 +104,7 @@ export const deleteCard = async (req: Request, res: Response) => {
     const card = await Card.findByIdAndDelete(id);
     if (!card) return sendError(res, 404, "Tarjeta no encontrada");
 
+    await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`);
     return res.json({ ok: true });
   } catch (err) {
     return sendError(res, 500, "Error eliminando tarjeta", err);
@@ -85,9 +121,25 @@ export const moveCard = async (req: Request, res: Response) => {
 
     if (!isValidObjectId(cardId)) return sendError(res, 400, "cardId invalido");
 
+    const cardBeforeMove = await Card.findById(cardId);
+    if (!cardBeforeMove) return sendError(res, 404, "Tarjeta no encontrada");
+
     let order: string;
 
     if (!prevOrder && !nextOrder) {
+      const destinationHasCards = await Card.exists({
+        listId,
+        _id: { $ne: cardId }
+      });
+
+      if (destinationHasCards) {
+        return sendError(
+          res,
+          400,
+          "prevOrder y nextOrder son requeridos cuando la lista destino no esta vacia"
+        );
+      }
+
       order = LexoRank.middle().toString();
     } else if (!prevOrder) {
       order = LexoRank.parse(nextOrder).genPrev().toString();
@@ -107,6 +159,7 @@ export const moveCard = async (req: Request, res: Response) => {
     );
 
     if (!card) return sendError(res, 404, "Tarjeta no encontrada");
+    await saveAuditLog("MOVE", `Tarjeta "${cardBeforeMove.title}" movida a ${listId}`);
 
     return res.json({ ok: true, order });
   } catch (err) {
