@@ -35,7 +35,7 @@ export class KanbanCardComponent {
       rejectLabel: 'No',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.delete.emit(this.card.id);
+        this.delete.emit(this.card._id);
       }
     });
   }

@@ -1,9 +1,10 @@
 export interface Kanban {
-    id: string;
+    _id: string;
     title: string;
     task: string;
     listId: string;
     order: string;
-    updatedAt: Date;
+    createdAt?: string;
+    updatedAt?: string;
     isNew?: boolean;
 }
