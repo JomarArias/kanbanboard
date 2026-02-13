@@ -6,12 +6,10 @@ GET http://localhost:3000/lists/inProgress/cards
 GET http://localhost:3000/lists/done/cards
 ###
 
-# 
-# Lista de registros de auditoría (primero el más reciente). Parámetros de paginación opcionales:
-# ?limit=100&offset=0
+# List audit logs (latest first). Optional params: ?limit=100&offset=0
 GET http://localhost:3000/audit-logs
 ###
-GET http://localhost:3000/audit-logs?limit=20&offset=0
+GET http://localhost:3000/audit-logs?limit=20&offset=4
 
 ###
 
@@ -26,67 +24,55 @@ Content-Type: application/json
 }
 
 ###
-# Create card en done
-POST http://localhost:3000/cards
+
+# Update card (replace ID)
+PUT http://localhost:3000/cards/698ba0b8d1c5e3b15cb30504
 Content-Type: application/json
 
 {
-  "listId": "done",
-  "title": "Mi tarjeta",
-  "task": "Detalle de la tarea"
+  "title": "Solo es prueba",
+  "task": "123456789"
 }
 
 ###
 
-# * Update card (replace :id)
-PUT http://localhost:3000/cards/
-Content-Type: application/json
-
-{
-  "title": "Esto es una prueba",
-  "task": "Detalle actualizado"
-}
-
-###
-
-# Mover la tarjeta al principio (la lista de destinos contiene tarjetas):
-# prevOrder debe ser nulo y nextOrder debe ser el primer orden de tarjeta
+# Move card to top (destination has cards)
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
 
 {
-  "cardId": "698b9ac0bec95e4e97c55cf6",
+  "cardId": "698ba0b8d1c5e3b15cb30504",
   "listId": "inProgress",
   "prevOrder": null,
   "nextOrder": "0|i00007:"
 }
 ###
 
-# Mover la carta al final (la lista de destinos contiene cartas):
-# * prevOrder debe ser el último orden de cartas y nextOrder debe ser nulo
+# Move card to bottom (destination has cards)
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
 
 {
-  "cardId": "698b9ac0bec95e4e97c55cf6",
+  "cardId": "REEMPLAZA_ID",
   "listId": "done",
   "prevOrder": "0|i0000f:",
   "nextOrder": null
 }
 
 ###
+
+# Invalid when destination is not empty (expected 400)
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
 
 {
-  "cardId": "698b9ac0bec95e4e97c55cf6",
+  "cardId": "REEMPLAZA_ID",
   "listId": "done",
   "prevOrder": null,
   "nextOrder": null
 }
 
-
 ###
 
-# Delete card (replace :id)
-DELETE http://localhost:3000/cards/698ba0b1d1c5e3b15cb30501
+# Delete card (replace ID)
+DELETE http://localhost:3000/cards/REEMPLAZA_ID

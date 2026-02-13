@@ -3,7 +3,6 @@ import { Router } from "express";
 import {
   createCard,
   deleteCard,
-  listAuditLogs,
   listCardsByList,
   moveCard,
   updateCard,
@@ -11,7 +10,6 @@ import {
 
 const router = Router();
 
-router.get("/audit-logs", listAuditLogs);
 router.get("/lists/:listId/cards", listCardsByList);
 router.post("/cards", createCard);
 router.put("/cards/move", moveCard);
