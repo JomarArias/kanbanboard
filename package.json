@@ -7,7 +7,7 @@
         "frontend"
     ],
     "scripts": {
-        "build": "npm run build -w frontend",
+        "build": "npm run build -w frontend && mkdir -p public && cp -r frontend/dist/frontend/browser/* public/",
         "test": "echo \"Error: no test specified\" && exit 1"
     }
 }
