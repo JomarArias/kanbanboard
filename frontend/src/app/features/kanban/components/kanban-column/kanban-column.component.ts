@@ -11,7 +11,7 @@ import { Kanban } from '../../../../core/models/kanban.model';
   imports: [CommonModule, DragDropModule, ButtonModule, KanbanCardComponent],
   templateUrl: './kanban-column.component.html',
   host: {
-    class: 'block w-80 flex-shrink-0 h-full'
+    class: 'block w-full md:w-80 flex-shrink-0 h-full'
   }
 })
 export class KanbanColumnComponent {
