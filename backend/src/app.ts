@@ -8,6 +8,14 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Debug Middleware
+app.use((req, res, next) => {
+    console.log(`[DEBUG] Incoming Request: ${req.method} ${req.url}`);
+    console.log(`[DEBUG] BaseURL: ${req.baseUrl}, OriginalUrl: ${req.originalUrl}`);
+    next();
+});
+
 const apiRouter = express.Router();
 apiRouter.use(cardRoutes);
 apiRouter.use(auditRoutes);
