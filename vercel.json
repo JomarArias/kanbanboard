@@ -3,12 +3,17 @@
     "public": true,
     "rewrites": [
         {
-            "source": "/api/(.*)",
+            "source": "/api/:path*",
             "destination": "/backend/api/index.ts"
         },
         {
-            "source": "/(.*)",
-            "destination": "/$1"
+            "source": "/:path*",
+            "destination": "/:path*"
         }
-    ]
+    ],
+    "functions": {
+        "backend/api/index.ts": {
+            "maxDuration": 10
+        }
+    }
 }
