@@ -8,11 +8,24 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use('/api', cardRoutes);
-app.use('/api', auditRoutes);
+const apiRouter = express.Router();
+apiRouter.use(cardRoutes);
+apiRouter.use(auditRoutes);
+
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 app.get('/', (req, res) => {
     res.send('Kanban Backend Running');
+});
+
+app.use((req, res) => {
+    console.log(`404 Not Found: ${req.method} ${req.url}`);
+    res.status(404).json({
+        message: 'Route not found',
+        path: req.url,
+        method: req.method
+    });
 });
 
 export default app;
