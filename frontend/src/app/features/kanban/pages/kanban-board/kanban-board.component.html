@@ -8,7 +8,8 @@
 
     <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
 
-    <div class="flex gap-6 overflow-x-auto h-full pb-4" cdkDropListGroup>
+    <div class="flex flex-col md:flex-row gap-6 overflow-x-auto h-full w-full pb-4 items-center md:items-start"
+        cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" [cards]="boardData.todo" (drop)="drop($event)"
             (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"

@@ -139,9 +139,24 @@ export class KanbanBoardComponent implements OnInit {
     this.displayEditDialog = true;
   }
 
+  isValidInput(text: string): boolean {
+    const pattern = /^[a-zA-Z0-9\s.,\-_ñÑáéíóúÁÉÍÓÚ?¿!¡]+$/;
+    return pattern.test(text);
+  }
+
   saveEditedCard() {
     if (!this.editingCard.title.trim()) {
       this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'El título es obligatorio' });
+      return;
+    }
+
+    if (!this.isValidInput(this.editingCard.title)) {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'El título contiene caracteres inválidos' });
+      return;
+    }
+
+    if (this.editingCard.task && !this.isValidInput(this.editingCard.task)) {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'La tarea contiene caracteres inválidos' });
       return;
     }
 
@@ -165,8 +180,6 @@ export class KanbanBoardComponent implements OnInit {
   drop(event: CdkDragDrop<Kanban[]>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      // Reorder within same list logic if needed by backend (LexoRank handles this via updates)
-      // For now triggering a move update to save order
       const card = event.container.data[event.currentIndex];
       const prevCard = event.container.data[event.currentIndex - 1];
       const nextCard = event.container.data[event.currentIndex + 1];
@@ -187,7 +200,7 @@ export class KanbanBoardComponent implements OnInit {
       );
 
       const card = event.container.data[event.currentIndex];
-      const newListId = event.container.id; // Ensure this ID matches what backend expects
+      const newListId = event.container.id; 
       const prevCard = event.container.data[event.currentIndex - 1];
       const nextCard = event.container.data[event.currentIndex + 1];
 
