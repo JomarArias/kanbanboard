@@ -35,33 +35,48 @@ export const createCard = async (
 
 
 export const updateCard = async (
-    id: string,
-    title: string, 
-   task: string,
-
-
+  id: string,
+  title: string,
+  task: string,
+  expectedVersion: number
 ) => {
-        const card = await Card.findByIdAndUpdate(
-          id,
-          {
-            $set: { title, task },
-            $inc: { version: 1 }
-          },
-          { new: true }
-        );
-        if (!card) {
-           const error: any = new Error("Tarjeta no encontrada");
-            error.status = 404;
-            throw error;
+  const card = await Card.findOneAndUpdate(
+    { _id: id, version: expectedVersion },
+    {
+      $set: { title, task },
+      $inc: { version: 1 }
+    },
+    { new: true }
+  );
 
-        }
-        console.log(`[BACKEND] Card updated: ${card?.title}`);
-    
-       
-        await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`);
+  if (!card) {
+    const freshCard = await Card.findById(id);
 
-        return card;
-}
+    if (!freshCard) {
+      const notFoundError: any = new Error("Tarjeta no encontrada");
+      notFoundError.status = 404;
+      throw notFoundError;
+    }
+
+    const conflictError: any = new Error("La tarjeta cambio y tu vista esta desactualizada");
+    conflictError.status = 409;
+    conflictError.code = "conflict";
+    conflictError.currentCard = {
+      id: freshCard.id,
+      title: freshCard.title,
+      task: freshCard.task,
+      listId: freshCard.listId,
+      order: freshCard.order,
+      version: freshCard.version
+    };
+    throw conflictError;
+  }
+
+  console.log(`[BACKEND] Card updated: ${card.title}`);
+  await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`);
+
+  return card;
+};
 
 
 export const deleteCard = async (
@@ -314,4 +329,3 @@ export const moveCardRealtime = async (
     updatedAt: updatedCard.updatedAt
   };
 };
-
