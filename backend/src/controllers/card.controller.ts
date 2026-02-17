@@ -37,15 +37,27 @@ export const createCard = async (req: Request, res: Response) => {
 export const updateCard = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, task } = req.body ?? {};
+    const { title, task, expectedVersion } = req.body ?? {};
 
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
     if (!title || !task) return sendError(res, 400, "title y task son requeridos");
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 0) {
+      return sendError(res, 400, "expectedVersion debe ser un entero mayor o igual a 0");
+    }
 
-    const card = await cardService.updateCard(id as string, title, task);
+    const card = await cardService.updateCard(id as string, title, task, expectedVersion);
 
     return res.json(card);
   } catch (err: any) {
+    if (err?.status === 409 && err?.currentCard) {
+      return res.status(409).json({
+        ok: false,
+        message: err.message,
+        reason: err.code || "conflict",
+        currentCard: err.currentCard
+      });
+    }
+
     return sendError(res, err.status || 500, err.message || "Error al actualizar la tarjeta");
   }
 };
