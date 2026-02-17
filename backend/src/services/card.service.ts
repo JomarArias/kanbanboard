@@ -4,32 +4,33 @@ import { saveAuditLog } from './audit.service.js';
 
 export const listCardsByList = async (listId: string) => {
   const cards = await Card.find({ listId })
-    .sort({ order: 1, _id: 1 });
+    .sort({ order: 1, _id: 1 })
+    .lean();
 
   return cards;
 };
 
 export const createCard = async (
-   listId: string, 
-   title: string, 
-   task: string, 
-   
+  listId: string,
+  title: string,
+  task: string,
+
 ) => {
 
-    const lastCard = await Card.findOne({ listId }).sort({ order: -1 });
-        const order = lastCard
-          ? LexoRank.parse(lastCard.order).genNext().toString()
-          : LexoRank.middle().toString();
-    
-        const card = await Card.create({ listId, title, task, order });
+  const lastCard = await Card.findOne({ listId }).sort({ order: -1 });
+  const order = lastCard
+    ? LexoRank.parse(lastCard.order).genNext().toString()
+    : LexoRank.middle().toString();
+
+  const card = await Card.create({ listId, title, task, order });
 
 
 
-        console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
+  console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
 
-        await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`);
+  await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`);
 
-        return card;
+  return card;
 
 }
 
@@ -80,18 +81,18 @@ export const updateCard = async (
 
 
 export const deleteCard = async (
- id: string
+  id: string
 ) => {
-     const card = await Card.findByIdAndDelete(id);
-     if (!card) {
-        const error: any = new Error("Tarjeta no encontrada");
-        error.status = 404;
-        throw error
-     }
+  const card = await Card.findByIdAndDelete(id);
+  if (!card) {
+    const error: any = new Error("Tarjeta no encontrada");
+    error.status = 404;
+    throw error
+  }
 
-      await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`);
+  await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`);
 
-     return card
+  return card
 }
 
 
@@ -124,7 +125,7 @@ export const moveCard = async (
       const error: any = new Error(
         "prevOrder y nextOrder son requeridos cuando la lista destino no esta vacia"
       );
-      error.status = 400; 
+      error.status = 400;
       throw error;
     }
 
