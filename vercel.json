@@ -7,6 +7,6 @@
             "destination": "/index.html"
         }
     ],
-    "outputDirectory": "dist/frontend/browser",
+    "outputDirectory": "frontend/dist/frontend/browser",
     "framework": "angular"
 }
