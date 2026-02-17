@@ -12,6 +12,8 @@ mongoose.connect(process.env.MONGO_URI!)
 const httpServer = createServer(app);
 initSocketServer(httpServer);
 
-httpServer.listen(3000, () => {
-  console.log("Servidor en 3000");
+const PORT = process.env.PORT || 3000;
+
+httpServer.listen(PORT, () => {
+  console.log(`Servidor en ${PORT}`);
 });
