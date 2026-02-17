@@ -22,6 +22,11 @@ const cardSchema = new Schema(
       type: String,
       required: true,
       index: true
+    },
+    version: {
+      type: Number,
+      required: true,
+      default: 0
     }
   },
   { timestamps: true }

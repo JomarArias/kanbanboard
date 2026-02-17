@@ -36,19 +36,19 @@ Content-Type: application/json
 
 ###
 
-# Move card to top (destination has cards)
+# Mueve la carta hacia arriba (el destino tiene cartas)
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
 
 {
-  "cardId": "698ba0b8d1c5e3b15cb30504",
+  "cardId": "698ba0bbd1c5e3b15cb30507",
   "listId": "inProgress",
   "prevOrder": null,
   "nextOrder": "0|i00007:"
 }
 ###
 
-# Move card to bottom (destination has cards)
+# Mueve la carta hacia abajo (el destino tiene cartas)
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
 
@@ -61,7 +61,7 @@ Content-Type: application/json
 
 ###
 
-# Invalid when destination is not empty (expected 400)
+# Inválido cuando el destino no está vacío (expected 400)
 PUT http://localhost:3000/cards/move
 Content-Type: application/json
 
