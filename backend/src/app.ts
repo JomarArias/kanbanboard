@@ -21,7 +21,6 @@ apiRouter.use(cardRoutes);
 apiRouter.use(auditRoutes);
 
 app.use('/api', apiRouter);
-app.use('/', apiRouter);
 
 app.get('/', (req, res) => {
     res.send('Kanban Backend Running');

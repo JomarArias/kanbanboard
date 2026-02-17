@@ -3,10 +3,6 @@
     "public": true,
     "rewrites": [
         {
-            "source": "/api/:path*",
-            "destination": "/api/index"
-        },
-        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
