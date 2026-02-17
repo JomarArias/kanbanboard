@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { isValidObjectId } from "mongoose";
 import { sendError } from "../utils/http-response.js";
 import * as cardService from "../services/card.service.js";
+import { getIO, BOARD_ROOM } from "../sockets/socket.server.js";
 
 export const listCardsByList = async (req: Request, res: Response) => {
   try {
@@ -28,6 +29,14 @@ export const createCard = async (req: Request, res: Response) => {
     const card = await cardService.createCard(listId, title, task);
 
     console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
+
+    // Broadcast to room
+    try {
+      getIO().to(BOARD_ROOM).emit("card:created", card);
+    } catch (e) {
+      console.error("Socket error emitting card:created", e);
+    }
+
     return res.status(201).json(card);
   } catch (err) {
     return sendError(res, 500, "Error creando tarjeta", err);
@@ -46,6 +55,13 @@ export const updateCard = async (req: Request, res: Response) => {
     }
 
     const card = await cardService.updateCard(id as string, title, task, expectedVersion);
+
+    // Broadcast to room
+    try {
+      getIO().to(BOARD_ROOM).emit("card:updated", card);
+    } catch (e) {
+      console.error("Socket error emitting card:updated", e);
+    }
 
     return res.json(card);
   } catch (err: any) {
@@ -68,6 +84,14 @@ export const deleteCard = async (req: Request, res: Response) => {
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
 
     await cardService.deleteCard(id);
+
+    // Broadcast to room
+    try {
+      getIO().to(BOARD_ROOM).emit("card:deleted", { _id: id });
+    } catch (e) {
+      console.error("Socket error emitting card:deleted", e);
+    }
+
     return res.json({ ok: true });
   } catch (err: any) {
     return sendError(res, err.status || 500, err.message || "Error eliminando tarjeta");
@@ -87,6 +111,17 @@ export const moveCard = async (req: Request, res: Response) => {
     }
 
     const result = await cardService.moveCard(cardId, listId, prevOrder, nextOrder);
+
+    // Broadcast to room - NOTE: socket.server might already handle this via card:move:request if using pure sockets
+    // But since we use HTTP for drag&drop, we must emit here too.
+    // However, avoid double emit if the client reloads on 'card:moved'
+    try {
+      // We can reuse 'card:moved' event structure
+      getIO().to(BOARD_ROOM).emit("card:moved", { cardId, listId, order: result.order });
+    } catch (e) {
+      console.error("Socket error emitting card:moved", e);
+    }
+
 
     return res.json(result);
   } catch (err: any) {
