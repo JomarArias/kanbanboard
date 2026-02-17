@@ -1,8 +1,15 @@
-<div class="kanban-card p-3 bg-white rounded shadow-sm mb-2 cursor-move hover:shadow-md transition-shadow group"
-    [class.new-card]="card.isNew">
+<div class="kanban-card p-3 bg-white rounded shadow-sm mb-2 cursor-move hover:shadow-md transition-shadow group relative"
+    [class.new-card]="card.isNew" [class.opacity-50]="!!editingUser" (mouseenter)="onMouseEnter()"
+    (mouseleave)="onMouseLeave()">
+
+    <div *ngIf="editingUser"
+        class="absolute -top-2 -right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full shadow-sm z-10 border border-yellow-200 font-medium">
+        Editing: {{ editingUser }}
+    </div>
+
     <div class="font-bold text-gray-800 mb-2">{{ card.title }}</div>
     <div class="text-gray-600 mb-2">{{ card.task }}</div>
-    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" *ngIf="!editingUser">
         <p-button (click)="onEdit()" class="text-blue-500 hover:text-blue-700 text-sm" icon="pi pi-pencil"></p-button>
         <p-button (click)="onDelete($event)" class="text-red-500 hover:text-red-700 text-sm"
             icon="pi pi-trash"></p-button>

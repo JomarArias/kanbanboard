@@ -18,10 +18,13 @@ export class KanbanColumnComponent {
   @Input() title: string = '';
   @Input() listId: string = '';
   @Input() cards: Kanban[] = [];
+  @Input() editingUsers: { [key: string]: string } = {};
   @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
   @Output() addCard = new EventEmitter<void>();
   @Output() editCard = new EventEmitter<Kanban>();
   @Output() deleteCard = new EventEmitter<string>();
+  @Output() startEditing = new EventEmitter<string>();
+  @Output() stopEditing = new EventEmitter<string>();
 
 
   onDrop(event: CdkDragDrop<Kanban[]>) {

@@ -115,5 +115,12 @@ export const registerCardSocketHandlers = (io: Server, socket: Socket) => {
       });
     }
   });
-};
 
+  socket.on("card:editing:start", (payload: { cardId: string; username: string }) => {
+    socket.to(BOARD_ROOM).emit("card:editing:started", payload);
+  });
+
+  socket.on("card:editing:stop", (payload: { cardId: string }) => {
+    socket.to(BOARD_ROOM).emit("card:editing:stopped", payload);
+  });
+};

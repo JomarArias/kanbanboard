@@ -8,8 +8,10 @@
         class="flex-1 overflow-y-auto min-h-[100px]">
         @for (card of cards; track card._id) {
         <div cdkDrag [cdkDragData]="card" class="mb-3">
-            <app-kanban-card [card]="card" (edit)="onEditCard($event)"
-                (delete)="onDeleteCard($event)"></app-kanban-card>
+            <app-kanban-card [card]="card" [editingUser]="editingUsers[card._id]" (edit)="onEditCard($event)"
+                (delete)="onDeleteCard($event)" (startEditing)="startEditing.emit($event)"
+                (stopEditing)="stopEditing.emit($event)">
+            </app-kanban-card>
             <div *cdkDragPlaceholder
                 class="bg-gray-200 border-2 border-dashed border-gray-400 min-h-[80px] rounded mb-3"></div>
         </div>

@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Kanban } from '../../../../core/models/kanban.model';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -8,7 +9,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 @Component({
   selector: 'app-kanban-card',
   standalone: true,
-  imports: [ButtonModule, ToastModule, ConfirmPopupModule],
+  imports: [CommonModule, ButtonModule, ToastModule, ConfirmPopupModule],
   templateUrl: './kanban-card.component.html',
   styleUrl: './kanban-card.component.scss',
   host: {
@@ -17,13 +18,24 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 })
 export class KanbanCardComponent {
   @Input() card!: Kanban;
+  @Input() editingUser?: string | null;
   @Output() edit = new EventEmitter<Kanban>();
   @Output() delete = new EventEmitter<string>();
+  @Output() startEditing = new EventEmitter<string>();
+  @Output() stopEditing = new EventEmitter<string>();
 
   constructor(private confirmationService: ConfirmationService, private messageService: MessageService) { }
 
   onEdit() {
     this.edit.emit(this.card);
+  }
+
+  onMouseEnter() {
+    this.startEditing.emit(this.card._id);
+  }
+
+  onMouseLeave() {
+    this.stopEditing.emit(this.card._id);
   }
 
   onDelete(event: Event) {

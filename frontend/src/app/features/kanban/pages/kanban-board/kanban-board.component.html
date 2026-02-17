@@ -11,17 +11,23 @@
     <div class="flex flex-col md:flex-row md:justify-center gap-6 overflow-x-auto h-full w-full pb-4 items-center md:items-start"
         cdkDropListGroup>
 
-        <app-kanban-column title="Por Hacer" listId="todo" [cards]="boardData.todo" (drop)="drop($event)"
-            (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)"></app-kanban-column>
+        <app-kanban-column title="Por Hacer" listId="todo" [cards]="boardData.todo" [editingUsers]="editingUsers"
+            (drop)="drop($event)" (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
+            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
+            (stopEditing)="onStopEditing($event)">
+        </app-kanban-column>
 
-        <app-kanban-column title="En Proceso" listId="inProgress" [cards]="boardData.inProgress" (drop)="drop($event)"
-            (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)"></app-kanban-column>
+        <app-kanban-column title="En Proceso" listId="inProgress" [cards]="boardData.inProgress"
+            [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('inProgress')"
+            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
+            (stopEditing)="onStopEditing($event)">
+        </app-kanban-column>
 
-        <app-kanban-column title="Terminado" listId="done" [cards]="boardData.done" (drop)="drop($event)"
-            (addCard)="onAddCard('done')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)"></app-kanban-column>
+        <app-kanban-column title="Terminado" listId="done" [cards]="boardData.done" [editingUsers]="editingUsers"
+            (drop)="drop($event)" (addCard)="onAddCard('done')" (editCard)="onEditCard($event)"
+            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
+            (stopEditing)="onStopEditing($event)">
+        </app-kanban-column>
 
     </div>
 
@@ -38,7 +44,7 @@
             </div>
         </div>
         <ng-template pTemplate="footer">
-            <p-button label="Cancelar" icon="pi pi-times" (onClick)="displayEditDialog = false" text="true"></p-button>
+            <p-button label="Cancelar" icon="pi pi-times" (onClick)="closeEditDialog()" text="true"></p-button>
             <p-button label="Guardar" icon="pi pi-check" (onClick)="saveEditedCard()" autofocus="true"></p-button>
         </ng-template>
     </p-dialog>

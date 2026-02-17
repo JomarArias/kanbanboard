@@ -284,8 +284,7 @@ export const moveCardRealtime = async (
       throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
     }
 
-    // Respuesta defensiva: si la versión aún coincide, intentar una vez con _id.
-    // Esto evita conflictos falsos causados ​​por casos extremos de conversión o consulta.
+
     if (freshCard.version === expectedVersion) {
       const retryCard = await Card.findByIdAndUpdate(
         cardId,
