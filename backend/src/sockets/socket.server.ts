@@ -10,6 +10,7 @@ export const initSocketServer = (httpServer: HttpServer) => {
       origin: [
         "http://localhost:4200",
         "https://kanbanboard-frontend.vercel.app",
+        "https://kanbanboard-beige-pi.vercel.app",
         process.env.FRONTEND_URL || ""
       ],
       credentials: true
@@ -20,6 +21,19 @@ export const initSocketServer = (httpServer: HttpServer) => {
     registerCardSocketHandlers(io, socket);
   });
 
+  return io;
+};
+
+let io: Server;
+
+export const setIO = (server: Server) => {
+  io = server;
+};
+
+export const getIO = () => {
+  if (!io) {
+    throw new Error("Socket.io not initialized!");
+  }
   return io;
 };
 

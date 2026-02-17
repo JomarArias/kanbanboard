@@ -54,6 +54,18 @@ export class SocketService {
         return this.listen<{ cardId: string }>('card:editing:stopped');
     }
 
+    onCardCreated() {
+        return this.listen<any>('card:created');
+    }
+
+    onCardUpdated() {
+        return this.listen<any>('card:updated');
+    }
+
+    onCardDeleted() {
+        return this.listen<{ _id: string }>('card:deleted');
+    }
+
     joinBoard(boardId: string = 'default') {
     }
 

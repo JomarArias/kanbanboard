@@ -61,7 +61,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   editingUsers: { [cardId: string]: string } = {};
   private subscriptions: Subscription = new Subscription();
-  private myUsername = 'User-' + Math.floor(Math.random() * 1000); 
+  private myUsername = 'User-' + Math.floor(Math.random() * 1000);
 
   constructor(
     private kanbanFacade: KanbanFacadeService,
@@ -110,7 +110,31 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.socketService.onCardMoved().subscribe((event) => {
-        console.log('Real-time update received:', event);
+        console.log('Real-time update received (move):', event);
+        this.loadCards();
+        this.loadAuditLogs();
+      })
+    );
+
+    this.subscriptions.add(
+      this.socketService.onCardCreated().subscribe((event) => {
+        console.log('Real-time update received (create):', event);
+        this.loadCards();
+        this.loadAuditLogs();
+      })
+    );
+
+    this.subscriptions.add(
+      this.socketService.onCardUpdated().subscribe((event) => {
+        console.log('Real-time update received (update):', event);
+        this.loadCards();
+        this.loadAuditLogs();
+      })
+    );
+
+    this.subscriptions.add(
+      this.socketService.onCardDeleted().subscribe((event) => {
+        console.log('Real-time update received (delete):', event);
         this.loadCards();
         this.loadAuditLogs();
       })
