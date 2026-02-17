@@ -61,7 +61,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   editingUsers: { [cardId: string]: string } = {};
   private subscriptions: Subscription = new Subscription();
-  private myUsername = 'User-' + Math.floor(Math.random() * 1000); // Temporary session ID
+  private myUsername = 'User-' + Math.floor(Math.random() * 1000); 
 
   constructor(
     private kanbanFacade: KanbanFacadeService,
@@ -110,16 +110,9 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.socketService.onCardMoved().subscribe((event) => {
-        // Reload cards to ensure consistency or optimistically update
-        // For simplicity and correctness, reloading lists involved
-        // But since we split lists, we might just reload all for now
-        // Refinement: check if we initiated the move?
-        // WebSocket broadcast is usually to everyone else.
-        // But typically we should reload to get latest state from DB including new order/version
         console.log('Real-time update received:', event);
         this.loadCards();
         this.loadAuditLogs();
-        // Optional: show toast "Board updated"
       })
     );
   }
@@ -213,9 +206,15 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.kanbanFacade.updateCard(this.editingCard._id, { title: this.editingCard.title, task: this.editingCard.task }).subscribe({
+    const payload: any = {
+      title: this.editingCard.title,
+      task: this.editingCard.task,
+      expectedVersion: this.editingCard.version
+    };
+
+    this.kanbanFacade.updateCard(this.editingCard._id, payload).subscribe({
       next: (updatedCard) => {
-        this.onStopEditing(updatedCard._id); // Notify stop editing
+        this.onStopEditing(updatedCard._id);
         for (const key of Object.keys(this.boardData)) {
           const index = this.boardData[key].findIndex(c => c._id === updatedCard._id);
           if (index !== -1) {

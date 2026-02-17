@@ -9,7 +9,7 @@ export const initSocketServer = (httpServer: HttpServer) => {
     cors: {
       origin: [
         "http://localhost:4200",
-        "https://kanbanboard-frontend.vercel.app", // Adjust this if your vercel URL is different
+        "https://kanbanboard-frontend.vercel.app",
         process.env.FRONTEND_URL || ""
       ],
       credentials: true
