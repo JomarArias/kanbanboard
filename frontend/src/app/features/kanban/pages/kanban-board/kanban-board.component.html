@@ -1,4 +1,4 @@
-<div class="p-6 h-screen flex flex-col items-center">
+<div class="p-6 h-screen flex flex-col items-center overflow-hidden">
     <div class="flex items-center gap-4 mb-6">
         <h1 class="text-3xl font-bold">Kanban Board</h1>
     </div>
@@ -8,31 +8,31 @@
 
     <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
 
-    <div class="flex flex-col md:flex-row md:justify-center gap-6 overflow-x-auto h-full w-full pb-4 items-center md:items-start"
+    <div class="flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4 snap-x snap-mandatory scroll-smooth"
         cdkDropListGroup>
 
-        <app-kanban-column title="Por Hacer" listId="todo" [cards]="boardData.todo" [editingUsers]="editingUsers"
-            (drop)="drop($event)" (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
-        </app-kanban-column>
-
-        <app-kanban-column title="En Proceso" listId="inProgress" [cards]="boardData.inProgress"
-            [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('inProgress')"
+        <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
+            [cards]="boardData.todo" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('todo')"
             (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
             (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
-        <app-kanban-column title="Terminado" listId="done" [cards]="boardData.done" [editingUsers]="editingUsers"
-            (drop)="drop($event)" (addCard)="onAddCard('done')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
+        <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
+            [cards]="boardData.inProgress" [editingUsers]="editingUsers" (drop)="drop($event)"
+            (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
+            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
+        </app-kanban-column>
+
+        <app-kanban-column title="Terminado" listId="done" class="min-w-[85vw] md:min-w-[350px] snap-center"
+            [cards]="boardData.done" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('done')"
+            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
             (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
     </div>
 
-    <p-dialog header="Editar Tarjeta" [(visible)]="displayEditDialog" [modal]="true" [style]="{ width: '400px' }"
-        [draggable]="false" [resizable]="false">
+    <p-dialog header="Editar Tarjeta" [(visible)]="displayEditDialog" [modal]="true" [blockScroll]="true"
+        [style]="{ width: '400px' }" [draggable]="false" [resizable]="false">
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
                 <label for="title" class="font-semibold">Título</label>
