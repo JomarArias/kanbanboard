@@ -206,7 +206,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   onEditCard(card: Kanban) {
     this.editingCard = { ...card };
     this.displayEditDialog = true;
-    this.onStartEditing(card._id); // Notify we are editing
+    this.onStartEditing(card._id);
   }
 
   isValidInput(text: string): boolean {
@@ -254,7 +254,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Also handle closing dialog cancellation
+
   closeEditDialog() {
     if (this.editingCard?._id) {
       this.onStopEditing(this.editingCard._id);
@@ -296,7 +296,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
           this.loadAuditLogs();
         },
         error: () => {
-          // Revert move on error?
           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' });
         }
       });
