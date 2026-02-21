@@ -31,4 +31,10 @@ export class KanbanService {
     moveCard(cardId: string, listId: string, prevOrder?: string, nextOrder?: string): Observable<{ ok: boolean, order: string }> {
         return this.http.put<{ ok: boolean, order: string }>(`${this.apiUrl}/cards/move`, { cardId, listId, prevOrder, nextOrder });
     }
+
+    uploadCardImage(file: File): Observable<{ imageUrl: string; publicId: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<{ imageUrl: string; publicId: string }>(`${this.apiUrl}/uploads/image`, formData);
+    }
 }

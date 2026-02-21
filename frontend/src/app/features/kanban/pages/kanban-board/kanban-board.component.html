@@ -32,103 +32,126 @@
     </div>
 
     <p-dialog header="Editar Tarjeta" [(visible)]="displayEditDialog" [modal]="true" [blockScroll]="true"
-        [style]="{ width: '400px' }" [draggable]="false" [resizable]="false">
-        <div class="flex flex-col gap-4">
-            <div class="flex flex-col gap-2">
-                <label for="title" class="font-semibold">Título</label>
-                <input pInputText id="title" [(ngModel)]="editingCard.title" class="w-full" />
-            </div>
-            <div class="flex flex-col gap-2">
-                <label for="task" class="font-semibold">Tarea</label>
-                <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full"></textarea>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label for="dueDate" class="font-semibold">Fecha de vencimiento</label>
-              <input  id="dueDate" type="date" [(ngModel)]="editingCard.dueDate"
-              class="w-full border rounded px-3 py-2">
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="bgType" class="font-semibold">Color de la Tarjeta</label>
-              <select id="bgType"
-              [(ngModel)]="editingCard.style!.backgroundType"
-              class="w-full border rounded px-3 py-2"
-              >
-              <option value="default">Por defecto</option>
-              <option value="color">Color</option>
-              <option value="image">Imagen (URL)</option>
-            </select>
+        [style]="{ width: '95vw', maxWidth: '980px' }" [draggable]="false" [resizable]="false">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <label for="title" class="font-semibold">Título</label>
+                    <input pInputText id="title" [(ngModel)]="editingCard.title" class="w-full" />
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="task" class="font-semibold">Tarea</label>
+                    <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full"></textarea>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label for="dueDate" class="font-semibold">Fecha de vencimiento</label>
+                  <input id="dueDate" type="date" [(ngModel)]="editingCard.dueDate" class="w-full border rounded px-3 py-2">
+                </div>
             </div>
 
-            <div class="flex flex-col gap-2" *ngIf="editingCard.style?.backgroundType === 'color'">
-              <label class="font-semibold">Colores predefinidos</label>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  *ngFor="let color of presetColors"
-                  type="button"
-                  class="w-8 h-8 rounded-full border-2"
-                  [style.backgroundColor]="color"
-                  [class.ring-2]="editingCard.style?.backgroundColor === color"
-                  [class.ring-offset-2]="editingCard.style?.backgroundColor === color"
-                  [class.ring-slate-500]="editingCard.style?.backgroundColor === color"
-                  (click)="selectCardColor(color)"
-                ></button>
-              </div>
-
-              <label for="bgColor" class="font-semibold">Personalizado</label>
-              <input
-                id="bgColor"
-                type="color"
-                [ngModel]="editingCard.style!.backgroundColor"
-                (ngModelChange)="selectCardColor($event)"
-                class="w-full h-10 border rounded"
-              />
-            </div>
-
-            <div class="flex flex-col gap-2" *ngIf="editingCard.style?.backgroundType === 'image'">
-              <label for="bgImageUrl" class="font-semibold">URL de imagen</label>
-              <input
-                pInputText
-                id="bgImageUrl"
-                type="text"
-                [(ngModel)]="editingCard.style!.backgroundImageUrl"
-                placeholder="https://..."
-                class="w-full"
-              />
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <label class="font-semibold">Etiquetas</label>
-                  <button type="button" pButton icon="pi pi-plus" label="Agregar" (click)="addLabel()"></button>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                  <label for="bgType" class="font-semibold">Color de la Tarjeta o imagen</label>
+                  <select id="bgType"
+                    [(ngModel)]="editingCard.style!.backgroundType"
+                    (ngModelChange)="onBackgroundTypeChange($event)"
+                    class="w-full border rounded px-3 py-2">
+                    <option value="default">Por defecto</option>
+                    <option value="color">Color</option>
+                    <option value="image">Imagen</option>
+                  </select>
                 </div>
 
-                <div *ngFor="let label of editingCard.labels; let i = index" class="flex flex-col gap-2 rounded  p-2">
-                  <div class="grid grid-cols-12 gap-2 items-center">
-                    <input type="text" [(ngModel)]="label.name" placeholder="Nombre" class="col-span-10 border rounded px-2 py-1">
-                    <input type="color" [(ngModel)]="label.color" class="col-span-1 h-9 border rounded" title="Color personalizado"/>
-                    <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1" (click)="removeLabel(i)"></button>
-                  </div>
-
-                  <div class="flex flex-wrap gap-1">
+                <div class="flex flex-col gap-2" *ngIf="editingCard.style?.backgroundType === 'color'">
+                  <label class="font-semibold">Colores predefinidos</label>
+                  <div class="flex flex-wrap gap-2">
                     <button
                       *ngFor="let color of presetColors"
                       type="button"
-                      class="w-6 h-6 rounded-full border"
+                      class="w-8 h-8 rounded-full border-2"
                       [style.backgroundColor]="color"
-                      [class.ring-2]="label.color === color"
-                      [class.ring-offset-1]="label.color === color"
-                      [class.ring-slate-500]="label.color === color"
-                      (click)="selectLabelColor(i, color)"
-                      [attr.title]="color"
+                      [class.ring-2]="editingCard.style?.backgroundColor === color"
+                      [class.ring-offset-2]="editingCard.style?.backgroundColor === color"
+                      [class.ring-slate-500]="editingCard.style?.backgroundColor === color"
+                      (click)="selectCardColor(color)"
                     ></button>
+                  </div>
+
+                  <label for="bgColor" class="font-semibold">Personalizado</label>
+                  <input
+                    id="bgColor"
+                    type="color"
+                    [ngModel]="editingCard.style!.backgroundColor"
+                    (ngModelChange)="selectCardColor($event)"
+                    class="w-full h-10 border rounded"
+                  />
+                </div>
+
+                <div class="flex flex-col gap-2" *ngIf="editingCard.style?.backgroundType === 'image'">
+                  <label for="bgImageFile" class="font-semibold">Subir imagen</label>
+                  <input
+                    id="bgImageFile"
+                    type="file"
+                    accept="image/*"
+                    (change)="onBackgroundImageFileSelected($event)"
+                    class="w-full border rounded px-2 py-2"
+                  />
+                  <small class="text-gray-500" *ngIf="isUploadingImage">Subiendo imagen...</small>
+
+                  <div *ngIf="editingCard.style?.backgroundImageUrl" class="flex flex-col gap-2">
+                    <img
+                      [src]="editingCard.style!.backgroundImageUrl!"
+                      alt="Preview de imagen"
+                      class="w-full max-h-40 object-cover rounded border"
+                    />
+                    <div class="flex gap-2">
+                      <button type="button" pButton label="Quitar imagen" severity="danger" (click)="removeBackgroundImage()"></button>
+                      <button type="button" pButton label="URL manual" [text]="true" (click)="showImageUrlInput = !showImageUrlInput"></button>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-2" *ngIf="showImageUrlInput || !editingCard.style?.backgroundImageUrl">
+                    <label for="bgImageUrl" class="font-semibold">URL de imagen (avanzado)</label>
+                    <input
+                      pInputText
+                      id="bgImageUrl"
+                      type="text"
+                      [(ngModel)]="editingCard.style!.backgroundImageUrl"
+                      placeholder="https://..."
+                      class="w-full"
+                    />
                   </div>
                 </div>
 
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                      <label class="font-semibold">Etiquetas</label>
+                      <button type="button" pButton icon="pi pi-plus" label="Agregar" (click)="addLabel()"></button>
+                    </div>
+
+                    <div *ngFor="let label of editingCard.labels; let i = index" class="flex flex-col gap-2 rounded p-2">
+                      <div class="grid grid-cols-12 gap-2 items-center">
+                        <input type="text" [(ngModel)]="label.name" placeholder="Nombre" class="col-span-10 border rounded px-2 py-1">
+                        <input type="color" [(ngModel)]="label.color" class="col-span-1 h-9 border rounded" title="Color personalizado"/>
+                        <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1" (click)="removeLabel(i)"></button>
+                      </div>
+
+                      <div class="flex flex-wrap gap-1">
+                        <button
+                          *ngFor="let color of presetColors"
+                          type="button"
+                          class="w-6 h-6 rounded-full border"
+                          [style.backgroundColor]="color"
+                          [class.ring-2]="label.color === color"
+                          [class.ring-offset-1]="label.color === color"
+                          [class.ring-slate-500]="label.color === color"
+                          (click)="selectLabelColor(i, color)"
+                          [attr.title]="color"
+                        ></button>
+                      </div>
+                    </div>
+                </div>
             </div>
-
-
-
         </div>
         <ng-template pTemplate="footer">
             <p-button label="Cancelar" icon="pi pi-times" (onClick)="closeEditDialog()" text="true"></p-button>

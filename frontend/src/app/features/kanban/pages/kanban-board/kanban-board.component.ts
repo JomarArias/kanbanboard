@@ -48,6 +48,8 @@ import { KanbanLabel } from '../../../../core/models/kanban.model';
 })
 export class KanbanBoardComponent implements OnInit, OnDestroy {
   private readonly HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{6})$/;
+  private readonly MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+  private readonly ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   readonly presetColors: string[] = [
     '#3B82F6',
     '#10B981',
@@ -66,6 +68,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   };
 
   displayEditDialog: boolean = false;
+  isUploadingImage = false;
+  showImageUrlInput = false;
   editingCard: Kanban = {
     _id: '',
     title: '',
@@ -226,6 +230,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   onEditCard(card: Kanban) {
+    this.showImageUrlInput = false;
     this.editingCard = { ...card,
       version: card.version ?? 0,
       dueDate: card.dueDate ? card.dueDate.substring(0,10) : null,
@@ -274,6 +279,77 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   selectLabelColor(index: number, color: string) {
     if (!this.editingCard.labels || !this.editingCard.labels[index]) return;
     this.editingCard.labels[index].color = color;
+  }
+
+  onBackgroundTypeChange(type: string) {
+    if (!this.editingCard.style) {
+      this.editingCard.style = { backgroundType: 'default', backgroundColor: null, backgroundImageUrl: null };
+    }
+
+    const nextType = (type === 'color' || type === 'image') ? type : 'default';
+    this.editingCard.style.backgroundType = nextType;
+
+    if (nextType === 'default') {
+      this.editingCard.style.backgroundColor = null;
+      this.editingCard.style.backgroundImageUrl = null;
+      this.showImageUrlInput = false;
+      return;
+    }
+
+    if (nextType === 'color') {
+      this.editingCard.style.backgroundColor = this.editingCard.style.backgroundColor ?? '#3B82F6';
+      this.editingCard.style.backgroundImageUrl = null;
+      return;
+    }
+
+    this.editingCard.style.backgroundColor = null;
+    this.editingCard.style.backgroundImageUrl = this.editingCard.style.backgroundImageUrl ?? '';
+  }
+
+  removeBackgroundImage() {
+    if (!this.editingCard.style) return;
+    this.editingCard.style.backgroundImageUrl = null;
+  }
+
+  onBackgroundImageFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!this.ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Selecciona un archivo de imagen' });
+      input.value = '';
+      return;
+    }
+
+    if (file.size > this.MAX_IMAGE_SIZE_BYTES) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'La imagen no debe exceder 5MB' });
+      input.value = '';
+      return;
+    }
+
+    this.isUploadingImage = true;
+
+    this.kanbanFacade.uploadCardImage(file).subscribe({
+      next: ({ imageUrl }) => {
+        if (!this.editingCard.style) {
+          this.editingCard.style = { backgroundType: 'image', backgroundColor: null, backgroundImageUrl: imageUrl };
+        } else {
+          this.editingCard.style.backgroundType = 'image';
+          this.editingCard.style.backgroundColor = null;
+          this.editingCard.style.backgroundImageUrl = imageUrl;
+        }
+        this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Imagen subida correctamente' });
+      },
+      error: (err) => {
+        const message = err?.error?.message || 'No se pudo subir la imagen';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+      },
+      complete: () => {
+        this.isUploadingImage = false;
+        input.value = '';
+      }
+    });
   }
 
   isValidInput(text: string): boolean {
@@ -365,6 +441,11 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   saveEditedCard() {
+    if (this.isUploadingImage) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Espera a que termine la subida de imagen' });
+      return;
+    }
+
     if (!this.editingCard.title.trim()) {
       this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'El título es obligatorio' });
       return;
