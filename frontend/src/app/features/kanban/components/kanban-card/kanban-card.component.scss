@@ -15,3 +15,51 @@
 .new-card {
     animation: highlight 2s ease-out forwards;
 }
+
+.kanban-card {
+    overflow: hidden;
+}
+
+.card-top-strip {
+    height: 44px;
+    margin: -0.75rem -0.75rem 0.75rem -0.75rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.label-bars {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.6rem;
+}
+
+.label-bar {
+    width: 48px;
+    height: 10px;
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.due-date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.45rem;
+}
+
+.due-ok {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.due-soon {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.due-overdue {
+    background: #fee2e2;
+    color: #991b1b;
+}

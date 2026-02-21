@@ -2,13 +2,32 @@
     [class.new-card]="card.isNew" [class.opacity-50]="!!editingUser" (mouseenter)="onMouseEnter()"
     (mouseleave)="onMouseLeave()">
 
+    <div class="card-top-strip" *ngIf="getHeaderColor() as headerColor" [style.backgroundColor]="headerColor"></div>
+
     <div *ngIf="editingUser"
         class="absolute -top-2 -right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full shadow-sm z-10 border border-yellow-200 font-medium">
         Se esta editando por otro usuario
     </div>
 
+    <div class="label-bars" *ngIf="getVisibleLabels().length > 0">
+        <span *ngFor="let label of getVisibleLabels()" class="label-bar" [style.backgroundColor]="label.color"
+            [attr.title]="label.name"></span>
+    </div>
+
     <div class="font-bold text-gray-800 mb-2">{{ card.title }}</div>
     <div class="text-gray-600 mb-2">{{ card.task }}</div>
+
+    <div class="mb-2" *ngIf="getDueDateStatus() !== 'none'">
+        <span class="due-date-badge" [ngClass]="{
+            'due-ok': getDueDateStatus() === 'ok',
+            'due-soon': getDueDateStatus() === 'soon',
+            'due-overdue': getDueDateStatus() === 'overdue'
+        }">
+            <i class="pi pi-clock"></i>
+            {{ formatDueDate() }}
+        </span>
+    </div>
+
     <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" *ngIf="!editingUser">
         <p-button (click)="onEdit()" class="text-blue-500 hover:text-blue-700 text-sm" icon="pi pi-pencil"></p-button>
         <p-button (click)="onDelete($event)" class="text-red-500 hover:text-red-700 text-sm"

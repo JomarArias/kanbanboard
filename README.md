@@ -161,3 +161,58 @@ Prueba local sin frontend:
 - Script: `backend/socket-test.js`
 - Comando: `npm run socket:test`
 - Modo estricto (fallar en rejected): `SOCKET_TEST_STRICT=1`
+
+-----------------------------------------------------------------
+
+Actualizacion Fase 1 (dueDate, labels, style)
+
+Base URL API (actual):
+- `http://localhost:3000/api`
+
+Campos nuevos en tarjeta:
+- `dueDate`: `string | null` (ISO date)
+- `labels`: arreglo de objetos `{ id, name, color }`
+- `style`: objeto `{ backgroundType, backgroundColor }`
+
+Reglas importantes:
+- `labels[].name` es obligatorio (no vacio).
+- `labels[].color` debe ser HEX valido (`#RRGGBB`).
+- Si `style.backgroundType = "color"`, `backgroundColor` es obligatorio.
+- Si `style.backgroundType = "default"`, `backgroundColor` debe ser `null`.
+- En `PUT /cards/:id`, `expectedVersion` es obligatorio para control de concurrencia.
+
+Ejemplo update con campos nuevos:
+`PUT /api/cards/:id`
+```json
+{
+  "title": "Tarjeta actualizada",
+  "task": "Detalle",
+  "expectedVersion": 1,
+  "dueDate": "2026-03-20T00:00:00.000Z",
+  "labels": [
+    { "id": "urgent", "name": "Urgente", "color": "#EF4444" },
+    { "id": "backend", "name": "Backend", "color": "#3B82F6" }
+  ],
+  "style": {
+    "backgroundType": "color",
+    "backgroundColor": "#3B82F6"
+  }
+}
+```
+
+Comportamiento visual en tablero:
+- Franja superior con color de tarjeta (`style.backgroundColor`).
+- Fecha con semaforo:
+- Verde: faltan mas de 2 dias.
+- Amarillo: faltan 2 dias o menos.
+- Rojo: vencida.
+- Labels visibles como barras de color (maximo 4) con tooltip (`label.name`).
+
+Mini checklist QA (Fase 1):
+1. Crear tarjeta normal y editar solo `title/task` (debe guardar sin pedir otros campos).
+2. Editar solo `dueDate` (debe guardar y mostrar badge de fecha).
+3. Editar `style` con color predefinido y personalizado (debe cambiar franja).
+4. Agregar labels con nombre+color (deben verse en tarjeta).
+5. Intentar guardar label sin nombre (debe bloquearse en frontend).
+6. Probar conflicto de version (`expectedVersion` viejo) y validar `409`.
+7. Probar edicion de tarjeta antigua sin `version` (debe actualizar con `expectedVersion: 0`).

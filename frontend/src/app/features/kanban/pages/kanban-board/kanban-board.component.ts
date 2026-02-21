@@ -22,6 +22,7 @@ import { SpeedDialModule } from 'primeng/speeddial';
 import { MenuItem } from 'primeng/api';
 import { SocketService } from '../../../../core/services/socket.service';
 import { Subscription } from 'rxjs';
+import { KanbanLabel } from '../../../../core/models/kanban.model';
 
 @Component({
   selector: 'app-kanban-board',
@@ -46,6 +47,18 @@ import { Subscription } from 'rxjs';
   }
 })
 export class KanbanBoardComponent implements OnInit, OnDestroy {
+  private readonly HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{6})$/;
+  readonly presetColors: string[] = [
+    '#3B82F6',
+    '#10B981',
+    '#F59E0B',
+    '#EF4444',
+    '#8B5CF6',
+    '#06B6D4',
+    '#84CC16',
+    '#F97316'
+  ];
+
   boardData: { todo: Kanban[]; inProgress: Kanban[]; done: Kanban[];[key: string]: Kanban[] } = {
     todo: [],
     inProgress: [],
@@ -53,7 +66,16 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   };
 
   displayEditDialog: boolean = false;
-  editingCard: Kanban = { _id: '', title: '', task: '', listId: '', order: '' };
+  editingCard: Kanban = {
+    _id: '',
+    title: '',
+    task: '',
+    listId: '',
+    order: '',
+    dueDate: null,
+    labels: [],
+    style: { backgroundType: 'default', backgroundColor: null }
+  };
 
   auditLogs: AuditLog[] = [];
   displayAuditLog: boolean = false;
@@ -204,14 +226,106 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   onEditCard(card: Kanban) {
-    this.editingCard = { ...card };
+    this.editingCard = { ...card,
+      version: card.version ?? 0,
+      dueDate: card.dueDate ? card.dueDate.substring(0,10) : null,
+      labels: card.labels ? [...card.labels] : [],
+      style: card.style ?? { backgroundType: 'default', backgroundColor: null}
+
+    };
+    if (this.editingCard.style?.backgroundType === 'color' && !this.editingCard.style.backgroundColor) {
+      this.editingCard.style.backgroundColor = '#3B82F6';
+    }
     this.displayEditDialog = true;
     this.onStartEditing(card._id);
+  }
+
+  addLabel(){
+      if (!this.editingCard.labels) this.editingCard.labels = [];
+      this.editingCard.labels.push({
+        id: `label-${Date.now()}`,
+        name: '',
+        color: '#3B82F6'
+      })
+    }
+
+  removeLabel(index: number) {
+    if (!this.editingCard.labels) return;
+    this.editingCard.labels.splice(index, 1);
+  }
+
+  private getSafeLabels(): KanbanLabel[] {
+    return this.editingCard.labels ?? [];
+  }
+
+  selectCardColor(color: string) {
+    if (!this.editingCard.style) {
+      this.editingCard.style = { backgroundType: 'color', backgroundColor: color };
+      return;
+    }
+    this.editingCard.style.backgroundType = 'color';
+    this.editingCard.style.backgroundColor = color;
+  }
+
+  selectLabelColor(index: number, color: string) {
+    if (!this.editingCard.labels || !this.editingCard.labels[index]) return;
+    this.editingCard.labels[index].color = color;
   }
 
   isValidInput(text: string): boolean {
     const pattern = /^[a-zA-Z0-9\s.,\-_ñÑáéíóúÁÉÍÓÚ?¿!¡]+$/;
     return pattern.test(text);
+  }
+
+  private normalizeAndValidateLabels() {
+    const labels = this.getSafeLabels();
+    const normalized = labels.map((label, index) => ({
+      id: label.id?.trim() || `label-${Date.now()}-${index}`,
+      name: label.name?.trim() || '',
+      color: label.color?.toUpperCase() || ''
+    }));
+
+    const hasEmptyName = normalized.some((label) => label.name.length === 0);
+    if (hasEmptyName) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Todas las etiquetas deben tener nombre'
+      });
+      return null;
+    }
+
+    const hasInvalidColor = normalized.some((label) => !this.HEX_COLOR_REGEX.test(label.color));
+    if (hasInvalidColor) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Todas las etiquetas deben tener color HEX valido'
+      });
+      return null;
+    }
+
+    return normalized;
+  }
+
+  private normalizeAndValidateStyle() {
+    const backgroundType = this.editingCard.style?.backgroundType ?? 'default';
+
+    if (backgroundType === 'default') {
+      return { backgroundType: 'default' as const, backgroundColor: null };
+    }
+
+    const backgroundColor = this.editingCard.style?.backgroundColor?.toUpperCase() || '';
+    if (!this.HEX_COLOR_REGEX.test(backgroundColor)) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Selecciona un color de tarjeta valido'
+      });
+      return null;
+    }
+
+    return { backgroundType: 'color' as const, backgroundColor };
   }
 
   saveEditedCard() {
@@ -230,10 +344,25 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const normalizedLabels = this.normalizeAndValidateLabels();
+    if (!normalizedLabels) return;
+
+    const normalizedStyle = this.normalizeAndValidateStyle();
+    if (!normalizedStyle) return;
+
+    const normalizedDueDate =
+      this.editingCard.dueDate && this.editingCard.dueDate.trim().length > 0
+        ? this.editingCard.dueDate
+        : null;
+
     const payload: any = {
-      title: this.editingCard.title,
-      task: this.editingCard.task,
-      expectedVersion: this.editingCard.version
+      title: this.editingCard.title.trim(),
+      task: this.editingCard.task?.trim() ?? '',
+      expectedVersion: this.editingCard.version,
+      dueDate: normalizedDueDate,
+      labels: normalizedLabels,
+      style: normalizedStyle
+
     };
 
     this.kanbanFacade.updateCard(this.editingCard._id, payload).subscribe({
@@ -250,7 +379,10 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
           }
         }
       },
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar la tarjeta' })
+      error: (err) => {
+        const message = err?.error?.message || 'No se pudo actualizar la tarjeta';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+      }
     });
   }
 
@@ -305,4 +437,9 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   onAddCard(listId: string) {
     this.addCard(listId);
   }
+
+
+
+
+
 }

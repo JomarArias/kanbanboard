@@ -5,6 +5,7 @@ import { sendError } from "../utils/http-response.js";
 import * as cardService from "../services/card.service.js";
 import { getIO, BOARD_ROOM } from "../sockets/socket.server.js";
 
+
 export const listCardsByList = async (req: Request, res: Response) => {
   try {
     const listId = req.params.listId as string;
@@ -20,7 +21,7 @@ export const listCardsByList = async (req: Request, res: Response) => {
 
 export const createCard = async (req: Request, res: Response) => {
   try {
-    const { listId, title, task } = req.body ?? {};
+    const { listId, title, task,  } = req.body ?? {};
 
     if (!listId || !title || !task) {
       return sendError(res, 400, "listId, title y task son requeridos");
@@ -43,18 +44,33 @@ export const createCard = async (req: Request, res: Response) => {
   }
 };
 
+
+
+
+
+
 export const updateCard = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, task, expectedVersion } = req.body ?? {};
+    const { title, task, expectedVersion, dueDate, labels, style } = req.body ?? {};
 
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
-    if (!title || !task) return sendError(res, 400, "title y task son requeridos");
+    // if (!title || !task) return sendError(res, 400, "title y task son requeridos");
     if (!Number.isInteger(expectedVersion) || expectedVersion < 0) {
       return sendError(res, 400, "expectedVersion debe ser un entero mayor o igual a 0");
     }
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (task !== undefined)  updateData.task = task;
+    if (dueDate !== undefined) updateData.dueDate = dueDate;
+    if ( labels !== undefined) updateData.labels = labels   
+    if ( style !== undefined) updateData.style = style
 
-    const card = await cardService.updateCard(id as string, title, task, expectedVersion);
+    if(Object.keys(updateData).length === 0){
+      return sendError(res, 400, "No hay campos para actualizar")
+    }
+
+    const card = await cardService.updateCard(id as string,  expectedVersion, updateData);
 
     // Broadcast to room
     try {
@@ -78,6 +94,15 @@ export const updateCard = async (req: Request, res: Response) => {
   }
 };
 
+
+
+
+
+
+
+
+
+
 export const deleteCard = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
@@ -100,7 +125,7 @@ export const deleteCard = async (req: Request, res: Response) => {
 
 export const moveCard = async (req: Request, res: Response) => {
   try {
-    const { cardId, listId, prevOrder, nextOrder } = req.body ?? {};
+    const { cardId, listId, prevOrder, nextOrder} = req.body ?? {};
 
     if (!cardId || !listId) {
       return sendError(res, 400, "cardId y listId son requeridos");

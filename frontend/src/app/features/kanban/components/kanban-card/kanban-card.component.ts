@@ -26,6 +26,46 @@ export class KanbanCardComponent {
 
   constructor(private confirmationService: ConfirmationService, private messageService: MessageService) { }
 
+  getHeaderColor(): string | null {
+    if (this.card?.style?.backgroundType === 'color' && this.card?.style?.backgroundColor) {
+      return this.card.style.backgroundColor;
+    }
+    return null;
+  }
+
+  getVisibleLabels() {
+    const labels = this.card?.labels ?? [];
+    return labels
+      .filter((label) => !!label?.name && !!label?.color)
+      .slice(0, 4);
+  }
+
+  getDueDateStatus(): 'none' | 'ok' | 'soon' | 'overdue' {
+    if (!this.card?.dueDate) return 'none';
+
+    const due = new Date(this.card.dueDate);
+    if (Number.isNaN(due.getTime())) return 'none';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    if (due < today) return 'overdue';
+
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / msPerDay);
+    if (diffDays <= 2) return 'soon';
+
+    return 'ok';
+  }
+
+  formatDueDate(): string {
+    if (!this.card?.dueDate) return '';
+    const date = new Date(this.card.dueDate);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(date);
+  }
+
   onEdit() {
     this.edit.emit(this.card);
   }
