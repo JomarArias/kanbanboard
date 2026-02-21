@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import cardRoutes from "./routes/card.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use((req, res, next) => {
 const apiRouter = express.Router();
 apiRouter.use(cardRoutes);
 apiRouter.use(auditRoutes);
+apiRouter.use(uploadRoutes);
 
 app.use('/api', apiRouter);
 

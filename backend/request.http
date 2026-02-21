@@ -26,7 +26,7 @@ Content-Type: application/json
 ###
 
 # Update card (replace ID)
-PUT http://localhost:3000/cards/698ba0bbd1c5e3b15cb30507
+PUT http://localhost:3000/api/cards/698ba0bbd1c5e3b15cb30507
 Content-Type: application/json
 
 {
@@ -38,7 +38,7 @@ Content-Type: application/json
 ###
 
 # Update card with stale version (expected 409 conflict)
-PUT http://localhost:3000/cards/698ba0b8d1c5e3b15cb30504
+PUT http://localhost:3000/api/cards/698ba0b8d1c5e3b15cb30504
 Content-Type: application/json
 
 {
@@ -50,7 +50,7 @@ Content-Type: application/json
 ###
 
 # Mueve la carta hacia arriba (el destino tiene cartas)
-PUT http://localhost:3000/cards/move
+PUT http://localhost:3000/api/cards/move
 Content-Type: application/json
 
 {
@@ -62,7 +62,7 @@ Content-Type: application/json
 ###
 
 # Mueve la carta hacia abajo (el destino tiene cartas)
-PUT http://localhost:3000/cards/move
+PUT http://localhost:3000/api/cards/move
 Content-Type: application/json
 
 {
@@ -75,7 +75,7 @@ Content-Type: application/json
 ###
 
 # Inválido cuando el destino no está vacío (expected 400)
-PUT http://localhost:3000/cards/move
+PUT http://localhost:3000/api/cards/move
 Content-Type: application/json
 
 {
@@ -88,7 +88,7 @@ Content-Type: application/json
 ###
 
 # Delete card (replace ID)
-DELETE http://localhost:3000/cards/REEMPLAZA_ID
+DELETE http://localhost:3000/api/cards/REEMPLAZA_ID
 
 ###
 
@@ -166,3 +166,17 @@ Content-Type: application/json
     "backgroundImageUrl": null
   }
 }
+
+###
+
+# Upload imagen a Cloudinary (campo multipart: file)
+# Reemplaza la ruta local del archivo debajo.
+POST http://localhost:3000/api/uploads/image
+Content-Type: multipart/form-data; boundary=KanbanBoundary
+
+--KanbanBoundary
+Content-Disposition: form-data; name="file"; filename="card-image.jpg"
+Content-Type: image/jpeg
+
+< ./card-image.jpg
+--KanbanBoundary--
