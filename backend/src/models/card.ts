@@ -43,9 +43,13 @@ const cardSchema = new Schema(
     },
     style: {
       backgroundType: {
-        type: String, enum: ["default", "color"], default: "default"
+        type: String, enum: ["default", "color", "image"], default: "default"
       },
       backgroundColor: {
+        type: String,
+        default: null
+      },
+      backgroundImageUrl: {
         type: String,
         default: null
       }

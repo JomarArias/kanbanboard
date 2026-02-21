@@ -3,6 +3,9 @@
     (mouseleave)="onMouseLeave()">
 
     <div class="card-top-strip" *ngIf="getHeaderColor() as headerColor" [style.backgroundColor]="headerColor"></div>
+    <div class="card-top-strip card-top-strip-image" *ngIf="getHeaderImageUrl() as headerImageUrl">
+        <img class="card-top-image" [src]="headerImageUrl" alt="Fondo de tarjeta" />
+    </div>
 
     <div *ngIf="editingUser"
         class="absolute -top-2 -right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full shadow-sm z-10 border border-yellow-200 font-medium">

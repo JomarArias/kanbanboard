@@ -74,7 +74,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     order: '',
     dueDate: null,
     labels: [],
-    style: { backgroundType: 'default', backgroundColor: null }
+    style: { backgroundType: 'default', backgroundColor: null, backgroundImageUrl: null }
   };
 
   auditLogs: AuditLog[] = [];
@@ -230,11 +230,14 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       version: card.version ?? 0,
       dueDate: card.dueDate ? card.dueDate.substring(0,10) : null,
       labels: card.labels ? [...card.labels] : [],
-      style: card.style ?? { backgroundType: 'default', backgroundColor: null}
+      style: card.style ?? { backgroundType: 'default', backgroundColor: null, backgroundImageUrl: null}
 
     };
     if (this.editingCard.style?.backgroundType === 'color' && !this.editingCard.style.backgroundColor) {
       this.editingCard.style.backgroundColor = '#3B82F6';
+    }
+    if (this.editingCard.style?.backgroundType === 'image' && !this.editingCard.style.backgroundImageUrl) {
+      this.editingCard.style.backgroundImageUrl = '';
     }
     this.displayEditDialog = true;
     this.onStartEditing(card._id);
@@ -260,11 +263,12 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   selectCardColor(color: string) {
     if (!this.editingCard.style) {
-      this.editingCard.style = { backgroundType: 'color', backgroundColor: color };
+      this.editingCard.style = { backgroundType: 'color', backgroundColor: color, backgroundImageUrl: null };
       return;
     }
     this.editingCard.style.backgroundType = 'color';
     this.editingCard.style.backgroundColor = color;
+    this.editingCard.style.backgroundImageUrl = null;
   }
 
   selectLabelColor(index: number, color: string) {
@@ -312,20 +316,52 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     const backgroundType = this.editingCard.style?.backgroundType ?? 'default';
 
     if (backgroundType === 'default') {
-      return { backgroundType: 'default' as const, backgroundColor: null };
+      return { backgroundType: 'default' as const, backgroundColor: null, backgroundImageUrl: null };
     }
 
-    const backgroundColor = this.editingCard.style?.backgroundColor?.toUpperCase() || '';
-    if (!this.HEX_COLOR_REGEX.test(backgroundColor)) {
+    if (backgroundType === 'color') {
+      const backgroundColor = this.editingCard.style?.backgroundColor?.toUpperCase() || '';
+      if (!this.HEX_COLOR_REGEX.test(backgroundColor)) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Advertencia',
+          detail: 'Selecciona un color de tarjeta valido'
+        });
+        return null;
+      }
+
+      return { backgroundType: 'color' as const, backgroundColor, backgroundImageUrl: null };
+    }
+
+    const backgroundImageUrl = this.editingCard.style?.backgroundImageUrl?.trim() || '';
+    if (!backgroundImageUrl) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Advertencia',
-        detail: 'Selecciona un color de tarjeta valido'
+        detail: 'La URL de imagen es obligatoria cuando el fondo es imagen'
       });
       return null;
     }
 
-    return { backgroundType: 'color' as const, backgroundColor };
+    if (!this.isValidHttpUrl(backgroundImageUrl)) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'La URL de imagen debe iniciar con http:// o https://'
+      });
+      return null;
+    }
+
+    return { backgroundType: 'image' as const, backgroundColor: null, backgroundImageUrl };
+  }
+
+  private isValidHttpUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 
   saveEditedCard() {

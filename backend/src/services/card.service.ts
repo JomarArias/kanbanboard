@@ -37,8 +37,9 @@ export const createCard = async (
 const HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{6})$/;
 
 type CardStyleUpdate = {
-  backgroundType?: "default" | "color";
+  backgroundType?: "default" | "color" | "image";
   backgroundColor?: string | null;
+  backgroundImageUrl?: string | null;
 }
 
 type CardLabelUpdate = {
@@ -84,6 +85,15 @@ const validateLabels = (labels: unknown) => {
 };
 
 
+const isValidHttpUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
   const validateStyle = (style: unknown) => {
     if (!style || typeof style !== "object"){
       const err: any = new Error ("style invalido");
@@ -91,9 +101,9 @@ const validateLabels = (labels: unknown) => {
       throw err;
       }
 
-      const { backgroundType, backgroundColor } = style as CardStyleUpdate
+      const { backgroundType, backgroundColor, backgroundImageUrl } = style as CardStyleUpdate
 
-      if (backgroundType !== undefined && !["default","color"].includes(backgroundType)){
+      if (backgroundType !== undefined && !["default","color","image"].includes(backgroundType)){
         const err: any = new Error ("backgroundType invalido");
         err.status = 400;
         throw err;
@@ -105,6 +115,24 @@ const validateLabels = (labels: unknown) => {
           err.status = 400;
           throw err;
         }
+        if (backgroundImageUrl !== null && backgroundImageUrl !== undefined) {
+          const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es color");
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      if (backgroundType === "image"){
+        if (!backgroundImageUrl || typeof backgroundImageUrl !== "string" || !isValidHttpUrl(backgroundImageUrl)){
+          const err: any = new Error ("backgroundImageUrl es requerido y debe ser una URL http/https valida cuando backgroundType es image");
+          err.status = 400;
+          throw err;
+        }
+        if (backgroundColor !== null && backgroundColor !== undefined){
+          const err: any = new Error ("backgroundColor debe ser null cuando backgroundType es image");
+          err.status = 400;
+          throw err;
+        }
       }
 
       if (backgroundType === "default" && backgroundColor !== null && backgroundColor !== undefined){
@@ -112,8 +140,18 @@ const validateLabels = (labels: unknown) => {
         err.status = 400;
         throw err;
       }
+      if (backgroundType === "default" && backgroundImageUrl !== null && backgroundImageUrl !== undefined){
+        const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es default");
+        err.status = 400;
+        throw err;
+      }
       if (backgroundType === undefined && backgroundColor !== undefined){
         const err: any = new Error("Si envías backgroundColor también debes enviar backgroundType");
+        err.status = 400;
+        throw err;
+      }
+      if (backgroundType === undefined && backgroundImageUrl !== undefined){
+        const err: any = new Error("Si envias backgroundImageUrl tambien debes enviar backgroundType");
         err.status = 400;
         throw err;
       }
@@ -133,7 +171,11 @@ export const updateCard = async (
     task?: string;
     dueDate?: Date | string | null;
     labels?: Array <{ id: string; name: string; color: string}>;
-    style?: {backgroundType?: "default" | "color"; backgroundColor?: string | null}
+    style?: {
+      backgroundType?: "default" | "color" | "image";
+      backgroundColor?: string | null;
+      backgroundImageUrl?: string | null;
+    }
   }
 ) => {
   if(Object.keys(updateData).length === 0){

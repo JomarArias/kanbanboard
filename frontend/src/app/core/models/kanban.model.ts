@@ -4,9 +4,10 @@ export interface KanbanLabel {
   color: string;
 }
 
-export interface style {
-   backgroundType?:'default' | 'color';
-   backgroundColor?: string | null
+export interface KanbanStyle {
+   backgroundType?: 'default' | 'color' | 'image';
+   backgroundColor?: string | null;
+   backgroundImageUrl?: string | null;
 }
 
 export interface Kanban {
@@ -21,6 +22,6 @@ export interface Kanban {
     version?: number;
     dueDate?: string | null;
     labels?: KanbanLabel[];
-    style?: style;
+    style?: KanbanStyle;
 
 }

@@ -33,6 +33,13 @@ export class KanbanCardComponent {
     return null;
   }
 
+  getHeaderImageUrl(): string | null {
+    if (this.card?.style?.backgroundType === 'image' && this.card?.style?.backgroundImageUrl) {
+      return this.card.style.backgroundImageUrl;
+    }
+    return null;
+  }
+
   getVisibleLabels() {
     const labels = this.card?.labels ?? [];
     return labels

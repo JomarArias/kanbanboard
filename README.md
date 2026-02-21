@@ -216,3 +216,52 @@ Mini checklist QA (Fase 1):
 5. Intentar guardar label sin nombre (debe bloquearse en frontend).
 6. Probar conflicto de version (`expectedVersion` viejo) y validar `409`.
 7. Probar edicion de tarjeta antigua sin `version` (debe actualizar con `expectedVersion: 0`).
+
+-----------------------------------------------------------------
+
+Actualizacion Fase 2.1 (imagen por URL)
+
+Objetivo:
+- Permitir fondo de tarjeta por URL externa sin upload de archivos.
+
+Cambios de modelo (`style`):
+- `backgroundType`: `default | color | image`
+- `backgroundColor`: `string | null`
+- `backgroundImageUrl`: `string | null`
+
+Reglas:
+- Si `backgroundType = "image"`:
+- `backgroundImageUrl` obligatorio.
+- URL valida `http://` o `https://`.
+- `backgroundColor` debe ser `null`.
+- Si `backgroundType = "color"`:
+- `backgroundColor` obligatorio HEX.
+- `backgroundImageUrl` debe ser `null`.
+- Si `backgroundType = "default"`:
+- `backgroundColor` y `backgroundImageUrl` deben ser `null`.
+
+Ejemplo update con imagen:
+`PUT /api/cards/:id`
+```json
+{
+  "expectedVersion": 10,
+  "style": {
+    "backgroundType": "image",
+    "backgroundColor": null,
+    "backgroundImageUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
+  }
+}
+```
+
+Comportamiento visual:
+- La franja superior de la tarjeta muestra:
+- color si `backgroundType = color`
+- imagen si `backgroundType = image`
+- En imagen se mantiene proporcion y tiene limite de altura (`max-height: 700px`).
+
+Mini checklist QA (Fase 2.1):
+1. Guardar tarjeta con `backgroundType: image` + URL valida (debe guardar y renderizar).
+2. Probar URL invalida (debe fallar con validacion).
+3. Cambiar de `image` a `color` (debe limpiar `backgroundImageUrl`).
+4. Cambiar de `image` o `color` a `default` (debe limpiar ambos campos).
+5. Probar con imagen muy alta (no debe romper la columna por limite de altura).
