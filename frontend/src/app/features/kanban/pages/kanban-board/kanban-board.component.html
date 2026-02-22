@@ -3,6 +3,15 @@
         <h1 class="text-3xl font-bold">Kanban Board</h1>
     </div>
 
+    <div class="w-full max-w-md mb-6 px-4">
+        <span class="relative w-full block">
+            <i class="pi pi-search absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"></i>
+
+            <input pInputText type="text" [(ngModel)]="searchTerm" placeholder="Buscar tareas..."
+                class="w-full !pl-10 rounded-xl" />
+        </span>
+    </div>
+
     <p-speedDial [model]="items" direction="up"
         [style]="{ position: 'fixed', bottom: '2rem', right: '2rem' }"></p-speedDial>
 
@@ -12,21 +21,21 @@
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.todo" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('todo')"
-            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
+            [cards]="filterCards(boardData.todo)" [editingUsers]="editingUsers" (drop)="drop($event)"
+            (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
+            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.inProgress" [editingUsers]="editingUsers" (drop)="drop($event)"
+            [cards]="filterCards(boardData.inProgress)" [editingUsers]="editingUsers" (drop)="drop($event)"
             (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
         <app-kanban-column title="Terminado" listId="done" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.done" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('done')"
-            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
+            [cards]="filterCards(boardData.done)" [editingUsers]="editingUsers" (drop)="drop($event)"
+            (addCard)="onAddCard('done')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
+            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
     </div>

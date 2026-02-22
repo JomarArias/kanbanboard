@@ -107,6 +107,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
         delete this.editingUsers[event.cardId];
       })
     );
+    
 
     this.subscriptions.add(
       this.socketService.onCardMoved().subscribe((event) => {
@@ -139,6 +140,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
         this.loadAuditLogs();
       })
     );
+
+    
   }
 
   onStartEditing(cardId: string) {
@@ -304,5 +307,21 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   onAddCard(listId: string) {
     this.addCard(listId);
+  }
+
+  searchTerm: string = ''; // Nueva variable para el filtro
+
+  // Función para determinar si una tarjeta debe ser visible
+  shouldShowCard(card: Kanban): boolean {
+    if (!this.searchTerm.trim()) return true;
+
+    const term = this.searchTerm.toLowerCase();
+    return (
+      card.title.toLowerCase().includes(term) ||
+      card.task.toLowerCase().includes(term)
+    );
+  }
+  filterCards(cards: Kanban[]): Kanban[] {
+    return cards.filter(card => this.shouldShowCard(card));
   }
 }
