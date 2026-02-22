@@ -8,4 +8,5 @@ export interface Kanban {
     updatedAt?: string;
     isNew?: boolean;
     version?: number;
+    archived?: boolean;
 }

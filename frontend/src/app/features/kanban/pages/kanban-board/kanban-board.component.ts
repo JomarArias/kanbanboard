@@ -257,6 +257,41 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     });
   }
 
+  archiveDoneCards() {
+    const cardsToArchive = [...this.boardData['done']];
+    
+    if (cardsToArchive.length === 0) return;
+
+    // 1. Limpieza visual inmediata
+    this.boardData['done'] = [];
+
+    // 2. Procesar cada tarjeta
+    cardsToArchive.forEach(card => {
+      // Usamos 'any' para saltar la restricción del modelo Kanban
+  
+      this.kanbanFacade.deleteCard(card._id).subscribe({
+        next: () => {
+          // Éxito: No necesitamos hacer nada extra, ya limpiamos la UI
+        },
+        error: (err) => {
+          console.error('Error al archivar:', err);
+          // Si falla, devolvemos la tarjeta a la lista para no perder datos
+          this.boardData['done'] = [...this.boardData['done'], card];
+          this.messageService.add({ 
+            severity: 'error', 
+            summary: 'Error', 
+            detail: 'El servidor rechazó el archivado' 
+          });
+        }
+      });
+    });
+
+    this.messageService.add({ 
+      severity: 'success', 
+      summary: 'Limpieza', 
+      detail: 'Procesando archivado de tarjetas...' 
+    });
+  }
 
   closeEditDialog() {
     if (this.editingCard?._id) {
