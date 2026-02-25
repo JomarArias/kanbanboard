@@ -61,6 +61,18 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     '#F97316'
   ];
 
+  private getLocalTodayIsoDate(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+todayIsoDate = this.getLocalTodayIsoDate();
+
+
+
   boardData: { todo: Kanban[]; inProgress: Kanban[]; done: Kanban[];[key: string]: Kanban[] } = {
     todo: [],
     inProgress: [],
@@ -68,6 +80,9 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   };
 
   displayEditDialog: boolean = false;
+  displayImagePreviewDialog: boolean = false;
+  imagePreviewUrl: string | null = null;
+  imagePreviewFitMode: 'contain' | 'cover' = 'contain';
   isUploadingImage = false;
   showImageUrlInput = false;
   editingCard: Kanban = {
@@ -229,24 +244,41 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     });
   }
 
-  onEditCard(card: Kanban) {
-    this.showImageUrlInput = false;
-    this.editingCard = { ...card,
-      version: card.version ?? 0,
-      dueDate: card.dueDate ? card.dueDate.substring(0,10) : null,
-      labels: card.labels ? [...card.labels] : [],
-      style: card.style ?? { backgroundType: 'default', backgroundColor: null, backgroundImageUrl: null}
+onEditCard(card: Kanban) {
+  this.showImageUrlInput = false;
 
-    };
-    if (this.editingCard.style?.backgroundType === 'color' && !this.editingCard.style.backgroundColor) {
-      this.editingCard.style.backgroundColor = '#3B82F6';
+  this.editingCard = {
+    ...card,
+    version: card.version ?? 0,
+    dueDate: card.dueDate ? card.dueDate.substring(0, 10) : null,
+
+    // Deep copy de labels (array + objetos)
+    labels: (card.labels ?? []).map((label) => ({
+      id: label.id,
+      name: label.name,
+      color: label.color
+    })),
+
+    // Deep copy de style (objeto)
+    style: {
+      backgroundType: card.style?.backgroundType ?? 'default',
+      backgroundColor: card.style?.backgroundColor ?? null,
+      backgroundImageUrl: card.style?.backgroundImageUrl ?? null
     }
-    if (this.editingCard.style?.backgroundType === 'image' && !this.editingCard.style.backgroundImageUrl) {
-      this.editingCard.style.backgroundImageUrl = '';
-    }
-    this.displayEditDialog = true;
-    this.onStartEditing(card._id);
+  };
+
+  if (this.editingCard.style?.backgroundType === 'color' && !this.editingCard.style.backgroundColor) {
+    this.editingCard.style.backgroundColor = '#3B82F6';
   }
+
+  if (this.editingCard.style?.backgroundType === 'image' && !this.editingCard.style.backgroundImageUrl) {
+    this.editingCard.style.backgroundImageUrl = '';
+  }
+
+  this.displayEditDialog = true;
+  this.onStartEditing(card._id);
+}
+
 
   addLabel(){
       if (!this.editingCard.labels) this.editingCard.labels = [];
@@ -309,6 +341,24 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   removeBackgroundImage() {
     if (!this.editingCard.style) return;
     this.editingCard.style.backgroundImageUrl = null;
+  }
+
+  openImagePreview() {
+    const imageUrl = this.editingCard.style?.backgroundImageUrl;
+    if (!imageUrl) return;
+    this.imagePreviewUrl = imageUrl;
+    this.imagePreviewFitMode = 'contain';
+    this.displayImagePreviewDialog = true;
+  }
+
+  closeImagePreview() {
+    this.displayImagePreviewDialog = false;
+    this.imagePreviewUrl = null;
+    this.imagePreviewFitMode = 'contain';
+  }
+
+  toggleImagePreviewFitMode() {
+    this.imagePreviewFitMode = this.imagePreviewFitMode === 'contain' ? 'cover' : 'contain';
   }
 
   onBackgroundImageFileSelected(event: Event) {
@@ -414,7 +464,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       this.messageService.add({
         severity: 'warn',
         summary: 'Advertencia',
-        detail: 'La URL de imagen es obligatoria cuando el fondo es imagen'
+        detail: 'URL obligatoria o carga una imagen'
       });
       return null;
     }
@@ -460,6 +510,26 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'La tarea contiene caracteres inválidos' });
       return;
     }
+
+if (this.editingCard.dueDate) {
+  const [y, m, d] = this.editingCard.dueDate.split('-').map(Number);
+  const selected = new Date(y, m - 1, d);
+  selected.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (selected < today) {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Advertencia',
+      detail: 'No puedes seleccionar una fecha pasada'
+    });
+    return;
+  }
+}
+
+
 
     const normalizedLabels = this.normalizeAndValidateLabels();
     if (!normalizedLabels) return;

@@ -47,31 +47,52 @@ export class KanbanCardComponent {
       .slice(0, 4);
   }
 
-  getDueDateStatus(): 'none' | 'ok' | 'soon' | 'overdue' {
-    if (!this.card?.dueDate) return 'none';
+private parseDueDateUtcNoon(dueDate: string): Date | null {
+  const raw = dueDate.slice(0, 10); // YYYY-MM-DD
+  const [y, m, d] = raw.split('-').map(Number);
+  if (!y || !m || !d) return null;
 
-    const due = new Date(this.card.dueDate);
-    if (Number.isNaN(due.getTime())) return 'none';
+  // 12:00 UTC evita saltos de día por timezone
+  const parsed = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    due.setHours(0, 0, 0, 0);
+private getTodayUtcNoon(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0));
+}
 
-    if (due < today) return 'overdue';
+getDueDateStatus(): 'none' | 'ok' | 'soon' | 'overdue' {
+  if (!this.card?.dueDate) return 'none';
 
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const diffDays = Math.ceil((due.getTime() - today.getTime()) / msPerDay);
-    if (diffDays <= 2) return 'soon';
+  const due = this.parseDueDateUtcNoon(this.card.dueDate);
+  if (!due) return 'none';
 
-    return 'ok';
-  }
+  const today = this.getTodayUtcNoon();
 
-  formatDueDate(): string {
-    if (!this.card?.dueDate) return '';
-    const date = new Date(this.card.dueDate);
-    if (Number.isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(date);
-  }
+  if (due.getTime() <= today.getTime()) return 'overdue';
+
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const diffDays = Math.ceil((due.getTime() - today.getTime()) / msPerDay);
+
+  if (diffDays <= 2) return 'soon';
+  return 'ok';
+}
+
+formatDueDate(): string {
+  if (!this.card?.dueDate) return '';
+
+  const due = this.parseDueDateUtcNoon(this.card.dueDate);
+  if (!due) return '';
+
+  return new Intl.DateTimeFormat('es-MX', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC'
+  }).format(due);
+}
+
 
   onEdit() {
     this.edit.emit(this.card);

@@ -196,14 +196,35 @@ export const updateCard = async (
     validateStyle(updateData.style);
   }
 
-  if (updateData.dueDate !== undefined && updateData.dueDate !== null) {
-    const parsed = new Date(updateData.dueDate);
-    if (Number.isNaN(parsed.getTime())) {
-      const err: any = new Error("dueDate invalida");
-      err.status = 400;
-      throw err;
-    }
+if (updateData.dueDate !== undefined && updateData.dueDate !== null) {
+  const raw = String(updateData.dueDate).slice(0, 10); // YYYY-MM-DD
+  const [y, m, d] = raw.split('-').map(Number);
+
+  if (!y || !m || !d) {
+    const err: any = new Error("dueDate invalida");
+    err.status = 400;
+    throw err;
   }
+
+  const normalizedUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)); // 12:00 UTC
+
+  const today = new Date();
+  const todayUtc = new Date(Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+    12, 0, 0
+  ));
+
+  if (normalizedUtc < todayUtc) {
+    const err: any = new Error("No se permite una fecha de vencimiento pasada");
+    err.status = 400;
+    throw err;
+  }
+
+  updateData.dueDate = normalizedUtc;
+}
+
 
   const versionQuery =
     expectedVersion === 0

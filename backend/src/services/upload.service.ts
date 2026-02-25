@@ -15,7 +15,7 @@ export const uploadImageBuffer = async (fileBuffer: Buffer): Promise<UploadImage
       (error, result) => {
         if (error) return reject(error);
         if (!result?.secure_url || !result.public_id) {
-          return reject(new Error("Cloudinary did not return a valid upload result"));
+          return reject(new Error("Cloudinary no devolvió un resultado de carga válido"));
         }
 
         resolve({

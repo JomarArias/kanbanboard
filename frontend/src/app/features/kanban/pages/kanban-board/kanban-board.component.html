@@ -45,7 +45,7 @@
                 </div>
                 <div class="flex flex-col gap-2">
                   <label for="dueDate" class="font-semibold">Fecha de vencimiento</label>
-                  <input id="dueDate" type="date" [(ngModel)]="editingCard.dueDate" class="w-full border rounded px-3 py-2">
+                  <input id="dueDate" type="date" [(ngModel)]="editingCard.dueDate" [min]="todayIsoDate" class="w-full border rounded px-3 py-2">
                 </div>
             </div>
 
@@ -96,15 +96,17 @@
                     (change)="onBackgroundImageFileSelected($event)"
                     class="w-full border rounded px-2 py-2"
                   />
-                  <small class="text-gray-500" *ngIf="isUploadingImage">Subiendo imagen...</small>
+                  <small class="text-black" *ngIf="isUploadingImage">Subiendo imagen...</small>
 
                   <div *ngIf="editingCard.style?.backgroundImageUrl" class="flex flex-col gap-2">
                     <img
                       [src]="editingCard.style!.backgroundImageUrl!"
                       alt="Preview de imagen"
-                      class="w-full max-h-40 object-cover rounded border"
+                      class="w-full max-h-40 object-cover rounded border cursor-zoom-in"
+                      (click)="openImagePreview()"
                     />
                     <div class="flex gap-2">
+                      <button type="button" pButton label="Ver imagen" severity="secondary" (click)="openImagePreview()"></button>
                       <button type="button" pButton label="Quitar imagen" severity="danger" (click)="removeBackgroundImage()"></button>
                       <button type="button" pButton label="URL manual" [text]="true" (click)="showImageUrlInput = !showImageUrlInput"></button>
                     </div>
@@ -157,5 +159,34 @@
             <p-button label="Cancelar" icon="pi pi-times" (onClick)="closeEditDialog()" text="true"></p-button>
             <p-button label="Guardar" icon="pi pi-check" (onClick)="saveEditedCard()" autofocus="true"></p-button>
         </ng-template>
+    </p-dialog>
+
+    <p-dialog
+      header="Vista de imagen"
+      [(visible)]="displayImagePreviewDialog"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '95vw', maxWidth: '1100px' }"
+      (onHide)="closeImagePreview()">
+      <div class="flex justify-end mb-3">
+        <button
+          type="button"
+          pButton
+          [label]="imagePreviewFitMode === 'contain' ? 'ampliar' : 'tamaño original'"
+          severity="secondary"
+          (click)="toggleImagePreviewFitMode()">
+        </button>
+      </div>
+      <div class="w-full flex justify-center">
+        <img
+          *ngIf="imagePreviewUrl"
+          [src]="imagePreviewUrl"
+          alt="Imagen ampliada"
+          [class]="imagePreviewFitMode === 'contain'
+            ? 'max-h-[80vh] w-auto max-w-full rounded border object-contain'
+            : 'h-[80vh] w-full rounded border object-cover'"
+        />
+      </div>
     </p-dialog>
 </div>
