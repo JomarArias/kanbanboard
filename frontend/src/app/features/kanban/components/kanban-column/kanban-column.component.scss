@@ -1,0 +1,30 @@
+.column-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.column-scroll:hover {
+  scrollbar-color: rgba(107, 114, 128, 0.55) transparent;
+}
+
+.column-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.column-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.column-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.column-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.55);
+}
+
+.column-scroll-hint {
+  background: linear-gradient(to top, rgba(243, 244, 246, 0.95), rgba(243, 244, 246, 0));
+}

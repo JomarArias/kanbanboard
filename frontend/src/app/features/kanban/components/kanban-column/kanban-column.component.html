@@ -4,24 +4,24 @@
         <span class="bg-gray-300 text-gray-700 px-2 py-1 rounded text-sm">{{ cards.length }}</span>
     </div>
 
-    <div cdkDropList [id]="listId" [cdkDropListData]="cards" (cdkDropListDropped)="onDrop($event)"
-        class="flex-1 overflow-y-auto min-h-[100px]">
-        @for (card of cards; track card._id) {
-        <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id]">
-            <app-kanban-card
-            [card]="card"
-            [editingUser]="editingUsers[card._id]"
-            [labelsExpandedGlobal]="labelsExpandedGlobal"
-            (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal.emit()"
-            (edit)="onEditCard($event)"
-            (delete)="onDeleteCard($event)"
-            (startEditing)="startEditing.emit($event)"
-            (stopEditing)="stopEditing.emit($event)">
-            </app-kanban-card>
-            <div *cdkDragPlaceholder
-                class="bg-gray-200 border-2 border-dashed border-gray-400 min-h-[80px] rounded mb-3"></div>
+    <div class="relative flex-1 min-h-[100px]">
+        <div cdkDropList [id]="listId" [cdkDropListData]="cards" (cdkDropListDropped)="onDrop($event)"
+            class="column-scroll h-full min-h-[100px] pr-1">
+            @for (card of cards; track card._id) {
+            <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id]">
+                <app-kanban-card [card]="card" [editingUser]="editingUsers[card._id]"
+                    [labelsExpandedGlobal]="labelsExpandedGlobal"
+                    (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal.emit()" (edit)="onEditCard($event)"
+                    (delete)="onDeleteCard($event)" (startEditing)="startEditing.emit($event)"
+                    (stopEditing)="stopEditing.emit($event)">
+                </app-kanban-card>
+                <div *cdkDragPlaceholder
+                    class="bg-gray-200 border-2 border-dashed border-gray-400 min-h-[80px] rounded mb-3"></div>
+            </div>
+            }
         </div>
-        }
+
+        <div class="column-scroll-hint pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-lg"></div>
     </div>
 
     <div class="mt-4">
