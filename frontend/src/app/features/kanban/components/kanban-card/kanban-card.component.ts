@@ -42,9 +42,6 @@ export class KanbanCardComponent {
     return null;
   }
 
-
-
-// ***********************+
   getVisibleLabels() {
     const labels = this.card?.labels ?? [];
     return labels
@@ -69,6 +66,8 @@ private getTodayUtcNoon(): Date {
 
 getDueDateStatus(): 'none' | 'ok' | 'soon' | 'overdue' {
   if (!this.card?.dueDate) return 'none';
+
+  if (this.isDoneCard()) return 'ok'
 
   const due = this.parseDueDateUtcNoon(this.card.dueDate);
   if (!due) return 'none';
@@ -124,4 +123,11 @@ formatDueDate(): string {
       }
     });
   }
+
+  isDoneCard(): boolean {
+    return this.card?.listId === "done"
+  }
+
+
+
 }

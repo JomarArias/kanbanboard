@@ -69,8 +69,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     '#F97316'
   ];
 
-
-
   private getLocalTodayIsoDate(): string {
   const now = new Date();
   const y = now.getFullYear();
@@ -104,7 +102,6 @@ labelsExpandedGlobal = false;
 toggleLabelsExpandedGlobal() {
   this.labelsExpandedGlobal = !this.labelsExpandedGlobal;
 }
-
 
 todayIsoDate = this.getLocalTodayIsoDate();
 
@@ -260,6 +257,7 @@ todayDate: Date = new Date();
     this.kanbanFacade.createCard(newCard).subscribe({
       next: (card) => {
         this.boardData[columnKey].push(card);
+
         this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta agregada' });
         this.loadAuditLogs();
       },
@@ -292,14 +290,12 @@ onEditCard(card: Kanban) {
     version: card.version ?? 0,
     dueDate: card.dueDate ? card.dueDate.substring(0, 10) : null,
 
-    //
     labels: (card.labels ?? []).map((label) => ({
       id: label.id,
       name: label.name,
       color: label.color
     })),
 
-    //
     style: {
       backgroundType: card.style?.backgroundType ?? 'default',
       backgroundColor: card.style?.backgroundColor ?? null,
@@ -572,9 +568,6 @@ if (this.selectedDueDate) {
     return;
   }
 }
-
-
-
 
     const normalizedLabels = this.normalizeAndValidateLabels();
     if (!normalizedLabels) return;
