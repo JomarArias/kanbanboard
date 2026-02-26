@@ -14,19 +14,26 @@
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
             [cards]="boardData.todo" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('todo')"
             (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
+            (stopEditing)="onStopEditing($event)"
+            [labelsExpandedGlobal]="labelsExpandedGlobal"
+            (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()"
+            >
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
             [cards]="boardData.inProgress" [editingUsers]="editingUsers" (drop)="drop($event)"
             (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
-            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
+            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
+            [labelsExpandedGlobal]="labelsExpandedGlobal"
+            (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
         <app-kanban-column title="Terminado" listId="done" class="min-w-[85vw] md:min-w-[350px] snap-center"
             [cards]="boardData.done" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('done')"
             (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
+            (stopEditing)="onStopEditing($event)"
+            [labelsExpandedGlobal]="labelsExpandedGlobal"
+            (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
     </div>
@@ -43,10 +50,27 @@
                     <label for="task" class="font-semibold">Tarea</label>
                     <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full"></textarea>
                 </div>
+
                 <div class="flex flex-col gap-2">
-                  <label for="dueDate" class="font-semibold">Fecha de vencimiento</label>
-                  <input id="dueDate" type="date" [(ngModel)]="editingCard.dueDate" [min]="todayIsoDate" class="w-full border rounded px-3 py-2">
-                </div>
+                    <label for="dueDate" class="font-semibold">Fecha de vencimiento</label>
+                    <p-datepicker
+                          [(ngModel)]="selectedDueDate"
+                          (ngModelChange)="onDueDateChange($event)"
+                          [showClear]="true"
+                          [minDate]="todayDate"
+                          dateFormat="dd/mm/yy"
+                          inputStyleClass="w-full"
+
+                          appendTo="body"
+                          [style]="{ width: '100%' }"
+>
+
+                    </p-datepicker>
+              </div>
+
+
+
+
             </div>
 
             <div class="flex flex-col gap-4">
@@ -86,6 +110,7 @@
                     class="w-full h-10 border rounded"
                   />
                 </div>
+
 
                 <div class="flex flex-col gap-2" *ngIf="editingCard.style?.backgroundType === 'image'">
                   <label for="bgImageFile" class="font-semibold">Subir imagen</label>
@@ -132,10 +157,10 @@
                     </div>
 
                     <div *ngFor="let label of editingCard.labels; let i = index" class="flex flex-col gap-2 rounded p-2">
-                      <div class="grid grid-cols-12 gap-2 items-center">
-                        <input type="text" [(ngModel)]="label.name" placeholder="Nombre" class="col-span-10 border rounded px-2 py-1">
+                      <div class="grid grid-cols-12 gap-4 items-center">
+                        <input type="text" [(ngModel)]="label.name" placeholder="Nombre" class="col-span-9 border rounded px-2 py-1">
                         <input type="color" [(ngModel)]="label.color" class="col-span-1 h-9 border rounded" title="Color personalizado"/>
-                        <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1" (click)="removeLabel(i)"></button>
+                        <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1 ml-6" (click)="removeLabel(i)"></button>
                       </div>
 
                       <div class="flex flex-wrap gap-1">

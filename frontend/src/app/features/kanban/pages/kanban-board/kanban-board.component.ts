@@ -7,22 +7,28 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
-import { CardModule } from 'primeng/card';
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { FormsModule } from '@angular/forms';
-import { KanbanColumnComponent } from '../../components/kanban-column/kanban-column.component';
-import { Kanban } from '../../../../core/models/kanban.model';
-import { KanbanFacadeService } from '../../services/kanban-facade.service';
-import { AuditLog } from '../../../../core/models/audit-log.model';
-import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
-import { SpeedDialModule } from 'primeng/speeddial';
+
 import { MenuItem } from 'primeng/api';
-import { SocketService } from '../../../../core/services/socket.service';
-import { Subscription } from 'rxjs';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { TextareaModule } from 'primeng/textarea';
+import { InputTextModule } from 'primeng/inputtext';
+import { SpeedDialModule } from 'primeng/speeddial';
+import { DatePickerModule } from 'primeng/datepicker';
+
+import { FormsModule } from '@angular/forms';
+import { Kanban } from '../../../../core/models/kanban.model';
 import { KanbanLabel } from '../../../../core/models/kanban.model';
+import { AuditLog } from '../../../../core/models/audit-log.model';
+import { SocketService } from '../../../../core/services/socket.service';
+
+import { KanbanFacadeService } from '../../services/kanban-facade.service';
+
+import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
+import { KanbanColumnComponent } from '../../components/kanban-column/kanban-column.component';
+
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-kanban-board',
@@ -38,7 +44,9 @@ import { KanbanLabel } from '../../../../core/models/kanban.model';
     TextareaModule,
     FormsModule,
     AuditLogComponent,
-    SpeedDialModule
+    SpeedDialModule,
+    DatePickerModule,
+    FormsModule
   ],
   templateUrl: './kanban-board.component.html',
   styleUrl: './kanban-board.component.scss',
@@ -61,6 +69,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     '#F97316'
   ];
 
+
+
   private getLocalTodayIsoDate(): string {
   const now = new Date();
   const y = now.getFullYear();
@@ -69,8 +79,37 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   return `${y}-${m}-${d}`;
 }
 
+private formatLocalDateToYmd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+private parseYmdToLocalDate(ymd: string): Date | null {
+  const [y, m, d] = ymd.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const date = new Date(y, m - 1, d);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+onDueDateChange(value: Date | null) {
+  this.selectedDueDate = value;
+  this.editingCard.dueDate = value ? this.formatLocalDateToYmd(value) : null;
+}
+
+labelsExpandedGlobal = false;
+
+toggleLabelsExpandedGlobal() {
+  this.labelsExpandedGlobal = !this.labelsExpandedGlobal;
+}
+
+
 todayIsoDate = this.getLocalTodayIsoDate();
 
+selectedDueDate: Date | null = null;
+todayDate: Date = new Date();
 
 
   boardData: { todo: Kanban[]; inProgress: Kanban[]; done: Kanban[];[key: string]: Kanban[] } = {
@@ -111,6 +150,7 @@ todayIsoDate = this.getLocalTodayIsoDate();
   ) { }
 
   ngOnInit(): void {
+    this.todayDate.setHours(0, 0, 0, 0);
     this.loadCards();
     this.loadAuditLogs();
 
@@ -252,20 +292,25 @@ onEditCard(card: Kanban) {
     version: card.version ?? 0,
     dueDate: card.dueDate ? card.dueDate.substring(0, 10) : null,
 
-    // Deep copy de labels (array + objetos)
+    //
     labels: (card.labels ?? []).map((label) => ({
       id: label.id,
       name: label.name,
       color: label.color
     })),
 
-    // Deep copy de style (objeto)
+    //
     style: {
       backgroundType: card.style?.backgroundType ?? 'default',
       backgroundColor: card.style?.backgroundColor ?? null,
       backgroundImageUrl: card.style?.backgroundImageUrl ?? null
     }
   };
+
+  this.selectedDueDate = this.editingCard.dueDate
+  ? this.parseYmdToLocalDate(this.editingCard.dueDate)
+  : null;
+
 
   if (this.editingCard.style?.backgroundType === 'color' && !this.editingCard.style.backgroundColor) {
     this.editingCard.style.backgroundColor = '#3B82F6';
@@ -511,12 +556,11 @@ onEditCard(card: Kanban) {
       return;
     }
 
-if (this.editingCard.dueDate) {
-  const [y, m, d] = this.editingCard.dueDate.split('-').map(Number);
-  const selected = new Date(y, m - 1, d);
+if (this.selectedDueDate) {
+  const selected = new Date(this.selectedDueDate);
   selected.setHours(0, 0, 0, 0);
 
-  const today = new Date();
+  const today = new Date(this.todayDate);
   today.setHours(0, 0, 0, 0);
 
   if (selected < today) {
@@ -531,16 +575,15 @@ if (this.editingCard.dueDate) {
 
 
 
+
     const normalizedLabels = this.normalizeAndValidateLabels();
     if (!normalizedLabels) return;
 
     const normalizedStyle = this.normalizeAndValidateStyle();
     if (!normalizedStyle) return;
 
-    const normalizedDueDate =
-      this.editingCard.dueDate && this.editingCard.dueDate.trim().length > 0
-        ? this.editingCard.dueDate
-        : null;
+    const normalizedDueDate = this.editingCard.dueDate ?? null;
+
 
     const payload: any = {
       title: this.editingCard.title.trim(),
@@ -624,9 +667,4 @@ if (this.editingCard.dueDate) {
   onAddCard(listId: string) {
     this.addCard(listId);
   }
-
-
-
-
-
 }

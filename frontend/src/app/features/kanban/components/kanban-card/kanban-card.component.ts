@@ -19,6 +19,8 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 export class KanbanCardComponent {
   @Input() card!: Kanban;
   @Input() editingUser?: string | null;
+  @Input() labelsExpandedGlobal = false;
+  @Output() toggleLabelsExpandedGlobal = new EventEmitter<void>();
   @Output() edit = new EventEmitter<Kanban>();
   @Output() delete = new EventEmitter<string>();
   @Output() startEditing = new EventEmitter<string>();
@@ -40,6 +42,9 @@ export class KanbanCardComponent {
     return null;
   }
 
+
+
+// ***********************+
   getVisibleLabels() {
     const labels = this.card?.labels ?? [];
     return labels
@@ -48,11 +53,11 @@ export class KanbanCardComponent {
   }
 
 private parseDueDateUtcNoon(dueDate: string): Date | null {
-  const raw = dueDate.slice(0, 10); // YYYY-MM-DD
+  const raw = dueDate.slice(0, 10);
   const [y, m, d] = raw.split('-').map(Number);
   if (!y || !m || !d) return null;
 
-  // 12:00 UTC evita saltos de día por timezone
+
   const parsed = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
