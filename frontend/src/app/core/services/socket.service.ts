@@ -66,14 +66,27 @@ export class SocketService {
         return this.listen<{ _id: string }>('card:deleted');
     }
 
-    joinBoard(boardId: string = 'default') {
+    onUserJoined() {
+        return this.listen<{ username: string; userId?: string; workspaceId: string }>('user:joined');
     }
 
-    startEditing(cardId: string, username: string) {
-        this.emit('card:editing:start', { cardId, username });
+    onUserLeft() {
+        return this.listen<{ username: string; userId?: string; workspaceId: string }>('user:left');
     }
 
-    stopEditing(cardId: string) {
-        this.emit('card:editing:stop', { cardId });
+    onWorkspaceUsers() {
+        return this.listen<{ workspaceId: string; users: { username: string; userId: string | null }[] }>('workspace:users');
+    }
+
+    joinWorkspace(workspaceId: string, username: string, userId?: string) {
+        this.emit('workspace:join', { workspaceId, username, userId });
+    }
+
+    startEditing(cardId: string, username: string, workspaceId: string) {
+        this.emit('card:editing:start', { cardId, username, workspaceId });
+    }
+
+    stopEditing(cardId: string, workspaceId: string) {
+        this.emit('card:editing:stop', { cardId, workspaceId });
     }
 }

@@ -19,6 +19,8 @@ export class KanbanColumnComponent {
   @Input() listId: string = '';
   @Input() cards: Kanban[] = [];
   @Input() editingUsers: { [key: string]: string } = {};
+  @Input() members: any[] = [];
+  @Input() isViewer: boolean = false;
   @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
   @Output() addCard = new EventEmitter<void>();
   @Output() editCard = new EventEmitter<Kanban>();
@@ -26,6 +28,9 @@ export class KanbanColumnComponent {
   @Output() startEditing = new EventEmitter<string>();
   @Output() stopEditing = new EventEmitter<string>();
 
+  trackByCard(index: number, card: Kanban): string {
+    return card._id;
+  }
 
   onDrop(event: CdkDragDrop<Kanban[]>) {
     this.drop.emit(event);
