@@ -17,10 +17,11 @@ export const createCard = async (
 
 ) => {
 
-  const lastCard = await Card.findOne({ listId }).sort({ order: -1 });
-  const order = lastCard
-    ? LexoRank.parse(lastCard.order).genNext().toString()
-    : LexoRank.middle().toString();
+const firstCard = await Card.findOne({ listId }).sort({ order: 1 });
+const order = firstCard
+  ? LexoRank.parse(firstCard.order).genPrev().toString()
+  : LexoRank.middle().toString();
+
 
   const card = await Card.create({ listId, title, task, order });
 

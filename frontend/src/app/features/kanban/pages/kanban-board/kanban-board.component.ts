@@ -265,7 +265,7 @@ todayDate: Date = new Date();
 
     this.kanbanFacade.createCard(newCard).subscribe({
       next: (card) => {
-        this.boardData[columnKey].push(card);
+        this.boardData[columnKey].unshift(card);
 
         this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta agregada' });
         this.loadAuditLogs();
