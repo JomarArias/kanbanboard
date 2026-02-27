@@ -1,5 +1,8 @@
-<main>
+<main class="min-h-screen bg-surface-50 dark:bg-surface-900 flex flex-col">
+  <app-navbar *ngIf="!isLoginPage"></app-navbar>
   <p-toast></p-toast>
   <p-confirmPopup></p-confirmPopup>
-  <router-outlet></router-outlet>
+  <div class="flex-1 overflow-hidden">
+    <router-outlet></router-outlet>
+  </div>
 </main>

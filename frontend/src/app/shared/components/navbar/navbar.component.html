@@ -1,0 +1,63 @@
+<header class="app-header">
+    <a class="logo" [routerLink]="(isAuthenticated$ | async) ? '/' : '/login'" title="Ir al inicio">
+        <i class="pi pi-th-large"></i>
+        <span>Kanban Dapper</span>
+    </a>
+
+    <div class="actions">
+        <ng-container *ngIf="isAuthenticated$ | async; else loggedOut">
+            <div class="workspace-selector" *ngIf="(workspaces$ | async) as workspaces">
+                <p-dropdown [options]="workspaces" [(ngModel)]="activeWorkspaceId" optionLabel="name" optionValue="_id"
+                    (onChange)="onWorkspaceChange($event)" placeholder="Seleccionar Proyecto"
+                    styleClass="w-full md:w-14rem" [disabled]="workspaces.length === 0">
+                </p-dropdown>
+            </div>
+
+            <div class="user-profile flex align-items-center gap-3" *ngIf="auth.currentUser$ | async as user">
+                <span class="hidden md:inline font-semibold">{{ user.displayName || user.email }}</span>
+                <a routerLink="/profile" pTooltip="Ver mi perfil" tooltipPosition="bottom"
+                    class="relative inline-block cursor-pointer">
+                    <img [src]="user.photoURL || 'assets/default-avatar.png'" [alt]="user.displayName || ''"
+                        class="avatar w-2rem h-2rem border-circle" />
+                    <span
+                        class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-white rounded-full"></span>
+                </a>
+                <p-button *ngIf="isOwner" icon="pi pi-user-plus" severity="secondary" [outlined]="true" size="small"
+                    pTooltip="Invitar a un Miembro" tooltipPosition="bottom" (onClick)="openInviteDialog()">
+                </p-button>
+                <a *ngIf="isAdmin" routerLink="/admin" class="p-button p-button-sm p-button-outlined p-button-secondary"
+                    pTooltip="Panel de Administración" tooltipPosition="bottom">
+                    <i class="pi pi-shield"></i>
+                    <span class="hidden md:inline ml-1">Admin</span>
+                </a>
+            </div>
+
+            <p-button label="Cerrar Sesión" icon="pi pi-sign-out" [text]="true" severity="danger" size="small"
+                (onClick)="logout()">
+            </p-button>
+        </ng-container>
+
+        <ng-template #loggedOut>
+            <p-button label="Iniciar Sesión" icon="pi pi-user" (onClick)="login()">
+            </p-button>
+        </ng-template>
+    </div>
+</header>
+
+<p-dialog header="Invitar Equipo" [(visible)]="displayInviteDialog" [modal]="true"
+    [style]="{ width: 'min(400px, 95vw)' }" [draggable]="false" [resizable]="false">
+    <div class="flex flex-column gap-3 py-3">
+        <span class="p-text-secondary w-full mb-2">Ingresa el correo electrónico del miembro de tu equipo para darle
+            acceso a este proyecto.</span>
+
+        <div class="flex flex-column gap-2">
+            <label htmlFor="email">Correo Electrónico</label>
+            <input pInputText id="email" type="email" placeholder="ejemplo@google.com" [(ngModel)]="inviteEmail" />
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Cancelar" [text]="true" severity="secondary"
+            (onClick)="displayInviteDialog = false"></p-button>
+        <p-button label="Invitar" icon="pi pi-send" [loading]="isInviting" (onClick)="inviteUser()"></p-button>
+    </ng-template>
+</p-dialog>

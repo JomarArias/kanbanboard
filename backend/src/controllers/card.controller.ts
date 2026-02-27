@@ -3,15 +3,16 @@ import { Request, Response } from "express";
 import { isValidObjectId } from "mongoose";
 import { sendError } from "../utils/http-response.js";
 import * as cardService from "../services/card.service.js";
-import { getIO, BOARD_ROOM } from "../sockets/socket.server.js";
+import { getIO } from "../sockets/socket.server.js";
 
 export const listCardsByList = async (req: Request, res: Response) => {
   try {
     const listId = req.params.listId as string;
+    const workspaceId = res.locals.workspaceId;
 
     if (!listId) return sendError(res, 400, "listId es requerido");
 
-    const cards = await cardService.listCardsByList(listId);
+    const cards = await cardService.listCardsByList(listId, workspaceId);
     return res.json(cards);
   } catch (err) {
     return sendError(res, 500, "Error listando tarjetas", err);
@@ -20,19 +21,18 @@ export const listCardsByList = async (req: Request, res: Response) => {
 
 export const createCard = async (req: Request, res: Response) => {
   try {
-    const { listId, title, task } = req.body ?? {};
+    const { listId, title, task, assigneeId } = req.body ?? {};
+    const workspaceId = res.locals.workspaceId;
+    const performedById = res.locals.user._id;
 
     if (!listId || !title || !task) {
       return sendError(res, 400, "listId, title y task son requeridos");
     }
 
-    const card = await cardService.createCard(listId, title, task);
+    const card = await cardService.createCard(listId, title, task, workspaceId, performedById, assigneeId);
 
-    console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
-
-    // Broadcast to room
     try {
-      getIO().to(BOARD_ROOM).emit("card:created", card);
+      getIO().to(`workspace:${workspaceId}`).emit("card:created", card);
     } catch (e) {
       console.error("Socket error emitting card:created", e);
     }
@@ -46,7 +46,9 @@ export const createCard = async (req: Request, res: Response) => {
 export const updateCard = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, task, expectedVersion } = req.body ?? {};
+    const { title, task, expectedVersion, assigneeId } = req.body ?? {};
+    const workspaceId = res.locals.workspaceId;
+    const performedById = res.locals.user._id;
 
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
     if (!title || !task) return sendError(res, 400, "title y task son requeridos");
@@ -54,11 +56,11 @@ export const updateCard = async (req: Request, res: Response) => {
       return sendError(res, 400, "expectedVersion debe ser un entero mayor o igual a 0");
     }
 
-    const card = await cardService.updateCard(id as string, title, task, expectedVersion);
+    const card = await cardService.updateCard(id as string, title, task, expectedVersion, workspaceId, assigneeId, performedById);
 
     // Broadcast to room
     try {
-      getIO().to(BOARD_ROOM).emit("card:updated", card);
+      getIO().to(`workspace:${workspaceId}`).emit("card:updated", card);
     } catch (e) {
       console.error("Socket error emitting card:updated", e);
     }
@@ -81,13 +83,14 @@ export const updateCard = async (req: Request, res: Response) => {
 export const deleteCard = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
+    const workspaceId = res.locals.workspaceId;
+    const performedById = res.locals.user._id;
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
 
-    await cardService.deleteCard(id);
+    await cardService.deleteCard(id, workspaceId, performedById);
 
-    // Broadcast to room
     try {
-      getIO().to(BOARD_ROOM).emit("card:deleted", { _id: id });
+      getIO().to(`workspace:${workspaceId}`).emit("card:deleted", { _id: id });
     } catch (e) {
       console.error("Socket error emitting card:deleted", e);
     }
@@ -101,6 +104,7 @@ export const deleteCard = async (req: Request, res: Response) => {
 export const moveCard = async (req: Request, res: Response) => {
   try {
     const { cardId, listId, prevOrder, nextOrder } = req.body ?? {};
+    const workspaceId = res.locals.workspaceId;
 
     if (!cardId || !listId) {
       return sendError(res, 400, "cardId y listId son requeridos");
@@ -110,14 +114,10 @@ export const moveCard = async (req: Request, res: Response) => {
       return sendError(res, 400, "cardId invalido");
     }
 
-    const result = await cardService.moveCard(cardId, listId, prevOrder, nextOrder);
+    const result = await cardService.moveCard(cardId, listId, workspaceId, prevOrder, nextOrder);
 
-    // Broadcast to room - NOTE: socket.server might already handle this via card:move:request if using pure sockets
-    // But since we use HTTP for drag&drop, we must emit here too.
-    // However, avoid double emit if the client reloads on 'card:moved'
     try {
-      // We can reuse 'card:moved' event structure
-      getIO().to(BOARD_ROOM).emit("card:moved", { cardId, listId, order: result.order });
+      getIO().to(`workspace:${workspaceId}`).emit("card:moved", { cardId, listId, order: result.order });
     } catch (e) {
       console.error("Socket error emitting card:moved", e);
     }

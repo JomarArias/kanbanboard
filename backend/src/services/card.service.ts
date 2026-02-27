@@ -2,9 +2,10 @@ import { Card } from '../models/card.js';
 import { LexoRank } from 'lexorank';
 import { saveAuditLog } from './audit.service.js';
 
-export const listCardsByList = async (listId: string) => {
-  const cards = await Card.find({ listId })
+export const listCardsByList = async (listId: string, workspaceId: string) => {
+  const cards = await Card.find({ listId, workspaceId })
     .sort({ order: 1, _id: 1 })
+    .populate('assigneeId', 'name picture email')
     .lean();
 
   return cards;
@@ -14,24 +15,23 @@ export const createCard = async (
   listId: string,
   title: string,
   task: string,
-
+  workspaceId: string,
+  performedById?: string,
+  assigneeId?: string
 ) => {
 
-  const lastCard = await Card.findOne({ listId }).sort({ order: -1 });
+  const lastCard = await Card.findOne({ listId, workspaceId }).sort({ order: -1 });
   const order = lastCard
     ? LexoRank.parse(lastCard.order).genNext().toString()
     : LexoRank.middle().toString();
 
-  const card = await Card.create({ listId, title, task, order });
-
-
+  const card = await Card.create({ listId, title, task, order, workspaceId, assigneeId });
 
   console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
 
-  await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`);
+  await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`, performedById, workspaceId);
 
   return card;
-
 }
 
 
@@ -39,19 +39,27 @@ export const updateCard = async (
   id: string,
   title: string,
   task: string,
-  expectedVersion: number
+  expectedVersion: number,
+  workspaceId: string,
+  assigneeId?: string | null,
+  performedById?: string
 ) => {
+  const updateFields: any = { title, task };
+  if (assigneeId !== undefined) {
+    updateFields.assigneeId = assigneeId || null;
+  }
+
   const card = await Card.findOneAndUpdate(
-    { _id: id, version: expectedVersion },
+    { _id: id, version: expectedVersion, workspaceId },
     {
-      $set: { title, task },
+      $set: updateFields,
       $inc: { version: 1 }
     },
     { new: true }
-  );
+  ).populate('assigneeId', 'name picture email');
 
   if (!card) {
-    const freshCard = await Card.findById(id);
+    const freshCard = await Card.findOne({ _id: id, workspaceId });
 
     if (!freshCard) {
       const notFoundError: any = new Error("Tarjeta no encontrada");
@@ -74,23 +82,25 @@ export const updateCard = async (
   }
 
   console.log(`[BACKEND] Card updated: ${card.title}`);
-  await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`);
+  await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`, performedById, workspaceId);
 
   return card;
 };
 
 
 export const deleteCard = async (
-  id: string
+  id: string,
+  workspaceId: string,
+  performedById?: string
 ) => {
-  const card = await Card.findByIdAndDelete(id);
+  const card = await Card.findOneAndDelete({ _id: id, workspaceId });
   if (!card) {
     const error: any = new Error("Tarjeta no encontrada");
     error.status = 404;
     throw error
   }
 
-  await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`);
+  await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`, performedById, workspaceId);
 
   return card
 }
@@ -101,13 +111,14 @@ export const deleteCard = async (
 export const moveCard = async (
   cardId: string,
   listId: string,
+  workspaceId: string,
   prevOrder?: string,
   nextOrder?: string
 ) => {
 
-  const cardBeforeMove = await Card.findById(cardId);
+  const cardBeforeMove = await Card.findOne({ _id: cardId, workspaceId });
   if (!cardBeforeMove) {
-    const error: any = new Error("Tarjeta no encontrada");
+    const error: any = new Error("Tarjeta no encontrada en este workspace");
     error.status = 404;
     throw error;
   }
@@ -118,6 +129,7 @@ export const moveCard = async (
 
     const destinationHasCards = await Card.exists({
       listId,
+      workspaceId,
       _id: { $ne: cardId }
     });
 
@@ -147,8 +159,8 @@ export const moveCard = async (
       .toString();
   }
 
-  const card = await Card.findByIdAndUpdate(
-    cardId,
+  const card = await Card.findOneAndUpdate(
+    { _id: cardId, workspaceId },
     {
       $set: { listId, order },
       $inc: { version: 1 }
@@ -164,7 +176,9 @@ export const moveCard = async (
 
   await saveAuditLog(
     "MOVE",
-    `Tarjeta "${cardBeforeMove.title}" movida a ${listId}`
+    `Tarjeta "${cardBeforeMove.title}" movida a ${listId}`,
+    undefined,
+    workspaceId
   );
 
   return { ok: true, order };

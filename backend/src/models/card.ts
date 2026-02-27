@@ -27,6 +27,14 @@ const cardSchema = new Schema(
       type: Number,
       required: true,
       default: 0
+    },
+    workspaceId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Workspace'
+    },
+    assigneeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
   { timestamps: true }

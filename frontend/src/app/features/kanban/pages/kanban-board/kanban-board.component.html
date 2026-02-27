@@ -1,6 +1,36 @@
 <div class="p-6 h-screen flex flex-col items-center overflow-hidden">
-    <div class="flex items-center gap-4 mb-6">
-        <h1 class="text-3xl font-bold">Kanban Board</h1>
+    <div class="flex items-center justify-between w-full max-w-7xl px-4 mt-4 mb-2">
+        <div class="flex items-center gap-2" *ngIf="activeWorkspaceId">
+            <div *ngFor="let member of workspaceMembers.slice(0,5)" class="relative" [pTooltip]="member.name"
+                tooltipPosition="bottom">
+                <img *ngIf="member.picture" [src]="member.picture"
+                    class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm" />
+                <div *ngIf="!member.picture"
+                    class="w-8 h-8 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center font-bold border-2 border-white shadow-sm">
+                    {{ member.name?.charAt(0)?.toUpperCase() }}
+                </div>
+                <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white"
+                    [ngClass]="onlineUsersArray.includes(member.name) ? 'bg-green-500' : 'bg-gray-300'">
+                </span>
+            </div>
+            <span *ngIf="workspaceMembers.length > 5" class="text-xs text-gray-500">
+                +{{ workspaceMembers.length - 5 }}
+            </span>
+            <div
+                class="flex items-center gap-1 ml-2 px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold">
+                <i class="pi pi-circle-fill text-xs animate-pulse"></i>
+                {{ onlineUsersArray.length }} Online
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="isViewer" class="w-full max-w-7xl px-4 mb-2">
+        <div
+            class="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-300 text-amber-700 rounded-lg text-sm">
+            <i class="pi pi-eye"></i>
+            <span><strong>Modo observador</strong> — Solo puedes ver el tablero. Contacta al administrador para obtener
+                permisos de edición.</span>
+        </div>
     </div>
 
     <p-speedDial [model]="items" direction="up"
@@ -12,34 +42,64 @@
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.todo" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('todo')"
-            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
+            [cards]="boardData.todo" [editingUsers]="editingUsers" [members]="workspaceMembers" [isViewer]="isViewer"
+            (drop)="drop($event)" (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
+            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
             (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.inProgress" [editingUsers]="editingUsers" (drop)="drop($event)"
-            (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
-            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
+            [cards]="boardData.inProgress" [editingUsers]="editingUsers" [members]="workspaceMembers"
+            [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('inProgress')"
+            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
+            (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
         <app-kanban-column title="Terminado" listId="done" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.done" [editingUsers]="editingUsers" (drop)="drop($event)" (addCard)="onAddCard('done')"
-            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
+            [cards]="boardData.done" [editingUsers]="editingUsers" [members]="workspaceMembers" [isViewer]="isViewer"
+            (drop)="drop($event)" (addCard)="onAddCard('done')" (editCard)="onEditCard($event)"
+            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
             (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
     </div>
 
-    <p-dialog header="Editar Tarjeta" [(visible)]="displayEditDialog" [modal]="true" [blockScroll]="true"
-        [style]="{ width: '400px' }" [draggable]="false" [resizable]="false">
+    <p-dialog header="Editar Tarjeta" [(visible)]="displayEditDialog" [modal]="true"
+        [style]="{ width: 'min(450px, 96vw)' }" [draggable]="false" [resizable]="false" appendTo="body"
+        (onHide)="closeEditDialog()">
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
-                <label for="title" class="font-semibold">Título</label>
+                <label for="title" class="font-semibold" style="margin-bottom: 0.5rem;">Título</label>
                 <input pInputText id="title" [(ngModel)]="editingCard.title" class="w-full" />
             </div>
+
             <div class="flex flex-col gap-2">
-                <label for="task" class="font-semibold">Tarea</label>
+                <label for="assignee" class="font-semibold"
+                    style="margin-bottom: 0.5rem; margin-top: 0.5rem;">Responsable</label>
+                <p-dropdown id="assignee" [options]="workspaceMembers" [(ngModel)]="editingCard.assigneeId"
+                    optionValue="_id" optionLabel="name" [showClear]="true" placeholder="Sin Asignar" appendTo="body"
+                    styleClass="w-full">
+                    <ng-template pTemplate="selectedItem" let-selectedOption>
+                        <div class="flex align-items-center gap-2" *ngIf="selectedOption">
+                            <img [src]="selectedOption.picture || 'https://ui-avatars.com/api/?name=' + selectedOption.name"
+                                class="w-1rem h-1rem border-circle" />
+                            <div>{{ selectedOption.name }}</div>
+                        </div>
+                    </ng-template>
+                    <ng-template let-user pTemplate="item">
+                        <div class="flex align-items-center gap-2">
+                            <img [src]="user.picture || 'https://ui-avatars.com/api/?name=' + user.name"
+                                class="w-2rem h-2rem border-circle" />
+                            <div>{{ user.name }}</div>
+                            <small class="text-500 ml-auto" *ngIf="user.email">{{ user.email }}</small>
+                        </div>
+                    </ng-template>
+                </p-dropdown>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="task" class="font-semibold" style="margin-bottom: 0.5rem; margin-top: 0.5rem;">Tarea /
+                    Descripción</label>
                 <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full"></textarea>
             </div>
         </div>

@@ -19,6 +19,12 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 export class KanbanCardComponent {
   @Input() card!: Kanban;
   @Input() editingUser?: string | null;
+  @Input() members: any[] = [];
+  @Input() isViewer: boolean = false;
+
+  get assignee() {
+    return this.members?.find(m => m._id === this.card.assigneeId);
+  }
   @Output() edit = new EventEmitter<Kanban>();
   @Output() delete = new EventEmitter<string>();
   @Output() startEditing = new EventEmitter<string>();

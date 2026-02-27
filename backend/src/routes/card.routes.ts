@@ -7,8 +7,12 @@ import {
   moveCard,
   updateCard,
 } from "../controllers/card.controller.js";
+import { requireWorkspaceAccess } from "../middlewares/workspace.middleware.js";
 
 const router = Router();
+
+// verifyFirebaseToken + requireUser are applied globally in app.ts before these routes
+router.use(requireWorkspaceAccess);
 
 router.get("/lists/:listId/cards", listCardsByList);
 router.post("/cards", createCard);

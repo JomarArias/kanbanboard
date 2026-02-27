@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import {
   CdkDragDrop,
   DragDropModule,
@@ -19,9 +19,14 @@ import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { AuditLog } from '../../../../core/models/audit-log.model';
 import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
 import { SpeedDialModule } from 'primeng/speeddial';
-import { MenuItem } from 'primeng/api';
 import { SocketService } from '../../../../core/services/socket.service';
 import { Subscription } from 'rxjs';
+import { WorkspaceService } from '../../../../core/services/workspace.service';
+import { Auth } from '@angular/fire/auth';
+import { authState } from '@angular/fire/auth';
+import { DropdownModule } from 'primeng/dropdown';
+import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-kanban-board',
@@ -37,7 +42,10 @@ import { Subscription } from 'rxjs';
     TextareaModule,
     FormsModule,
     AuditLogComponent,
-    SpeedDialModule
+    SpeedDialModule,
+    DropdownModule,
+    ToastModule,
+    TooltipModule
   ],
   templateUrl: './kanban-board.component.html',
   styleUrl: './kanban-board.component.scss',
@@ -61,17 +69,35 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   editingUsers: { [cardId: string]: string } = {};
   private subscriptions: Subscription = new Subscription();
+  private auth = inject(Auth);
   private myUsername = 'User-' + Math.floor(Math.random() * 1000);
+  private myUserId: string | null = null;
+  activeWorkspaceId: string = '';
+  workspaceMembers: any[] = [];
+  onlineUsers: { username: string; userId: string | null }[] = [];
+  myRole: string = 'editor';
+
+  get isViewer(): boolean { return this.myRole === 'viewer'; }
+
+  get onlineCount(): number { return this.onlineUsers.length; }
 
   constructor(
     private kanbanFacade: KanbanFacadeService,
     private messageService: MessageService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private workspaceService: WorkspaceService
   ) { }
 
   ngOnInit(): void {
-    this.loadCards();
-    this.loadAuditLogs();
+    this.subscriptions.add(
+      authState(this.auth).subscribe((user: import('@angular/fire/auth').User | null) => {
+        if (user) {
+          this.myUsername = user.displayName || user.email || 'Usuario';
+          this.myUserId = user.uid;
+          // No auto-add: the server emits workspace:users as source of truth
+        }
+      })
+    );
 
     this.items = [
       {
@@ -86,6 +112,26 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       }
     ];
 
+    this.subscriptions.add(
+      this.workspaceService.activeWorkspaceId$.subscribe((workspaceId: any) => {
+        if (workspaceId) {
+          this.activeWorkspaceId = workspaceId;
+          this.socketService.joinWorkspace(workspaceId, this.myUsername, this.myUserId || undefined);
+          this.loadCards();
+          this.loadAuditLogs();
+          this.loadMembers();
+          const ws = this.workspaceService.getWorkspaceById(workspaceId);
+          if (ws) this.myRole = ws.myRole || (ws.isOwner ? 'admin' : 'editor');
+
+        } else {
+          this.activeWorkspaceId = '';
+          this.boardData = { todo: [], inProgress: [], done: [] };
+          this.auditLogs = [];
+          this.workspaceMembers = [];
+        }
+      })
+    );
+
     this.initSocketListeners();
   }
 
@@ -94,6 +140,32 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   initSocketListeners() {
+    // Authoritative presence list from server
+    this.subscriptions.add(
+      this.socketService.onWorkspaceUsers().subscribe((event) => {
+        if (event.workspaceId === this.activeWorkspaceId) {
+          this.onlineUsers = event.users;
+        }
+      })
+    );
+
+    // Toast-only notifications (no longer mutate onlineUsers)
+    this.subscriptions.add(
+      this.socketService.onUserJoined().subscribe((event) => {
+        if (event.username !== this.myUsername) {
+          this.messageService.add({ severity: 'info', summary: 'Conectado', detail: `${event.username} se unió al proyecto`, icon: 'pi pi-user-plus' });
+        }
+      })
+    );
+
+    this.subscriptions.add(
+      this.socketService.onUserLeft().subscribe((event) => {
+        if (event.username !== this.myUsername) {
+          this.messageService.add({ severity: 'warn', summary: 'Desconectado', detail: `${event.username} salió del proyecto`, icon: 'pi pi-user-minus' });
+        }
+      })
+    );
+
     this.subscriptions.add(
       this.socketService.onCardEditingStarted().subscribe((event) => {
         if (event.username !== this.myUsername) {
@@ -117,8 +189,15 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.add(
-      this.socketService.onCardCreated().subscribe((event) => {
+      this.socketService.onCardCreated().subscribe((event: any) => {
         console.log('Real-time update received (create):', event);
+        // Si esta instancia del cliente fue quien creó la tarjeta,
+        // ya la insertamos localmente — solo recargamos para otros peers.
+        if (event?._id && event._id === this._lastCreatedCardId) {
+          this._lastCreatedCardId = null;
+          return;
+        }
+        this._lastCreatedCardId = null;
         this.loadCards();
         this.loadAuditLogs();
       })
@@ -141,12 +220,28 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     );
   }
 
+  loadMembers() {
+    if (!this.activeWorkspaceId) return;
+    this.workspaceService.getWorkspaceMembers(this.activeWorkspaceId).subscribe({
+      next: (members: any) => this.workspaceMembers = members,
+      error: (err: any) => console.error(err)
+    });
+  }
+
+  get onlineUsersArray(): string[] {
+    return this.onlineUsers.map(u => u.username);
+  }
+
   onStartEditing(cardId: string) {
-    this.socketService.startEditing(cardId, this.myUsername);
+    if (this.activeWorkspaceId) {
+      this.socketService.startEditing(cardId, this.myUsername, this.activeWorkspaceId);
+    }
   }
 
   onStopEditing(cardId: string) {
-    this.socketService.stopEditing(cardId);
+    if (this.activeWorkspaceId) {
+      this.socketService.stopEditing(cardId, this.activeWorkspaceId);
+    }
   }
 
   loadCards() {
@@ -178,13 +273,20 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
     this.kanbanFacade.createCard(newCard).subscribe({
       next: (card) => {
-        this.boardData[columnKey].push(card);
+        // Insertamos la tarjeta al final de la lista localmente,
+        // por orden LexoRank (el server ya asigna el order correcto).
+        // El evento de socket 'card:created' recargará para sincronizar peers,
+        // pero usamos un flag para evitar duplicar la recarga propia.
+        this._lastCreatedCardId = card._id;
+        this.boardData[columnKey] = [...this.boardData[columnKey], card];
         this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta agregada' });
         this.loadAuditLogs();
       },
       error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear la tarjeta' })
     });
   }
+
+  private _lastCreatedCardId: string | null = null;
 
   onDeleteCard(cardId: string) {
     this.kanbanFacade.deleteCard(cardId).subscribe({
@@ -233,7 +335,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     const payload: any = {
       title: this.editingCard.title,
       task: this.editingCard.task,
-      expectedVersion: this.editingCard.version
+      expectedVersion: this.editingCard.version,
+      assigneeId: this.editingCard.assigneeId
     };
 
     this.kanbanFacade.updateCard(this.editingCard._id, payload).subscribe({
