@@ -16,6 +16,8 @@ import { TextareaModule } from 'primeng/textarea';
 import { InputTextModule } from 'primeng/inputtext';
 import { SpeedDialModule } from 'primeng/speeddial';
 import { DatePickerModule } from 'primeng/datepicker';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { ColorPickerModule } from 'primeng/colorpicker';
 
 import { FormsModule } from '@angular/forms';
 import { Kanban } from '../../../../core/models/kanban.model';
@@ -46,7 +48,8 @@ import { Subscription } from 'rxjs';
     AuditLogComponent,
     SpeedDialModule,
     DatePickerModule,
-    FormsModule
+    SelectButtonModule,
+    ColorPickerModule
   ],
   templateUrl: './kanban-board.component.html',
   styleUrl: './kanban-board.component.scss',
@@ -58,6 +61,12 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   private readonly HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{6})$/;
   private readonly MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
   private readonly ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  readonly backgroundTypeOptions = [
+    { label: 'Ninguno', value: 'default' },
+    { label: 'Color', value: 'color' },
+    { label: 'Imagen', value: 'image' }
+  ];
+
   readonly presetColors: string[] = [
     '#3B82F6',
     '#10B981',
@@ -323,7 +332,7 @@ onEditCard(card: Kanban) {
 
   addLabel(){
       if (!this.editingCard.labels) this.editingCard.labels = [];
-      this.editingCard.labels.push({
+      this.editingCard.labels.unshift({
         id: `label-${Date.now()}`,
         name: '',
         color: '#3B82F6'
@@ -661,3 +670,5 @@ if (this.selectedDueDate) {
     this.addCard(listId);
   }
 }
+
+

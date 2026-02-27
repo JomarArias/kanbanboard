@@ -28,6 +28,7 @@ export class KanbanColumnComponent {
   @Output() deleteCard = new EventEmitter<string>();
   @Output() startEditing = new EventEmitter<string>();
   @Output() stopEditing = new EventEmitter<string>();
+  
 
 
 
