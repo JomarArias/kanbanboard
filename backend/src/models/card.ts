@@ -26,7 +26,15 @@ const cardSchema = new Schema(
       type: Number,
       required: true,
       default: 0
+    },
+    // ── ARCHIVADO ────────────────────────────────────────────────────────────────
+    archived: {
+      type: Boolean,
+      required: true,
+      default: false,
+      index: true
     }
+    // ────────────────────────────────────────────────────────────────────────
   },
   { timestamps: true }
 );

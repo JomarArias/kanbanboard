@@ -15,27 +15,20 @@ import { Kanban } from '../../../../core/models/kanban.model';
   }
 })
 export class KanbanColumnComponent {
-  @Input() title: string = '';
-  @Input() listId: string = '';
-  @Input() cards: Kanban[] = [];
-  @Input() editingUsers: { [key: string]: string } = {};
-  @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
-  @Output() addCard = new EventEmitter<void>();
-  @Output() editCard = new EventEmitter<Kanban>();
-  @Output() deleteCard = new EventEmitter<string>();
+  @Input()  title: string = '';
+  @Input()  listId: string = '';
+  @Input()  cards: Kanban[] = [];
+  @Input()  editingUsers: { [key: string]: string } = {};
+  @Output() drop         = new EventEmitter<CdkDragDrop<Kanban[]>>();
+  @Output() addCard      = new EventEmitter<void>();
+  @Output() editCard     = new EventEmitter<Kanban>();
+  @Output() deleteCard   = new EventEmitter<string>();
+  @Output() archiveCard  = new EventEmitter<string>();   // ← NUEVO
   @Output() startEditing = new EventEmitter<string>();
-  @Output() stopEditing = new EventEmitter<string>();
+  @Output() stopEditing  = new EventEmitter<string>();
 
-
-  onDrop(event: CdkDragDrop<Kanban[]>) {
-    this.drop.emit(event);
-  }
-
-  onEditCard(card: Kanban) {
-    this.editCard.emit(card);
-  }
-
-  onDeleteCard(cardId: string) {
-    this.deleteCard.emit(cardId);
-  }
+  onDrop(event: CdkDragDrop<Kanban[]>) { this.drop.emit(event); }
+  onEditCard(card: Kanban)             { this.editCard.emit(card); }
+  onDeleteCard(cardId: string)         { this.deleteCard.emit(cardId); }
+  onArchiveCard(cardId: string)        { this.archiveCard.emit(cardId); }  // ← NUEVO
 }

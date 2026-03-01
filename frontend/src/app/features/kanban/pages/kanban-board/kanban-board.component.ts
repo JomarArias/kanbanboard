@@ -18,6 +18,7 @@ import { Kanban } from '../../../../core/models/kanban.model';
 import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { AuditLog } from '../../../../core/models/audit-log.model';
 import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
+import { ArchivedPanelComponent } from '../../components/archived-panel/archived-panel.component';
 import { SpeedDialModule } from 'primeng/speeddial';
 import { MenuItem } from 'primeng/api';
 import { SocketService } from '../../../../core/services/socket.service';
@@ -38,6 +39,7 @@ import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/o
     TextareaModule,
     FormsModule,
     AuditLogComponent,
+    ArchivedPanelComponent,
     SpeedDialModule
   ],
   templateUrl: './kanban-board.component.html',
@@ -56,6 +58,11 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   auditLogs: AuditLog[] = [];
   displayAuditLog: boolean = false;
+
+  // ── BANDEJA DE ARCHIVADOS ───────────────────────────────────────────────────
+  displayArchivedPanel: boolean = false;
+  // ───────────────────────────────────────────────────────────────────────────
+
   items: MenuItem[] = [];
 
   editingUsers: { [cardId: string]: string } = {};
@@ -64,7 +71,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   // ─── BÚSQUEDA ──────────────────────────────────────────────────────────────
   searchTerm: string = '';
-  searchResults: Kanban[] | null = null;  // null = sin búsqueda activa
+  searchResults: Kanban[] | null = null;
   isSearching: boolean = false;
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -89,6 +96,11 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
           this.loadAuditLogs();
         },
         tooltipOptions: { tooltipLabel: 'Ver Historial' }
+      },
+      {
+        icon: 'pi pi-inbox',
+        command: () => { this.displayArchivedPanel = true; },
+        tooltipOptions: { tooltipLabel: 'Bandeja de Archivados' }
       }
     ];
 
@@ -117,10 +129,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       }),
       takeUntil(this.destroy$)
     ).subscribe({
-      next: (cards) => {
-        this.searchResults = cards;
-        this.isSearching = false;
-      },
+      next: (cards) => { this.searchResults = cards; this.isSearching = false; },
       error: () => {
         this.isSearching = false;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo realizar la búsqueda' });
@@ -132,11 +141,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.searchSubject.next(term);
   }
 
-  /**
-   * Sin búsqueda activa → devuelve las tarjetas normales de la columna.
-   * Con búsqueda activa → devuelve TODOS los resultados del backend
-   *                       en todas las columnas (sin filtrar por columna).
-   */
   filterCards(cards: Kanban[], listId: string): Kanban[] {
     if (this.searchResults === null) return cards;
     return this.searchResults.filter(c => c.listId === listId);
@@ -151,53 +155,27 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
         }
       })
     );
-
     this.subscriptions.add(
       this.socketService.onCardEditingStopped().subscribe((event) => {
         delete this.editingUsers[event.cardId];
       })
     );
-
     this.subscriptions.add(
-      this.socketService.onCardMoved().subscribe((event) => {
-        console.log('Real-time update received (move):', event);
-        this.loadCards();
-        this.loadAuditLogs();
-      })
+      this.socketService.onCardMoved().subscribe(() => { this.loadCards(); this.loadAuditLogs(); })
     );
-
     this.subscriptions.add(
-      this.socketService.onCardCreated().subscribe((event) => {
-        console.log('Real-time update received (create):', event);
-        this.loadCards();
-        this.loadAuditLogs();
-      })
+      this.socketService.onCardCreated().subscribe(() => { this.loadCards(); this.loadAuditLogs(); })
     );
-
     this.subscriptions.add(
-      this.socketService.onCardUpdated().subscribe((event) => {
-        console.log('Real-time update received (update):', event);
-        this.loadCards();
-        this.loadAuditLogs();
-      })
+      this.socketService.onCardUpdated().subscribe(() => { this.loadCards(); this.loadAuditLogs(); })
     );
-
     this.subscriptions.add(
-      this.socketService.onCardDeleted().subscribe((event) => {
-        console.log('Real-time update received (delete):', event);
-        this.loadCards();
-        this.loadAuditLogs();
-      })
+      this.socketService.onCardDeleted().subscribe(() => { this.loadCards(); this.loadAuditLogs(); })
     );
   }
 
-  onStartEditing(cardId: string) {
-    this.socketService.startEditing(cardId, this.myUsername);
-  }
-
-  onStopEditing(cardId: string) {
-    this.socketService.stopEditing(cardId);
-  }
+  onStartEditing(cardId: string) { this.socketService.startEditing(cardId, this.myUsername); }
+  onStopEditing(cardId: string)  { this.socketService.stopEditing(cardId); }
 
   loadCards() {
     ['todo', 'inProgress', 'done'].forEach(listId => {
@@ -217,7 +195,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   addCard(columnKey: string) {
     const newCard: Partial<Kanban> = { title: 'New Card', task: 'New Task', listId: columnKey };
-
     this.kanbanFacade.createCard(newCard).subscribe({
       next: (card) => {
         this.boardData[columnKey].push(card);
@@ -227,6 +204,25 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear la tarjeta' })
     });
   }
+
+  // ── ARCHIVAR DESDE BOTÓN DE BASURA ────────────────────────────────────────
+  onArchiveCard(cardId: string) {
+    this.kanbanFacade.archiveCard(cardId).subscribe({
+      next: () => {
+        for (const key of Object.keys(this.boardData)) {
+          const index = this.boardData[key].findIndex(c => c._id === cardId);
+          if (index !== -1) {
+            this.boardData[key].splice(index, 1);
+            this.messageService.add({ severity: 'success', summary: 'Archivada', detail: 'Tarjeta movida a la bandeja' });
+            this.loadAuditLogs();
+            return;
+          }
+        }
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo archivar la tarjeta' })
+    });
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   onDeleteCard(cardId: string) {
     this.kanbanFacade.deleteCard(cardId).subscribe({
@@ -269,13 +265,11 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'La tarea contiene caracteres inválidos' });
       return;
     }
-
     const payload: any = {
       title: this.editingCard.title,
       task: this.editingCard.task,
       expectedVersion: this.editingCard.version
     };
-
     this.kanbanFacade.updateCard(this.editingCard._id, payload).subscribe({
       next: (updatedCard) => {
         this.onStopEditing(updatedCard._id);
@@ -294,25 +288,41 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ── LIMPIAR TERMINADO → ARCHIVAR ───────────────────────────────────────────
   archiveDoneCards() {
     const cardsToArchive = [...this.boardData['done']];
     if (cardsToArchive.length === 0) return;
 
+    // Limpieza visual inmediata
     this.boardData['done'] = [];
 
     cardsToArchive.forEach(card => {
-      this.kanbanFacade.deleteCard(card._id).subscribe({
-        next: () => { },
-        error: (err) => {
-          console.error('Error al archivar:', err);
+      this.kanbanFacade.archiveCard(card._id).subscribe({
+        error: () => {
+          // Si falla, devolvemos la tarjeta
           this.boardData['done'] = [...this.boardData['done'], card];
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'El servidor rechazó el archivado' });
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: `No se pudo archivar "${card.title}"` });
         }
       });
     });
 
-    this.messageService.add({ severity: 'success', summary: 'Limpieza', detail: 'Procesando archivado de tarjetas...' });
+    this.messageService.add({ severity: 'success', summary: 'Archivado', detail: `${cardsToArchive.length} tarjeta(s) enviadas a la bandeja` });
+    this.loadAuditLogs();
   }
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ── EVENTOS DEL DRAWER ─────────────────────────────────────────────────────
+  onCardRestored(card: Kanban) {
+    // Agrega la tarjeta restaurada a su columna original
+    this.boardData[card.listId] = [...this.boardData[card.listId], card]
+      .sort((a, b) => a.order.localeCompare(b.order));
+    this.loadAuditLogs();
+  }
+
+  onArchivedCardDeleted(cardId: string) {
+    this.loadAuditLogs();
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   closeEditDialog() {
     if (this.editingCard?._id) this.onStopEditing(this.editingCard._id);
@@ -325,18 +335,15 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       const card = event.container.data[event.currentIndex];
       const prevCard = event.container.data[event.currentIndex - 1];
       const nextCard = event.container.data[event.currentIndex + 1];
-
       this.kanbanFacade.moveCard(card._id, card.listId, prevCard?.order, nextCard?.order).subscribe({
         next: (res) => { card.order = res.order; this.loadAuditLogs(); }
       });
     } else {
       transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
-
       const card = event.container.data[event.currentIndex];
       const newListId = event.container.id;
       const prevCard = event.container.data[event.currentIndex - 1];
       const nextCard = event.container.data[event.currentIndex + 1];
-
       this.kanbanFacade.moveCard(card._id, newListId, prevCard?.order, nextCard?.order).subscribe({
         next: (res) => { card.listId = newListId; card.order = res.order; this.loadAuditLogs(); },
         error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' })
@@ -344,7 +351,5 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     }
   }
 
-  onAddCard(listId: string) {
-    this.addCard(listId);
-  }
+  onAddCard(listId: string) { this.addCard(listId); }
 }

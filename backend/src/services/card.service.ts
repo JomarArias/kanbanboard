@@ -37,6 +37,47 @@ export const searchCards = async (q: string, limit = 20) => {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── ARCHIVADO ──────────────────────────────────────────────────────────────────
+
+export const archiveCard = async (id: string) => {
+  const card = await Card.findByIdAndUpdate(
+    id,
+    { $set: { archived: true }, $inc: { version: 1 } },
+    { new: true }
+  );
+  if (!card) {
+    const error: any = new Error("Tarjeta no encontrada");
+    error.status = 404;
+    throw error;
+  }
+  await saveAuditLog("ARCHIVE", `Tarjeta "${card.title}" archivada`);
+  return card;
+};
+
+export const listArchivedCards = async () => {
+  const cards = await Card.find({ archived: true })
+    .sort({ updatedAt: -1 })
+    .lean();
+  return cards;
+};
+
+export const restoreCard = async (id: string) => {
+  const card = await Card.findByIdAndUpdate(
+    id,
+    { $set: { archived: false }, $inc: { version: 1 } },
+    { new: true }
+  );
+  if (!card) {
+    const error: any = new Error("Tarjeta no encontrada");
+    error.status = 404;
+    throw error;
+  }
+  await saveAuditLog("RESTORE", `Tarjeta "${card.title}" restaurada a lista ${card.listId}`);
+  return card;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const createCard = async (listId: string, title: string, task: string) => {
   const lastCard = await Card.findOne({ listId }).sort({ order: -1 });
   const order = lastCard

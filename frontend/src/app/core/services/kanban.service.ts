@@ -40,4 +40,18 @@ export class KanbanService {
     moveCard(cardId: string, listId: string, prevOrder?: string, nextOrder?: string): Observable<{ ok: boolean, order: string }> {
         return this.http.put<{ ok: boolean, order: string }>(`${this.apiUrl}/cards/move`, { cardId, listId, prevOrder, nextOrder });
     }
+
+        // ── BANDEJA DE ARCHIVADOS ─────────────────────────────────────────────────
+    archiveCard(id: string): Observable<Kanban> {
+        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/archive`, {});
+    }
+
+    getArchivedCards(): Observable<Kanban[]> {
+        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/archived`);
+    }
+
+    restoreCard(id: string): Observable<Kanban> {
+        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/restore`, {});
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 }
