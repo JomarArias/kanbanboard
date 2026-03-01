@@ -20,8 +20,7 @@ const cardSchema = new Schema(
     },
     order: {
       type: String,
-      required: true,
-      index: true
+      required: true
     },
     version: {
       type: Number,

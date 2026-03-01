@@ -16,6 +16,15 @@ export class KanbanService {
         return this.http.get<Kanban[]>(`${this.apiUrl}/lists/${listId}/cards`);
     }
 
+        // ────────────────────────────────────────────────────────────
+    /**
+     * Busca tarjetas en el backend por título o tarea.
+     */
+     searchCards(q: string): Observable<Kanban[]> {
+        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/search`, { params: { q } });
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     createCard(card: Partial<Kanban>): Observable<Kanban> {
         return this.http.post<Kanban>(`${this.apiUrl}/cards`, card);
     }

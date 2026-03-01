@@ -6,10 +6,12 @@ import {
   listCardsByList,
   moveCard,
   updateCard,
+  searchCards,
 } from "../controllers/card.controller.js";
 
 const router = Router();
 
+router.get("/cards/search", searchCards);
 router.get("/lists/:listId/cards", listCardsByList);
 router.post("/cards", createCard);
 router.put("/cards/move", moveCard);

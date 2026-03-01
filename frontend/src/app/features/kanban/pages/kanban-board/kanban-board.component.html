@@ -3,15 +3,38 @@
         <h1 class="text-3xl font-bold">Kanban Board</h1>
     </div>
 
+        <!-- ── INPUT DE BÚSQUEDA ──────────────────────────────────────────────── -->
+    <!--
+        Cambios respecto a la versión anterior:
+        - Se eliminó [(ngModel)] directo sobre searchTerm para usar (ngModelChange)
+          que dispara onSearchChange() → Subject → debounce → backend
+        - Se agrega el spinner de carga (pi-spin pi-spinner) mientras isSearching = true
+        - El icono cambia: lupa cuando no busca, spinner mientras busca
+    -->
     <div class="w-full max-w-md mb-6 px-4">
         <span class="relative w-full block">
-            <i class="pi pi-search absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"></i>
-            <input pInputText type="text" [(ngModel)]="searchTerm" placeholder="Buscar tareas..."
+            <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
+               [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
+            </i>
+            <input
+                pInputText
+                type="text"
+                [ngModel]="searchTerm"
+                (ngModelChange)="onSearchChange($event); searchTerm = $event"
+                placeholder="Buscar tareas..."
                 class="w-full !pl-10 rounded-xl" />
         </span>
-    </div>
 
-    <p-speedDial [model]="items" direction="up"
+        <p *ngIf="searchResults !== null && !isSearching"
+           class="text-sm text-gray-500 mt-1 pl-1">
+            {{ searchResults.length === 0
+                ? 'Sin resultados para "' + searchTerm + '"'
+                : searchResults.length + ' resultado(s) encontrado(s)' }}
+        </p>
+    </div>
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+
+     <p-speedDial [model]="items" direction="up"
         [style]="{ position: 'fixed', bottom: '2rem', right: '2rem' }"></p-speedDial>
 
     <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
@@ -20,39 +43,39 @@
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="filterCards(boardData.todo)" [editingUsers]="editingUsers" (drop)="drop($event)"
+            [cards]="filterCards(boardData.todo, 'todo')" [editingUsers]="editingUsers" (drop)="drop($event)"
             (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="filterCards(boardData.inProgress)" [editingUsers]="editingUsers" (drop)="drop($event)"
+            [cards]="filterCards(boardData.inProgress, 'inProgress')" [editingUsers]="editingUsers" (drop)="drop($event)"
             (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
         <div class="relative min-w-[85vw] md:min-w-[350px] snap-center flex flex-col h-full">
-            <app-kanban-column 
-                title="Terminado" 
-                listId="done" 
+            <app-kanban-column
+                title="Terminado"
+                listId="done"
                 class="w-full h-full"
-                [cards]="filterCards(boardData.done)" 
-                [editingUsers]="editingUsers" 
+                [cards]="filterCards(boardData.done, 'done')"
+                [editingUsers]="editingUsers"
                 (drop)="drop($event)"
-                (addCard)="onAddCard('done')" 
-                (editCard)="onEditCard($event)" 
+                (addCard)="onAddCard('done')"
+                (editCard)="onEditCard($event)"
                 (deleteCard)="onDeleteCard($event)"
-                (startEditing)="onStartEditing($event)" 
+                (startEditing)="onStartEditing($event)"
                 (stopEditing)="onStopEditing($event)">
             </app-kanban-column>
 
             <div class="absolute -bottom-10 right-0">
-                <p-button 
+                <p-button
                     *ngIf="boardData.done.length > 0"
-                    label="Limpiar Terminado" 
-                    icon="pi pi-box" 
-                    severity="secondary" 
-                    [text]="true" 
+                    label="Limpiar Terminado"
+                    icon="pi pi-box"
+                    severity="secondary"
+                    [text]="true"
                     size="small"
                     (onClick)="archiveDoneCards()">
                 </p-button>
