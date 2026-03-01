@@ -1,5 +1,12 @@
-<main>
+<main class="flex h-screen overflow-hidden">
   <p-toast></p-toast>
   <p-confirmPopup></p-confirmPopup>
-  <router-outlet></router-outlet>
+
+  <!-- Contenido principal (board) -->
+  <div class="flex-1 overflow-hidden">
+    <router-outlet></router-outlet>
+  </div>
+
+  <!-- Chat lateral fijo -->
+  <app-chat-panel></app-chat-panel>
 </main>

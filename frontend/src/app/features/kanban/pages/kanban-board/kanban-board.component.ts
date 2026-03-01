@@ -95,16 +95,18 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
           this.displayAuditLog = true;
           this.loadAuditLogs();
         },
-        tooltipOptions: { tooltipLabel: 'Ver Historial' }
+        tooltipOptions: { tooltipLabel: 'Ver Historial', tooltipPosition: 'left' }
       },
       {
         icon: 'pi pi-inbox',
         command: () => { this.displayArchivedPanel = true; },
-        tooltipOptions: { tooltipLabel: 'Bandeja de Archivados' }
+        tooltipOptions: { tooltipLabel: 'Bandeja de Archivados', tooltipPosition: 'left' }
       }
     ];
 
     this.initSocketListeners();
+
+
   }
 
   ngOnDestroy(): void {
@@ -336,7 +338,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       const prevCard = event.container.data[event.currentIndex - 1];
       const nextCard = event.container.data[event.currentIndex + 1];
       this.kanbanFacade.moveCard(card._id, card.listId, prevCard?.order, nextCard?.order).subscribe({
-        next: (res) => { card.order = res.order; this.loadAuditLogs(); }
+        next: (res) => { card.order = res.order; this.loadCards(); this.loadAuditLogs(); }
       });
     } else {
       transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
@@ -345,7 +347,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       const prevCard = event.container.data[event.currentIndex - 1];
       const nextCard = event.container.data[event.currentIndex + 1];
       this.kanbanFacade.moveCard(card._id, newListId, prevCard?.order, nextCard?.order).subscribe({
-        next: (res) => { card.listId = newListId; card.order = res.order; this.loadAuditLogs(); },
+        next: (res) => { card.listId = newListId; card.order = res.order; this.loadCards(); this.loadAuditLogs(); },
         error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' })
       });
     }
