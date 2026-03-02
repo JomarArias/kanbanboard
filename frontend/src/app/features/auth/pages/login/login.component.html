@@ -2,33 +2,22 @@
 
     <!-- Panel Izquierdo: Branding -->
     <div class="login-left">
+        <!-- Mesh gradient orbs -->
+        <div class="mesh-orb orb-1"></div>
+        <div class="mesh-orb orb-2"></div>
+        <div class="mesh-orb orb-3"></div>
+        <div class="mesh-orb orb-4"></div>
+
         <div class="left-content">
-            <div class="app-logo">
-                <i class="pi pi-th-large"></i>
-            </div>
-            <h1 class="app-name">Kanban Dapper</h1>
-            <p class="app-tagline">Organiza tu trabajo, colabora con tu equipo en tiempo real.</p>
-            <div class="feature-list">
-                <div class="feature-item">
-                    <i class="pi pi-check-circle"></i>
-                    <span>Tableros colaborativos en tiempo real</span>
-                </div>
-                <div class="feature-item">
-                    <i class="pi pi-check-circle"></i>
-                    <span>Control de acceso por roles</span>
-                </div>
-                <div class="feature-item">
-                    <i class="pi pi-check-circle"></i>
-                    <span>Historial de cambios con Audit Log</span>
-                </div>
-            </div>
+            <img src="dapper-logo.png" alt="Dapper" class="app-logo-img" />
+            <p class="app-tagline">Organiza tu trabajo.<br>Colabora en tiempo real.</p>
         </div>
-        <div class="left-glow"></div>
     </div>
 
-    <!-- Panel Derecho: Formulario -->
     <div class="login-right">
         <div class="form-wrapper">
+            <!-- Logo en mobile (panel izq. oculto en móvil) -->
+            <img src="dapper-logo.png" alt="Dapper" class="form-logo-mobile" />
 
             <div class="form-header">
                 <h2>{{ mode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta' }}</h2>

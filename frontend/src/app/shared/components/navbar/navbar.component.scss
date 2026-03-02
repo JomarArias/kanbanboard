@@ -13,16 +13,18 @@ $header-height: 60px;
     .logo {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        font-weight: 700;
-        font-size: 1.25rem;
-        color: var(--primary-color);
         text-decoration: none;
         cursor: pointer;
         transition: opacity 0.2s;
 
         &:hover {
-            opacity: 0.8;
+            opacity: 0.75;
+        }
+
+        .navbar-logo {
+            height: 28px;
+            width: auto;
+            display: block;
         }
     }
 

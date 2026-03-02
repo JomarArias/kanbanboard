@@ -1,7 +1,6 @@
 <header class="app-header">
     <a class="logo" [routerLink]="(isAuthenticated$ | async) ? '/' : '/login'" title="Ir al inicio">
-        <i class="pi pi-th-large"></i>
-        <span>Kanban Dapper</span>
+        <img src="dapper-logo.png" alt="Dapper" class="navbar-logo" />
     </a>
 
     <div class="actions">

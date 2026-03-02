@@ -19,11 +19,14 @@ app.use(express.json());
 const helmet = (helmetpkg as any).default || helmetpkg;
 app.use(helmet());
 
+// Rate limiter general — protege toda la API
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 500,
     standardHeaders: true,
     legacyHeaders: false,
+    message: { message: 'Demasiadas solicitudes, intenta de nuevo en unos minutos.' },
+    skip: (req) => req.method === 'OPTIONS',
 });
 app.use(limiter);
 
