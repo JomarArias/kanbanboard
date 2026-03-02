@@ -11,6 +11,75 @@ export const listCardsByList = async (listId: string, workspaceId: string) => {
   return cards;
 };
 
+// ─── BÚSQUEDA EN BACKEND ──────────────────────────────────────────────────────
+/**
+ * Busca tarjetas cuyo título o tarea contengan el término indicado.
+ * Requiere índice de texto en el modelo Card:
+ *   CardSchema.index({ title: 'text', task: 'text' }, { weights: { title: 10, task: 2 } })
+ */
+export const searchCards = async (q: string, workspaceId: string, limit = 20) => {
+  const trimmed = q.trim();
+  if (!trimmed) return [];
+
+  // $regex permite búsqueda parcial (ej: "ca" encuentra "Card")
+  const regex = new RegExp(trimmed, 'i');
+
+  const cards = await Card.find({
+    workspaceId,
+    $or: [
+      { title: { $regex: regex } },
+      { task: { $regex: regex } }
+    ]
+  })
+    .sort({ listId: 1, order: 1 })
+    .limit(limit)
+    .lean();
+
+  return cards;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── ARCHIVADO ──────────────────────────────────────────────────────────────────
+
+export const archiveCard = async (id: string, workspaceId: string, performedById?: string) => {
+  const card = await Card.findOneAndUpdate(
+    { _id: id, workspaceId },
+    { $set: { archived: true }, $inc: { version: 1 } },
+    { new: true }
+  );
+  if (!card) {
+    const error: any = new Error("Tarjeta no encontrada");
+    error.status = 404;
+    throw error;
+  }
+  await saveAuditLog("ARCHIVE", `Tarjeta "${card.title}" archivada`, performedById, workspaceId);
+  return card;
+};
+
+export const listArchivedCards = async (workspaceId: string) => {
+  const cards = await Card.find({ archived: true, workspaceId })
+    .sort({ updatedAt: -1 })
+    .lean();
+  return cards;
+};
+
+export const restoreCard = async (id: string, workspaceId: string, performedById?: string) => {
+  const card = await Card.findOneAndUpdate(
+    { _id: id, workspaceId },
+    { $set: { archived: false }, $inc: { version: 1 } },
+    { new: true }
+  );
+  if (!card) {
+    const error: any = new Error("Tarjeta no encontrada");
+    error.status = 404;
+    throw error;
+  }
+  await saveAuditLog("RESTORE", `Tarjeta "${card.title}" restaurada a lista ${card.listId}`, performedById, workspaceId);
+  return card;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const createCard = async (
   listId: string,
   title: string,
@@ -32,8 +101,7 @@ export const createCard = async (
   await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`, performedById, workspaceId);
 
   return card;
-}
-
+};
 
 export const updateCard = async (
   id: string,
@@ -87,7 +155,6 @@ export const updateCard = async (
   return card;
 };
 
-
 export const deleteCard = async (
   id: string,
   workspaceId: string,
@@ -97,16 +164,13 @@ export const deleteCard = async (
   if (!card) {
     const error: any = new Error("Tarjeta no encontrada");
     error.status = 404;
-    throw error
+    throw error;
   }
 
   await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`, performedById, workspaceId);
 
-  return card
-}
-
-
-
+  return card;
+};
 
 export const moveCard = async (
   cardId: string,
@@ -115,7 +179,6 @@ export const moveCard = async (
   prevOrder?: string,
   nextOrder?: string
 ) => {
-
   const cardBeforeMove = await Card.findOne({ _id: cardId, workspaceId });
   if (!cardBeforeMove) {
     const error: any = new Error("Tarjeta no encontrada en este workspace");
@@ -126,7 +189,6 @@ export const moveCard = async (
   let order: string;
 
   if (!prevOrder && !nextOrder) {
-
     const destinationHasCards = await Card.exists({
       listId,
       workspaceId,
@@ -134,29 +196,18 @@ export const moveCard = async (
     });
 
     if (destinationHasCards) {
-      const error: any = new Error(
-        "prevOrder y nextOrder son requeridos cuando la lista destino no esta vacia"
-      );
+      const error: any = new Error("prevOrder y nextOrder son requeridos cuando la lista destino no esta vacia");
       error.status = 400;
       throw error;
     }
 
     order = LexoRank.middle().toString();
-
   } else if (!prevOrder) {
-
     order = LexoRank.parse(nextOrder!).genPrev().toString();
-
   } else if (!nextOrder) {
-
     order = LexoRank.parse(prevOrder!).genNext().toString();
-
   } else {
-
-    order = LexoRank
-      .parse(prevOrder!)
-      .between(LexoRank.parse(nextOrder!))
-      .toString();
+    order = LexoRank.parse(prevOrder!).between(LexoRank.parse(nextOrder!)).toString();
   }
 
   const card = await Card.findOneAndUpdate(
@@ -203,12 +254,7 @@ type MoveCardRealtimeResult = {
 type ServiceError = Error & {
   status?: number;
   code?: string;
-  currentCard?: {
-    id: string;
-    listId: string;
-    order: string;
-    version: number;
-  };
+  currentCard?: { id: string; listId: string; order: string; version: number };
 };
 
 const buildServiceError = (
@@ -226,51 +272,26 @@ const buildServiceError = (
 
 const getNeighborCard = async (cardId: string, targetListId: string) => {
   const card = await Card.findById(cardId);
-  if (!card) {
-    throw buildServiceError("Tarjeta vecina no encontrada", 400, "invalid_neighbor");
-  }
-  if (card.listId !== targetListId) {
-    throw buildServiceError("Tarjeta vecina no pertenece a la lista destino", 400, "invalid_neighbor_list");
-  }
+  if (!card) throw buildServiceError("Tarjeta vecina no encontrada", 400, "invalid_neighbor");
+  if (card.listId !== targetListId) throw buildServiceError("Tarjeta vecina no pertenece a la lista destino", 400, "invalid_neighbor_list");
   return card;
 };
 
-export const moveCardRealtime = async (
-  input: MoveCardRealtimeInput
-): Promise<MoveCardRealtimeResult> => {
-  const {
-    cardId,
-    targetListId,
-    beforeCardId = null,
-    afterCardId = null,
-    expectedVersion
-  } = input;
+export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<MoveCardRealtimeResult> => {
+  const { cardId, targetListId, beforeCardId = null, afterCardId = null, expectedVersion } = input;
 
   const currentCard = await Card.findById(cardId);
-  if (!currentCard) {
-    throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
-  }
+  if (!currentCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
-  if (beforeCardId && beforeCardId === afterCardId) {
+  if (beforeCardId && beforeCardId === afterCardId)
     throw buildServiceError("beforeCardId y afterCardId no pueden ser iguales", 400, "invalid_neighbors");
-  }
 
   let order: string;
 
   if (!beforeCardId && !afterCardId) {
-    const destinationHasCards = await Card.exists({
-      listId: targetListId,
-      _id: { $ne: cardId }
-    });
-
-    if (destinationHasCards) {
-      throw buildServiceError(
-        "beforeCardId y afterCardId son requeridos cuando la lista destino no esta vacia",
-        400,
-        "missing_neighbors"
-      );
-    }
-
+    const destinationHasCards = await Card.exists({ listId: targetListId, _id: { $ne: cardId } });
+    if (destinationHasCards)
+      throw buildServiceError("beforeCardId y afterCardId son requeridos cuando la lista destino no esta vacia", 400, "missing_neighbors");
     order = LexoRank.middle().toString();
   } else if (!beforeCardId && afterCardId) {
     const afterCard = await getNeighborCard(afterCardId, targetListId);
@@ -286,60 +307,32 @@ export const moveCardRealtime = async (
 
   const updatedCard = await Card.findOneAndUpdate(
     { _id: cardId, version: expectedVersion },
-    {
-      $set: { listId: targetListId, order },
-      $inc: { version: 1 }
-    },
+    { $set: { listId: targetListId, order }, $inc: { version: 1 } },
     { new: true }
   );
 
   if (!updatedCard) {
     const freshCard = await Card.findById(cardId);
-    if (!freshCard) {
-      throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
-    }
-
+    if (!freshCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
     if (freshCard.version === expectedVersion) {
       const retryCard = await Card.findByIdAndUpdate(
         cardId,
-        {
-          $set: { listId: targetListId, order },
-          $inc: { version: 1 }
-        },
+        { $set: { listId: targetListId, order }, $inc: { version: 1 } },
         { new: true }
       );
 
-      if (!retryCard) {
-        throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
-      }
+      if (!retryCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
       await saveAuditLog("MOVE", `Tarjeta "${retryCard.title}" movida a ${targetListId}`);
-
-      return {
-        cardId: retryCard.id,
-        listId: retryCard.listId,
-        order: retryCard.order,
-        version: retryCard.version,
-        updatedAt: retryCard.updatedAt
-      };
+      return { cardId: retryCard.id, listId: retryCard.listId, order: retryCard.order, version: retryCard.version, updatedAt: retryCard.updatedAt };
     }
 
     throw buildServiceError("La tarjeta cambio y tu vista esta desactualizada", 409, "conflict", {
-      id: freshCard.id,
-      listId: freshCard.listId,
-      order: freshCard.order,
-      version: freshCard.version
+      id: freshCard.id, listId: freshCard.listId, order: freshCard.order, version: freshCard.version
     });
   }
 
   await saveAuditLog("MOVE", `Tarjeta "${updatedCard.title}" movida a ${targetListId}`);
-
-  return {
-    cardId: updatedCard.id,
-    listId: updatedCard.listId,
-    order: updatedCard.order,
-    version: updatedCard.version,
-    updatedAt: updatedCard.updatedAt
-  };
+  return { cardId: updatedCard.id, listId: updatedCard.listId, order: updatedCard.order, version: updatedCard.version, updatedAt: updatedCard.updatedAt };
 };

@@ -10,4 +10,5 @@ export interface Kanban {
     version?: number;
     workspaceId?: string;
     assigneeId?: string;
+    archived?: boolean;
 }

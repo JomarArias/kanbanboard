@@ -8,7 +8,7 @@ import { getIO } from "../sockets/socket.server.js";
 export const listCardsByList = async (req: Request, res: Response) => {
   try {
     const listId = req.params.listId as string;
-    const workspaceId = res.locals.workspaceId;
+    const workspaceId = res.locals.workspaceId as string;
 
     if (!listId) return sendError(res, 400, "listId es requerido");
 
@@ -19,10 +19,91 @@ export const listCardsByList = async (req: Request, res: Response) => {
   }
 };
 
+// ─── NUEVO CONTROLADOR ────────────────────────────────────────────────────────
+// GET /cards/search?q=<término>
+export const searchCards = async (req: Request, res: Response) => {
+  try {
+    const q = (req.query["q"] as string) ?? "";
+    const workspaceId = res.locals.workspaceId as string;
+
+    if (!q.trim()) {
+      return sendError(res, 400, "El parámetro q es requerido");
+    }
+
+    const cards = await cardService.searchCards(q, workspaceId);
+    return res.json(cards);
+  } catch (err) {
+    return sendError(res, 500, "Error buscando tarjetas", err);
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── ARCHIVADO ──────────────────────────────────────────────────────────────────
+
+// PATCH /cards/:id/archive
+export const archiveCard = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const workspaceId = res.locals.workspaceId as string;
+    const performedById = res.locals.user._id;
+
+    if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
+
+    const card = await cardService.archiveCard(id, workspaceId, performedById);
+
+    try {
+      getIO().to(`workspace:${workspaceId}`).emit("card:updated", card);
+    } catch (e) {
+      console.error("Socket error emitting card:updated", e);
+    }
+
+    return res.json(card);
+  } catch (err: any) {
+    if (err?.status === 404) return sendError(res, 404, err.message);
+    return sendError(res, 500, "Error archivando tarjeta", err);
+  }
+};
+
+// GET /cards/archived
+export const listArchivedCards = async (_req: Request, res: Response) => {
+  try {
+    const workspaceId = res.locals.workspaceId as string;
+    const cards = await cardService.listArchivedCards(workspaceId);
+    return res.json(cards);
+  } catch (err) {
+    return sendError(res, 500, "Error listando tarjetas archivadas", err);
+  }
+};
+
+// PATCH /cards/:id/restore
+export const restoreCard = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const workspaceId = res.locals.workspaceId as string;
+    const performedById = res.locals.user._id;
+
+    if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
+
+    const card = await cardService.restoreCard(id, workspaceId, performedById);
+
+    try {
+      getIO().to(`workspace:${workspaceId}`).emit("card:updated", card);
+    } catch (e) {
+      console.error("Socket error emitting card:updated", e);
+    }
+
+    return res.json(card);
+  } catch (err: any) {
+    if (err?.status === 404) return sendError(res, 404, err.message);
+    return sendError(res, 500, "Error restaurando tarjeta", err);
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const createCard = async (req: Request, res: Response) => {
   try {
     const { listId, title, task, assigneeId } = req.body ?? {};
-    const workspaceId = res.locals.workspaceId;
+    const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
     if (!listId || !title || !task) {
@@ -36,7 +117,6 @@ export const createCard = async (req: Request, res: Response) => {
     } catch (e) {
       console.error("Socket error emitting card:created", e);
     }
-
     return res.status(201).json(card);
   } catch (err) {
     return sendError(res, 500, "Error creando tarjeta", err);
@@ -47,7 +127,7 @@ export const updateCard = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { title, task, expectedVersion, assigneeId } = req.body ?? {};
-    const workspaceId = res.locals.workspaceId;
+    const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
@@ -64,26 +144,18 @@ export const updateCard = async (req: Request, res: Response) => {
     } catch (e) {
       console.error("Socket error emitting card:updated", e);
     }
-
     return res.json(card);
   } catch (err: any) {
-    if (err?.status === 409 && err?.currentCard) {
-      return res.status(409).json({
-        ok: false,
-        message: err.message,
-        reason: err.code || "conflict",
-        currentCard: err.currentCard
-      });
-    }
-
-    return sendError(res, err.status || 500, err.message || "Error al actualizar la tarjeta");
+    if (err?.status === 409) return res.status(409).json({ message: err.message, currentCard: err.currentCard });
+    if (err?.status === 404) return sendError(res, 404, err.message);
+    return sendError(res, 500, "Error actualizando tarjeta", err);
   }
 };
 
 export const deleteCard = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const workspaceId = res.locals.workspaceId;
+    const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
 
@@ -94,17 +166,17 @@ export const deleteCard = async (req: Request, res: Response) => {
     } catch (e) {
       console.error("Socket error emitting card:deleted", e);
     }
-
     return res.json({ ok: true });
   } catch (err: any) {
-    return sendError(res, err.status || 500, err.message || "Error eliminando tarjeta");
+    if (err?.status === 404) return sendError(res, 404, err.message);
+    return sendError(res, 500, "Error eliminando tarjeta", err);
   }
 };
 
 export const moveCard = async (req: Request, res: Response) => {
   try {
     const { cardId, listId, prevOrder, nextOrder } = req.body ?? {};
-    const workspaceId = res.locals.workspaceId;
+    const workspaceId = res.locals.workspaceId as string;
 
     if (!cardId || !listId) {
       return sendError(res, 400, "cardId y listId son requeridos");
@@ -121,10 +193,10 @@ export const moveCard = async (req: Request, res: Response) => {
     } catch (e) {
       console.error("Socket error emitting card:moved", e);
     }
-
-
     return res.json(result);
   } catch (err: any) {
-    return sendError(res, err.status || 500, err.message || "Error moviendo tarjeta");
+    if (err?.status === 404) return sendError(res, 404, err.message);
+    if (err?.status === 400) return sendError(res, 400, err.message);
+    return sendError(res, 500, "Error moviendo tarjeta", err);
   }
 };

@@ -1,13 +1,13 @@
 import { Schema, model, Types } from "mongoose";
 
-export type AuditLogAction = "CREATE" | "UPDATE" | "DELETE" | "MOVE";
+export type AuditLogAction = "CREATE" | "UPDATE" | "DELETE" | "MOVE" | "ARCHIVE" | "RESTORE";
 
 const auditLogSchema = new Schema(
   {
     action: {
       type: String,
       required: true,
-      enum: ["CREATE", "UPDATE", "DELETE", "MOVE"],
+      enum: ["CREATE", "UPDATE", "DELETE", "MOVE", "ARCHIVE", "RESTORE"],
       index: true
     },
     details: {

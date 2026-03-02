@@ -38,4 +38,24 @@ export class KanbanFacadeService {
   getAuditLogs(limit: number = 100, offset: number = 0): Observable<AuditLog[]> {
     return this.auditLogService.getAuditLogs(limit, offset);
   }
+
+  // ── NUEVO: delega la búsqueda al KanbanService ─────────────────────────────
+  searchCards(q: string): Observable<Kanban[]> {
+    return this.kanbanService.searchCards(q);
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ── BANDEJA DE ARCHIVADOS ───────────────────────────────────────────────────
+  archiveCard(id: string): Observable<Kanban> {
+    return this.kanbanService.archiveCard(id);
+  }
+
+  getArchivedCards(): Observable<Kanban[]> {
+    return this.kanbanService.getArchivedCards();
+  }
+
+  restoreCard(id: string): Observable<Kanban> {
+    return this.kanbanService.restoreCard(id);
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 }

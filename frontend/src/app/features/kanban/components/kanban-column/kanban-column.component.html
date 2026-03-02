@@ -10,7 +10,8 @@
         <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id] || isViewer">
             <app-kanban-card [card]="card" [editingUser]="editingUsers[card._id]" [members]="members"
                 [isViewer]="isViewer" (edit)="onEditCard($event)" (delete)="onDeleteCard($event)"
-                (startEditing)="startEditing.emit($event)" (stopEditing)="stopEditing.emit($event)">
+                (archive)="onArchiveCard($event)" (startEditing)="startEditing.emit($event)"
+                (stopEditing)="stopEditing.emit($event)">
             </app-kanban-card>
             <div *cdkDragPlaceholder
                 class="bg-gray-200 border-2 border-dashed border-gray-400 min-h-[80px] rounded mb-3"></div>

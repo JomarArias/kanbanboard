@@ -25,6 +25,7 @@ export class KanbanColumnComponent {
   @Output() addCard = new EventEmitter<void>();
   @Output() editCard = new EventEmitter<Kanban>();
   @Output() deleteCard = new EventEmitter<string>();
+  @Output() archiveCard = new EventEmitter<string>();
   @Output() startEditing = new EventEmitter<string>();
   @Output() stopEditing = new EventEmitter<string>();
 
@@ -42,5 +43,9 @@ export class KanbanColumnComponent {
 
   onDeleteCard(cardId: string) {
     this.deleteCard.emit(cardId);
+  }
+
+  onArchiveCard(cardId: string) {
+    this.archiveCard.emit(cardId);
   }
 }

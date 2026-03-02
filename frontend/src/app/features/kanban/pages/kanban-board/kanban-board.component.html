@@ -33,8 +33,30 @@
         </div>
     </div>
 
+    <div class="w-full max-w-md mb-6 px-4">
+        <span class="relative w-full block">
+            <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
+                [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
+            </i>
+            <input pInputText type="text" [ngModel]="searchTerm"
+                (ngModelChange)="onSearchChange($event); searchTerm = $event" placeholder="Buscar tareas..."
+                class="w-full !pl-10 rounded-xl" />
+        </span>
+        <p *ngIf="searchResults !== null && !isSearching" class="text-sm text-gray-500 mt-1 pl-1">
+            {{ searchResults.length === 0
+            ? 'Sin resultados para "' + searchTerm + '"'
+            : searchResults.length + ' resultado(s) encontrado(s)' }}
+        </p>
+    </div>
+
+    <!-- Speed Dial con Historial + Archivados -->
     <p-speedDial [model]="items" direction="up"
-        [style]="{ position: 'fixed', bottom: '2rem', right: '2rem' }"></p-speedDial>
+        [style]="{ position: 'fixed', bottom: '2rem', right: '5rem' }"></p-speedDial>
+
+    <!-- Drawer de archivados -->
+    <app-archived-panel [(visible)]="displayArchivedPanel" (cardRestored)="onCardRestored($event)"
+        (cardDeleted)="onArchivedCardDeleted($event)">
+    </app-archived-panel>
 
     <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
 
@@ -42,25 +64,34 @@
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.todo" [editingUsers]="editingUsers" [members]="workspaceMembers" [isViewer]="isViewer"
-            (drop)="drop($event)" (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
+            [cards]="filterCards(boardData.todo, 'todo')" [editingUsers]="editingUsers" [members]="workspaceMembers"
+            [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
+            (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
+            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.inProgress" [editingUsers]="editingUsers" [members]="workspaceMembers"
-            [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('inProgress')"
-            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
+            [cards]="filterCards(boardData.inProgress, 'inProgress')" [editingUsers]="editingUsers"
+            [members]="workspaceMembers" [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('inProgress')"
+            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
+            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)">
         </app-kanban-column>
 
-        <app-kanban-column title="Terminado" listId="done" class="min-w-[85vw] md:min-w-[350px] snap-center"
-            [cards]="boardData.done" [editingUsers]="editingUsers" [members]="workspaceMembers" [isViewer]="isViewer"
-            (drop)="drop($event)" (addCard)="onAddCard('done')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)">
-        </app-kanban-column>
+        <div class="relative min-w-[85vw] md:min-w-[350px] snap-center flex flex-col h-full">
+            <app-kanban-column title="Terminado" listId="done" class="w-full h-full"
+                [cards]="filterCards(boardData.done, 'done')" [editingUsers]="editingUsers" [members]="workspaceMembers"
+                [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('done')"
+                (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
+                (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
+                (stopEditing)="onStopEditing($event)">
+            </app-kanban-column>
+
+            <div class="flex justify-end mt-2">
+                <p-button *ngIf="boardData.done.length > 0" label="Limpiar Terminado" icon="pi pi-box"
+                    severity="secondary" [text]="true" size="small" (onClick)="archiveDoneCards()">
+                </p-button>
+            </div>
+        </div>
 
     </div>
 

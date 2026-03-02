@@ -5,15 +5,17 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ToastModule } from 'primeng/toast';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { AuthSyncService } from './core/services/auth-sync.service';
+import { ChatPanelComponent } from './features/kanban/components/chat-panel/chat-panel.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, ConfirmPopupModule, ToastModule, NavbarComponent],
+  imports: [RouterOutlet, CommonModule, ConfirmPopupModule, ToastModule, NavbarComponent, ChatPanelComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
   protected readonly title = signal('frontend');
+  chatOpen = false;
   private authSync = inject(AuthSyncService);
   protected router = inject(Router);
 

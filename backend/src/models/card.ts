@@ -20,8 +20,7 @@ const cardSchema = new Schema(
     },
     order: {
       type: String,
-      required: true,
-      index: true
+      required: true
     },
     version: {
       type: Number,
@@ -35,7 +34,15 @@ const cardSchema = new Schema(
     assigneeId: {
       type: Schema.Types.ObjectId,
       ref: 'User'
+    },
+    // ── ARCHIVADO ────────────────────────────────────────────────────────────────
+    archived: {
+      type: Boolean,
+      required: true,
+      default: false,
+      index: true
     }
+    // ────────────────────────────────────────────────────────────────────────
   },
   { timestamps: true }
 );

@@ -29,6 +29,15 @@ export class KanbanService {
         return this.http.get<Kanban[]>(`${this.apiUrl}/lists/${listId}/cards`, this.getWorkspaceParams());
     }
 
+        // ────────────────────────────────────────────────────────────
+    /**
+     * Busca tarjetas en el backend por título o tarea.
+     */
+     searchCards(q: string): Observable<Kanban[]> {
+        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/search`, { params: { q } });
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     createCard(card: Partial<Kanban>): Observable<Kanban> {
         const workspaceId = this.workspaceService.getActiveWorkspaceId();
         return this.http.post<Kanban>(`${this.apiUrl}/cards`, { ...card, workspaceId });
@@ -49,4 +58,18 @@ export class KanbanService {
             cardId, listId, prevOrder, nextOrder, workspaceId
         });
     }
+
+        // ── BANDEJA DE ARCHIVADOS ─────────────────────────────────────────────────
+    archiveCard(id: string): Observable<Kanban> {
+        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/archive`, {});
+    }
+
+    getArchivedCards(): Observable<Kanban[]> {
+        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/archived`);
+    }
+
+    restoreCard(id: string): Observable<Kanban> {
+        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/restore`, {});
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 }
