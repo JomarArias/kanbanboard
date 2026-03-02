@@ -8,4 +8,6 @@ export interface Kanban {
     updatedAt?: string;
     isNew?: boolean;
     version?: number;
+    workspaceId?: string;
+    assigneeId?: string;
 }

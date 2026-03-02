@@ -1,26 +1,41 @@
-<p-sidebar [(visible)]="visible" (visibleChange)="onVisibleChange($event)" position="right" [style]="{width:'400px'}">
-    <h3>Historial de Acciones</h3>
-    <p-table [value]="logs" [scrollable]="true" scrollHeight="flex">
-        <ng-template pTemplate="header">
-            <tr>
-                <th>Acción</th>
-                <th>Detalle</th>
-                <th>Hora</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-log>
-            <tr>
-                <td>
-                    <span [ngClass]="{
-                        'text-green-600': log.action === 'CREATE',
-                        'text-blue-600': log.action === 'UPDATE',
-                        'text-red-600': log.action === 'DELETE',
-                        'text-orange-600': log.action === 'MOVE'
-                    }" class="font-bold">{{ log.action }}</span>
-                </td>
-                <td>{{ log.details }}</td>
-                <td class="text-sm text-gray-500">{{ log.timestamp | date:'shortTime' }}</td>
-            </tr>
-        </ng-template>
-    </p-table>
+<p-sidebar [(visible)]="visible" (visibleChange)="onVisibleChange($event)" position="right" [style]="{width:'420px'}">
+    <ng-template pTemplate="header">
+        <div class="flex items-center gap-2">
+            <i class="pi pi-history text-xl"></i>
+            <h3 class="m-0 font-semibold">Historial de Acciones</h3>
+        </div>
+    </ng-template>
+
+    <div *ngIf="logs.length === 0" class="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
+        <i class="pi pi-inbox text-4xl"></i>
+        <span class="text-sm">Sin registros de actividad aún</span>
+    </div>
+
+    <ul class="list-none p-0 m-0" *ngIf="logs.length > 0">
+        <li *ngFor="let log of logs"
+            class="flex gap-3 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
+            <!-- Left: Action Badge -->
+            <div class="flex-shrink-0 w-16 text-center pt-1">
+                <span class="text-xs font-bold px-1.5 py-0.5 rounded-full" [ngClass]="{
+                    'bg-green-100 text-green-700': log.action === 'CREATE',
+                    'bg-blue-100 text-blue-700': log.action === 'UPDATE',
+                    'bg-red-100 text-red-700': log.action === 'DELETE',
+                    'bg-orange-100 text-orange-700': log.action === 'MOVE'
+                }">{{ log.action }}</span>
+            </div>
+            <!-- Right: Details + Who + When -->
+            <div class="flex flex-col gap-1 flex-1 min-w-0">
+                <span class="text-sm text-gray-700 dark:text-gray-200">{{ log.details }}</span>
+                <div class="flex items-center gap-1.5 text-xs text-gray-400">
+                    <ng-container *ngIf="log.performedBy">
+                        <img *ngIf="log.performedBy.picture" [src]="log.performedBy.picture"
+                            class="w-4 h-4 rounded-full" />
+                        <span class="font-medium text-gray-600 dark:text-gray-300">{{ log.performedBy.name }}</span>
+                        <span>·</span>
+                    </ng-container>
+                    <span>{{ log.timestamp | date:'dd/MM HH:mm' }}</span>
+                </div>
+            </div>
+        </li>
+    </ul>
 </p-sidebar>
