@@ -334,11 +334,11 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   onStartEditing(cardId: string) {
-    this.socketService.startEditing(cardId, this.myUsername);
+    this.socketService.startEditing(cardId, this.myUsername, this.activeWorkspaceId || '');
   }
 
   onStopEditing(cardId: string) {
-    this.socketService.stopEditing(cardId);
+    this.socketService.stopEditing(cardId, this.activeWorkspaceId || '');
   }
 
   loadCards() {
