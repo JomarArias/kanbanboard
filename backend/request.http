@@ -180,3 +180,14 @@ Content-Type: image/jpeg
 
 < ./card-image.jpg
 --KanbanBoundary--
+
+###
+
+# Sync user in Mongo after Firebase login
+# 1) Obtén el ID token desde tu app/frontend (ver instrucciones abajo)
+# 2) Reemplaza <PEGAR_FIREBASE_ID_TOKEN_AQUI>
+POST http://localhost:3000/api/users/sync
+Authorization: Bearer <PEGAR_FIREBASE_ID_TOKEN_AQUI>
+Content-Type: application/json
+
+{}

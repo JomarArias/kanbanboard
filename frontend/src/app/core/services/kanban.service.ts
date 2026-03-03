@@ -34,7 +34,12 @@ export class KanbanService {
      * Busca tarjetas en el backend por título o tarea.
      */
     searchCards(q: string): Observable<Kanban[]> {
-        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/search`, { params: { q } });
+        const workspaceId = this.workspaceService.getActiveWorkspaceId();
+        let params = new HttpParams().set('q', q);
+        if (workspaceId) {
+            params = params.set('workspaceId', workspaceId);
+        }
+        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/search`, { params });
     }
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -61,21 +66,23 @@ export class KanbanService {
 
     // ── BANDEJA DE ARCHIVADOS ─────────────────────────────────────────────────
     archiveCard(id: string): Observable<Kanban> {
-        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/archive`, {});
+        const workspaceId = this.workspaceService.getActiveWorkspaceId();
+        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/archive`, { workspaceId });
     }
 
     getArchivedCards(): Observable<Kanban[]> {
-        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/archived`);
+        return this.http.get<Kanban[]>(`${this.apiUrl}/cards/archived`, this.getWorkspaceParams());
     }
 
     restoreCard(id: string): Observable<Kanban> {
-        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/restore`, {});
+        const workspaceId = this.workspaceService.getActiveWorkspaceId();
+        return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/restore`, { workspaceId });
     }
     // ─────────────────────────────────────────────────────────────────────────
 
     uploadCardImage(file: File): Observable<{ imageUrl: string; publicId: string }> {
         const formData = new FormData();
         formData.append('file', file);
-        return this.http.post<{ imageUrl: string; publicId: string }>(`${this.apiUrl}/uploads/image`, formData);
+        return this.http.post<{ imageUrl: string; publicId: string }>(`${this.apiUrl}/uploads/image`, formData, this.getWorkspaceParams());
     }
 }
