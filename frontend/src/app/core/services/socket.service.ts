@@ -52,9 +52,6 @@ export class SocketService {
   onCardCreated() { return this.listen<any>('card:created'); }
   onCardUpdated() { return this.listen<any>('card:updated'); }
   onCardDeleted() { return this.listen<{ _id: string }>('card:deleted'); }
-
-  startEditing(cardId: string, username: string) { this.emit('card:editing:start', { cardId, username }); }
-  stopEditing(cardId: string) { this.emit('card:editing:stop', { cardId }); }
   joinBoard(boardId: string = 'default') { }
 
   // ── Chat events ────────────────────────────────────────────────────────────
@@ -72,14 +69,6 @@ export class SocketService {
 
   onChatHistory(): Observable<ChatMessage[]> {
     return this.listen<ChatMessage[]>('chat:history');
-  }
-
-  onCardUpdated() {
-    return this.listen<any>('card:updated');
-  }
-
-  onCardDeleted() {
-    return this.listen<{ _id: string }>('card:deleted');
   }
 
   onUserJoined() {
