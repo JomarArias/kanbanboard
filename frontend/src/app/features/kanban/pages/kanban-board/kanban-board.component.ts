@@ -508,6 +508,16 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   onBackgroundImageFileSelected(event: Event) {
+    const workspaceId = this.activeWorkspaceId || this.workspaceService.getActiveWorkspaceId();
+    if (!workspaceId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Workspace requerido',
+        detail: 'Selecciona un workspace antes de subir imágenes'
+      });
+      return;
+    }
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -540,6 +550,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       error: (err) => {
         const message = err?.error?.message || 'No se pudo subir la imagen';
         this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+        this.isUploadingImage = false;
       },
       complete: () => {
         this.isUploadingImage = false;
@@ -637,6 +648,16 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   saveEditedCard() {
+    const workspaceId = this.activeWorkspaceId || this.workspaceService.getActiveWorkspaceId();
+    if (!workspaceId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Workspace requerido',
+        detail: 'Selecciona un workspace antes de guardar cambios'
+      });
+      return;
+    }
+
     if (this.isUploadingImage) {
       this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Espera a que termine la subida de imagen' });
       return;
