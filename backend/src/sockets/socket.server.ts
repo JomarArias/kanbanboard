@@ -8,12 +8,7 @@ export const BOARD_ROOM = "board:default";
 export const initSocketServer = (httpServer: HttpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: [
-        "http://localhost:4200",
-        "https://kanbanboard-frontend.vercel.app",
-        "https://kanbanboard-beige-pi.vercel.app",
-        process.env.FRONTEND_URL || ""
-      ],
+      origin: true,
       credentials: true
     }
   });

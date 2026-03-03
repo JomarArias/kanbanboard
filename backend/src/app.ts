@@ -1,5 +1,4 @@
-// src/app.ts
-import './config/firebase-admin.js'; // Initialize Firebase Admin on startup
+import './config/firebase-admin.js'; 
 import express from "express";
 import cors from "cors";
 import cardRoutes from "./routes/card.routes.js";
