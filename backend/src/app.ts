@@ -10,6 +10,7 @@ import { rateLimit } from "express-rate-limit";
 import userRoutes from "./routes/user.routes.js";
 import { verifyFirebaseToken, requireUser } from "./middlewares/auth.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 const app = express();
 
@@ -42,6 +43,7 @@ apiRouter.use(workspaceRoutes);
 apiRouter.use(verifyFirebaseToken, requireUser);
 apiRouter.use(cardRoutes);
 apiRouter.use(auditRoutes);
+apiRouter.use(uploadRoutes);
 
 app.use('/api', apiRouter);
 

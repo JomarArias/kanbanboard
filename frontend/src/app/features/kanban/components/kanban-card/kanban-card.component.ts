@@ -19,6 +19,8 @@ export class KanbanCardComponent {
   @Input() editingUser?: string | null;
   @Input() members: any[] = [];
   @Input() isViewer: boolean = false;
+  @Input() labelsExpandedGlobal = false;
+  @Output() toggleLabelsExpandedGlobal = new EventEmitter<void>();
 
   get assignee() {
     return this.members?.find(m => m._id === this.card.assigneeId);
@@ -36,6 +38,76 @@ export class KanbanCardComponent {
     private confirmationService: ConfirmationService,
     private messageService: MessageService
   ) { }
+
+  getHeaderColor(): string | null {
+    if (this.card?.style?.backgroundType === 'color' && this.card?.style?.backgroundColor) {
+      return this.card.style.backgroundColor;
+    }
+    return null;
+  }
+
+  getHeaderImageUrl(): string | null {
+    if (this.card?.style?.backgroundType === 'image' && this.card?.style?.backgroundImageUrl) {
+      return this.card.style.backgroundImageUrl;
+    }
+    return null;
+  }
+
+  getVisibleLabels() {
+    const labels = this.card?.labels ?? [];
+    return labels
+      .filter((label) => !!label?.name && !!label?.color)
+      .slice(0, 4);
+  }
+
+  private parseDueDateUtcNoon(dueDate: string): Date | null {
+    const raw = dueDate.slice(0, 10);
+    const [y, m, d] = raw.split('-').map(Number);
+    if (!y || !m || !d) return null;
+
+
+    const parsed = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private getTodayUtcNoon(): Date {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0));
+  }
+
+  getDueDateStatus(): 'none' | 'ok' | 'soon' | 'overdue' {
+    if (!this.card?.dueDate) return 'none';
+
+    if (this.isDoneCard()) return 'ok'
+
+    const due = this.parseDueDateUtcNoon(this.card.dueDate);
+    if (!due) return 'none';
+
+    const today = this.getTodayUtcNoon();
+
+    if (due.getTime() <= today.getTime()) return 'overdue';
+
+
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / msPerDay);
+
+    if (diffDays <= 2) return 'soon';
+    return 'ok';
+  }
+
+  formatDueDate(): string {
+    if (!this.card?.dueDate) return '';
+
+    const due = this.parseDueDateUtcNoon(this.card.dueDate);
+    if (!due) return '';
+
+    return new Intl.DateTimeFormat('es-MX', {
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'UTC'
+    }).format(due);
+  }
+
 
   onEdit() {
     this.edit.emit(this.card);
@@ -57,5 +129,8 @@ export class KanbanCardComponent {
         this.archive.emit(this.card._id);
       }
     });
+  }
+  isDoneCard(): boolean {
+    return this.card?.listId === "done"
   }
 }

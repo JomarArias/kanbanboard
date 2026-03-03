@@ -3,3 +3,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Drag preview: hide any accidental scrollbars on the card being dragged */
+.cdk-drag-preview {
+  overflow: hidden !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cdk-drag-preview::-webkit-scrollbar,
+.cdk-drag-preview *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}

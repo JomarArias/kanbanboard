@@ -29,11 +29,11 @@ export class KanbanService {
         return this.http.get<Kanban[]>(`${this.apiUrl}/lists/${listId}/cards`, this.getWorkspaceParams());
     }
 
-        // ────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────
     /**
      * Busca tarjetas en el backend por título o tarea.
      */
-     searchCards(q: string): Observable<Kanban[]> {
+    searchCards(q: string): Observable<Kanban[]> {
         return this.http.get<Kanban[]>(`${this.apiUrl}/cards/search`, { params: { q } });
     }
     // ──────────────────────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ export class KanbanService {
         });
     }
 
-        // ── BANDEJA DE ARCHIVADOS ─────────────────────────────────────────────────
+    // ── BANDEJA DE ARCHIVADOS ─────────────────────────────────────────────────
     archiveCard(id: string): Observable<Kanban> {
         return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/archive`, {});
     }
@@ -72,4 +72,10 @@ export class KanbanService {
         return this.http.patch<Kanban>(`${this.apiUrl}/cards/${id}/restore`, {});
     }
     // ─────────────────────────────────────────────────────────────────────────
+
+    uploadCardImage(file: File): Observable<{ imageUrl: string; publicId: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<{ imageUrl: string; publicId: string }>(`${this.apiUrl}/uploads/image`, formData);
+    }
 }

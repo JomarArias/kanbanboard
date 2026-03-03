@@ -41,10 +41,39 @@ const cardSchema = new Schema(
       required: true,
       default: false,
       index: true
+    },
+    dueDate: {
+      type: Date,
+      default: null,
+      index: true
+    },
+    labels: {
+      type: [{
+        id: { type: String, required: true },
+        name: { type: String, required: true, trim: true },
+        color: { type: String, required: true },
+      }],
+      default: []
+    },
+    style: {
+      backgroundType: {
+        type: String, enum: ["default", "color", "image"], default: "default"
+      },
+      backgroundColor: {
+        type: String,
+        default: null
+      },
+      backgroundImageUrl: {
+        type: String,
+        default: null
+      }
     }
     // ────────────────────────────────────────────────────────────────────────
   },
-  { timestamps: true }
+
+  { timestamps: true },
+
+
 );
 
 cardSchema.index({ listId: 1, order: 1 });

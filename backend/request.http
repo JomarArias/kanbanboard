@@ -1,20 +1,20 @@
 # List cards in a list
-GET http://localhost:3000/lists/todo/cards
+GET http://localhost:3000/api/lists/todo/cards
 ###
-GET http://localhost:3000/lists/inProgress/cards
+GET http://localhost:3000/api/lists/inProgress/cards
 ###
-GET http://localhost:3000/lists/done/cards
+GET http://localhost:3000/api/lists/done/cards
 ###
 
 # List audit logs (latest first). Optional params: ?limit=100&offset=0
-GET http://localhost:3000/audit-logs
+GET http://localhost:3000/api/audit-logs
 ###
-GET http://localhost:3000/audit-logs?limit=20&offset=4
+GET http://localhost:3000/api/audit-logs?limit=20&offset=4
 
 ###
 
 # Create card
-POST http://localhost:3000/cards
+POST http://localhost:3000/api/cards
 Content-Type: application/json
 
 {
@@ -26,7 +26,7 @@ Content-Type: application/json
 ###
 
 # Update card (replace ID)
-PUT http://localhost:3000/cards/698ba0bbd1c5e3b15cb30507
+PUT http://localhost:3000/api/cards/698ba0bbd1c5e3b15cb30507
 Content-Type: application/json
 
 {
@@ -38,7 +38,7 @@ Content-Type: application/json
 ###
 
 # Update card with stale version (expected 409 conflict)
-PUT http://localhost:3000/cards/698ba0b8d1c5e3b15cb30504
+PUT http://localhost:3000/api/cards/698ba0b8d1c5e3b15cb30504
 Content-Type: application/json
 
 {
@@ -50,7 +50,7 @@ Content-Type: application/json
 ###
 
 # Mueve la carta hacia arriba (el destino tiene cartas)
-PUT http://localhost:3000/cards/move
+PUT http://localhost:3000/api/cards/move
 Content-Type: application/json
 
 {
@@ -62,7 +62,7 @@ Content-Type: application/json
 ###
 
 # Mueve la carta hacia abajo (el destino tiene cartas)
-PUT http://localhost:3000/cards/move
+PUT http://localhost:3000/api/cards/move
 Content-Type: application/json
 
 {
@@ -75,7 +75,7 @@ Content-Type: application/json
 ###
 
 # Inválido cuando el destino no está vacío (expected 400)
-PUT http://localhost:3000/cards/move
+PUT http://localhost:3000/api/cards/move
 Content-Type: application/json
 
 {
@@ -88,4 +88,95 @@ Content-Type: application/json
 ###
 
 # Delete card (replace ID)
-DELETE http://localhost:3000/cards/REEMPLAZA_ID
+DELETE http://localhost:3000/api/cards/REEMPLAZA_ID
+
+###
+
+# PUT: agregar/actualizar fecha de vencimiento (dueDate)
+PUT http://localhost:3000/api/cards/698ba0bbd1c5e3b15cb30507
+Content-Type: application/json
+
+{
+  "expectedVersion": 3,
+  "dueDate": "2026-03-20T00:00:00.000Z"
+}
+
+###
+
+# PUT: agregar/actualizar color de tarjeta (style)
+PUT http://localhost:3000/api/cards/698ba0bbd1c5e3b15cb30507
+Content-Type: application/json
+
+{
+  "expectedVersion": 4,
+  "style": {
+    "backgroundType": "color",
+    "backgroundColor": "#FEF3C7"
+  }
+}
+
+###
+
+# PUT: agregar/actualizar labels con color y nombre
+PUT http://localhost:3000/api/cards/698ba0bbd1c5e3b15cb30507
+Content-Type: application/json
+
+{
+  "expectedVersion": 5,
+  "labels": [
+    {
+      "id": "urgent",
+      "name": "Urgente",
+      "color": "#EF4444"
+    },
+    {
+      "id": "backend",
+      "name": "Backend",
+      "color": "#3B82F6"
+    }
+  ]
+}
+
+###
+
+# PUT: agregar/actualizar imagen de tarjeta (style.backgroundImageUrl)
+PUT http://localhost:3000/api/cards/698ba0bbd1c5e3b15cb30507
+Content-Type: application/json
+
+{
+  "expectedVersion": 21,
+  "style": {
+    "backgroundType": "image",
+    "backgroundColor": null,
+    "backgroundImageUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
+  }
+}
+
+###
+
+# PUT: volver a estilo por defecto (limpia color e imagen)
+PUT http://localhost:3000/api/cards/698ba0bbd1c5e3b15cb30507
+Content-Type: application/json
+
+{
+  "expectedVersion": 22,
+  "style": {
+    "backgroundType": "default",
+    "backgroundColor": null,
+    "backgroundImageUrl": null
+  }
+}
+
+###
+
+# Upload imagen a Cloudinary (campo multipart: file)
+# Reemplaza la ruta local del archivo debajo.
+POST http://localhost:3000/api/uploads/image
+Content-Type: multipart/form-data; boundary=KanbanBoundary
+
+--KanbanBoundary
+Content-Disposition: form-data; name="file"; filename="card-image.jpg"
+Content-Type: image/jpeg
+
+< ./card-image.jpg
+--KanbanBoundary--

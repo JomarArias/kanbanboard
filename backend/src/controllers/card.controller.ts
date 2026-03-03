@@ -5,6 +5,7 @@ import { sendError } from "../utils/http-response.js";
 import * as cardService from "../services/card.service.js";
 import { getIO } from "../sockets/socket.server.js";
 
+
 export const listCardsByList = async (req: Request, res: Response) => {
   try {
     const listId = req.params.listId as string;
@@ -43,7 +44,7 @@ export const searchCards = async (req: Request, res: Response) => {
 // PATCH /cards/:id/archive
 export const archiveCard = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
@@ -78,7 +79,7 @@ export const listArchivedCards = async (_req: Request, res: Response) => {
 // PATCH /cards/:id/restore
 export const restoreCard = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
@@ -123,20 +124,37 @@ export const createCard = async (req: Request, res: Response) => {
   }
 };
 
+
+
+
+
+
 export const updateCard = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { title, task, expectedVersion, assigneeId } = req.body ?? {};
+    const id = req.params.id as string;
+    const { title, task, expectedVersion, dueDate, labels, style, assigneeId } = req.body ?? {};
     const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
     if (!isValidObjectId(id)) return sendError(res, 400, "id invalido");
-    if (!title || !task) return sendError(res, 400, "title y task son requeridos");
+
     if (!Number.isInteger(expectedVersion) || expectedVersion < 0) {
       return sendError(res, 400, "expectedVersion debe ser un entero mayor o igual a 0");
     }
 
-    const card = await cardService.updateCard(id as string, title, task, expectedVersion, workspaceId, assigneeId, performedById);
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (task !== undefined) updateData.task = task;
+    if (dueDate !== undefined) updateData.dueDate = dueDate;
+    if (labels !== undefined) updateData.labels = labels
+    if (style !== undefined) updateData.style = style
+    if (assigneeId !== undefined) updateData.assigneeId = assigneeId || null;
+
+    if (Object.keys(updateData).length === 0) {
+      return sendError(res, 400, "No hay campos para actualizar")
+    }
+
+    const card = await cardService.updateCard(id as string, expectedVersion, updateData, workspaceId, performedById);
 
     // Broadcast to room
     try {
@@ -151,6 +169,15 @@ export const updateCard = async (req: Request, res: Response) => {
     return sendError(res, 500, "Error actualizando tarjeta", err);
   }
 };
+
+
+
+
+
+
+
+
+
 
 export const deleteCard = async (req: Request, res: Response) => {
   try {

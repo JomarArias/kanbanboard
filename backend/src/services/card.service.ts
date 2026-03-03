@@ -10,7 +10,6 @@ export const listCardsByList = async (listId: string, workspaceId: string) => {
 
   return cards;
 };
-
 // ─── BÚSQUEDA EN BACKEND ──────────────────────────────────────────────────────
 /**
  * Busca tarjetas cuyo título o tarea contengan el término indicado.
@@ -89,9 +88,9 @@ export const createCard = async (
   assigneeId?: string
 ) => {
 
-  const lastCard = await Card.findOne({ listId, workspaceId }).sort({ order: -1 });
-  const order = lastCard
-    ? LexoRank.parse(lastCard.order).genNext().toString()
+  const firstCard = await Card.findOne({ listId, workspaceId }).sort({ order: 1 });
+  const order = firstCard
+    ? LexoRank.parse(firstCard.order).genPrev().toString()
     : LexoRank.middle().toString();
 
   const card = await Card.create({ listId, title, task, order, workspaceId, assigneeId });
@@ -103,24 +102,208 @@ export const createCard = async (
   return card;
 };
 
-export const updateCard = async (
-  id: string,
-  title: string,
-  task: string,
-  expectedVersion: number,
-  workspaceId: string,
-  assigneeId?: string | null,
-  performedById?: string
-) => {
-  const updateFields: any = { title, task };
-  if (assigneeId !== undefined) {
-    updateFields.assigneeId = assigneeId || null;
+const HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{6})$/;
+
+type CardStyleUpdate = {
+  backgroundType?: "default" | "color" | "image";
+  backgroundColor?: string | null;
+  backgroundImageUrl?: string | null;
+}
+
+type CardLabelUpdate = {
+  id: string;
+  name: string;
+  color: string;
+}
+
+const validateLabels = (labels: unknown) => {
+  if (!Array.isArray(labels)){
+    const err: any = new Error ("labels debe ser un arreglo")
+    err.status = 400
+    throw err;
   }
 
+  for (const label of labels){
+    if (!label || typeof label !== "object"){
+      const err: any = new Error ("Cada label debe ser un objeto");
+      err.status = 400;
+      throw err;
+    }
+
+    const {id, name, color} = label as CardLabelUpdate;
+
+    if (!id || typeof id !== "string"){
+      const err: any = new Error ("Cada label requiere un id valido");
+      err.status = 400;
+      throw err;
+    }
+
+    if (!name || typeof name !== "string" || !name.trim()){
+      const err: any = new Error  ("Cada label requiere un name valido")
+      err.status = 400;
+      throw err;
+    }
+
+    if (!color || typeof color !== "string" || !HEX_COLOR_REGEX.test(color)){
+      const err: any = new Error ("Cada label requiere un color HEX valido (#RRGGBB)");
+      err.status = 400;
+      throw err;
+    }
+  }
+};
+
+
+const isValidHttpUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+  const validateStyle = (style: unknown) => {
+    if (!style || typeof style !== "object"){
+      const err: any = new Error ("style invalido");
+      err.status = 400;
+      throw err;
+      }
+
+      const { backgroundType, backgroundColor, backgroundImageUrl } = style as CardStyleUpdate
+
+      if (backgroundType !== undefined && !["default","color","image"].includes(backgroundType)){
+        const err: any = new Error ("backgroundType invalido");
+        err.status = 400;
+        throw err;
+      }
+
+      if (backgroundType === "color"){
+        if (!backgroundColor || typeof backgroundColor !== "string" || !HEX_COLOR_REGEX.test(backgroundColor)){
+          const err: any = new Error ("backgroundColor es requerido y debe ser HEX valido cuando backgroundType es color");
+          err.status = 400;
+          throw err;
+        }
+        if (backgroundImageUrl !== null && backgroundImageUrl !== undefined) {
+          const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es color");
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      if (backgroundType === "image"){
+        if (!backgroundImageUrl || typeof backgroundImageUrl !== "string" || !isValidHttpUrl(backgroundImageUrl)){
+          const err: any = new Error ("backgroundImageUrl es requerido y debe ser una URL http/https valida cuando backgroundType es image");
+          err.status = 400;
+          throw err;
+        }
+        if (backgroundColor !== null && backgroundColor !== undefined){
+          const err: any = new Error ("backgroundColor debe ser null cuando backgroundType es image");
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      if (backgroundType === "default" && backgroundColor !== null && backgroundColor !== undefined){
+        const err: any = new Error ("backgroundColor debe ser null cuando backgroundType es default");
+        err.status = 400;
+        throw err;
+      }
+      if (backgroundType === "default" && backgroundImageUrl !== null && backgroundImageUrl !== undefined){
+        const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es default");
+        err.status = 400;
+        throw err;
+      }
+      if (backgroundType === undefined && backgroundColor !== undefined){
+        const err: any = new Error("Si envías backgroundColor también debes enviar backgroundType");
+        err.status = 400;
+        throw err;
+      }
+      if (backgroundType === undefined && backgroundImageUrl !== undefined){
+        const err: any = new Error("Si envias backgroundImageUrl tambien debes enviar backgroundType");
+        err.status = 400;
+        throw err;
+      }
+    };
+
+
+
+
+
+export const updateCard = async (
+  id: string,
+  expectedVersion: number,
+  updateData:{
+    title?: string;
+    task?: string;
+    dueDate?: Date | string | null;
+    labels?: Array <{ id: string; name: string; color: string}>;
+    style?: {
+      backgroundType?: "default" | "color" | "image";
+      backgroundColor?: string | null;
+      backgroundImageUrl?: string | null;
+    };
+    assigneeId?: string | null;
+  },
+  workspaceId: string,
+  performedById?: string
+) => {
+  if(Object.keys(updateData).length === 0){
+    const err: any =new Error ("updateData no debe estar vacio")
+    err.status = 400;
+    throw err;
+  }
+
+  if (updateData.labels !== undefined) {
+    validateLabels(updateData.labels);
+    updateData.labels = updateData.labels.map((label) => ({
+      ...label,
+      name: label.name.trim()
+    }));
+  }
+
+  if (updateData.style !== undefined) {
+    validateStyle(updateData.style);
+  }
+
+if (updateData.dueDate !== undefined && updateData.dueDate !== null) {
+  const raw = String(updateData.dueDate).slice(0, 10); // YYYY-MM-DD
+  const [y, m, d] = raw.split('-').map(Number);
+
+  if (!y || !m || !d) {
+    const err: any = new Error("dueDate invalida");
+    err.status = 400;
+    throw err;
+  }
+
+  const normalizedUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)); // 12:00 UTC
+
+  const today = new Date();
+  const todayUtc = new Date(Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+    12, 0, 0
+  ));
+
+  if (normalizedUtc < todayUtc) {
+    const err: any = new Error("No se permite una fecha de vencimiento pasada");
+    err.status = 400;
+    throw err;
+  }
+
+  updateData.dueDate = normalizedUtc;
+}
+
+
+  const versionQuery =
+    expectedVersion === 0
+      ? { $or: [{ version: 0 }, { version: { $exists: false } }] }
+      : { version: expectedVersion };
+
   const card = await Card.findOneAndUpdate(
-    { _id: id, version: expectedVersion, workspaceId },
+    { _id: id, ...versionQuery, workspaceId },
     {
-      $set: updateFields,
+      $set: updateData,
       $inc: { version: 1 }
     },
     { new: true }
@@ -138,13 +321,14 @@ export const updateCard = async (
     const conflictError: any = new Error("La tarjeta cambio y tu vista esta desactualizada");
     conflictError.status = 409;
     conflictError.code = "conflict";
+    const currentVersion = freshCard.version ?? 0;
     conflictError.currentCard = {
       id: freshCard.id,
       title: freshCard.title,
       task: freshCard.task,
       listId: freshCard.listId,
       order: freshCard.order,
-      version: freshCard.version
+      version: currentVersion
     };
     throw conflictError;
   }
@@ -304,6 +488,12 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
     const afterCard = await getNeighborCard(afterCardId as string, targetListId);
     order = LexoRank.parse(beforeCard.order).between(LexoRank.parse(afterCard.order)).toString();
   }
+
+
+
+
+
+
 
   const updatedCard = await Card.findOneAndUpdate(
     { _id: cardId, version: expectedVersion },

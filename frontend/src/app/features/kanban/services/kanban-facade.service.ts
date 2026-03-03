@@ -35,6 +35,10 @@ export class KanbanFacadeService {
     return this.kanbanService.moveCard(cardId, listId, prevOrder, nextOrder);
   }
 
+  uploadCardImage(file: File): Observable<{ imageUrl: string; publicId: string }> {
+    return this.kanbanService.uploadCardImage(file);
+  }
+
   getAuditLogs(limit: number = 100, offset: number = 0): Observable<AuditLog[]> {
     return this.auditLogService.getAuditLogs(limit, offset);
   }

@@ -14,7 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { FormsModule } from '@angular/forms';
 import { KanbanColumnComponent } from '../../components/kanban-column/kanban-column.component';
-import { Kanban } from '../../../../core/models/kanban.model';
+import { Kanban, KanbanLabel } from '../../../../core/models/kanban.model';
 import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { AuditLog } from '../../../../core/models/audit-log.model';
 import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
@@ -29,6 +29,9 @@ import { DropdownModule } from 'primeng/dropdown';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/operators';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { ColorPickerModule } from 'primeng/colorpicker';
 
 @Component({
   selector: 'app-kanban-board',
@@ -48,13 +51,76 @@ import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/o
     SpeedDialModule,
     DropdownModule,
     ToastModule,
-    TooltipModule
+    TooltipModule,
+    DatePickerModule,
+    SelectButtonModule,
+    ColorPickerModule
   ],
   templateUrl: './kanban-board.component.html',
   styleUrl: './kanban-board.component.scss',
   host: { class: 'block h-full' }
 })
 export class KanbanBoardComponent implements OnInit, OnDestroy {
+  private readonly HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{6})$/;
+  private readonly MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+  private readonly ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  readonly backgroundTypeOptions = [
+    { label: 'Ninguno', value: 'default' },
+    { label: 'Color', value: 'color' },
+    { label: 'Imagen', value: 'image' }
+  ];
+
+  readonly presetColors: string[] = [
+    '#3B82F6',
+    '#10B981',
+    '#F59E0B',
+    '#EF4444',
+    '#8B5CF6',
+    '#06B6D4',
+    '#84CC16',
+    '#F97316'
+  ];
+
+  private getLocalTodayIsoDate(): string {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  private formatLocalDateToYmd(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  private parseYmdToLocalDate(ymd: string): Date | null {
+    const [y, m, d] = ymd.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    const date = new Date(y, m - 1, d);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  onDueDateChange(value: Date | null) {
+    this.selectedDueDate = value;
+    this.editingCard.dueDate = value ? this.formatLocalDateToYmd(value) : null;
+  }
+
+  labelsExpandedGlobal = false;
+
+  toggleLabelsExpandedGlobal() {
+    this.labelsExpandedGlobal = !this.labelsExpandedGlobal;
+  }
+
+  todayIsoDate = this.getLocalTodayIsoDate();
+
+  selectedDueDate: Date | null = null;
+  todayDate: Date = new Date();
+
+
   boardData: { todo: Kanban[]; inProgress: Kanban[]; done: Kanban[];[key: string]: Kanban[] } = {
     todo: [],
     inProgress: [],
@@ -62,7 +128,21 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   };
 
   displayEditDialog: boolean = false;
-  editingCard: Kanban = { _id: '', title: '', task: '', listId: '', order: '' };
+  displayImagePreviewDialog: boolean = false;
+  imagePreviewUrl: string | null = null;
+  imagePreviewFitMode: 'contain' | 'cover' = 'contain';
+  isUploadingImage = false;
+  showImageUrlInput = false;
+  editingCard: Kanban = {
+    _id: '',
+    title: '',
+    task: '',
+    listId: '',
+    order: '',
+    dueDate: null,
+    labels: [],
+    style: { backgroundType: 'default', backgroundColor: null, backgroundImageUrl: null }
+  };
 
   auditLogs: AuditLog[] = [];
   displayAuditLog: boolean = false;
@@ -99,6 +179,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    this.todayDate.setHours(0, 0, 0, 0);
     this.loadCards();
     this.loadAuditLogs();
 
@@ -280,10 +361,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     const newCard: Partial<Kanban> = { title: 'New Card', task: 'New Task', listId: columnKey };
     this.kanbanFacade.createCard(newCard).subscribe({
       next: (card) => {
-        // Insertamos la tarjeta al final de la lista localmente,
-        // por orden LexoRank (el server ya asigna el order correcto).
-        // El evento de socket 'card:created' recargará para sincronizar peers,
-        // pero usamos un flag para evitar duplicar la recarga propia.
         this._lastCreatedCardId = card._id;
         this.boardData[columnKey] = [...this.boardData[columnKey], card];
         this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta agregada' });
@@ -311,9 +388,164 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   onEditCard(card: Kanban) {
-    this.editingCard = { ...card };
+    this.showImageUrlInput = false;
+
+    this.editingCard = {
+      ...card,
+      version: card.version ?? 0,
+      dueDate: card.dueDate ? card.dueDate.substring(0, 10) : null,
+
+      labels: (card.labels ?? []).map((label) => ({
+        id: label.id,
+        name: label.name,
+        color: label.color
+      })),
+
+      style: {
+        backgroundType: card.style?.backgroundType ?? 'default',
+        backgroundColor: card.style?.backgroundColor ?? null,
+        backgroundImageUrl: card.style?.backgroundImageUrl ?? null
+      }
+    };
+
+    this.selectedDueDate = this.editingCard.dueDate
+      ? this.parseYmdToLocalDate(this.editingCard.dueDate)
+      : null;
+
+
+    if (this.editingCard.style?.backgroundType === 'color' && !this.editingCard.style.backgroundColor) {
+      this.editingCard.style.backgroundColor = '#3B82F6';
+    }
+
+    if (this.editingCard.style?.backgroundType === 'image' && !this.editingCard.style.backgroundImageUrl) {
+      this.editingCard.style.backgroundImageUrl = '';
+    }
+
     this.displayEditDialog = true;
     this.onStartEditing(card._id);
+  }
+
+
+  addLabel() {
+    if (!this.editingCard.labels) this.editingCard.labels = [];
+    this.editingCard.labels.unshift({
+      id: `label-${Date.now()}`,
+      name: '',
+      color: '#3B82F6'
+    })
+  }
+
+  removeLabel(index: number) {
+    if (!this.editingCard.labels) return;
+    this.editingCard.labels.splice(index, 1);
+  }
+
+  private getSafeLabels(): KanbanLabel[] {
+    return this.editingCard.labels ?? [];
+  }
+
+  selectCardColor(color: string) {
+    if (!this.editingCard.style) {
+      this.editingCard.style = { backgroundType: 'color', backgroundColor: color, backgroundImageUrl: null };
+      return;
+    }
+    this.editingCard.style.backgroundType = 'color';
+    this.editingCard.style.backgroundColor = color;
+    this.editingCard.style.backgroundImageUrl = null;
+  }
+
+  selectLabelColor(index: number, color: string) {
+    if (!this.editingCard.labels || !this.editingCard.labels[index]) return;
+    this.editingCard.labels[index].color = color;
+  }
+
+  onBackgroundTypeChange(type: string) {
+    if (!this.editingCard.style) {
+      this.editingCard.style = { backgroundType: 'default', backgroundColor: null, backgroundImageUrl: null };
+    }
+
+    const nextType = (type === 'color' || type === 'image') ? type : 'default';
+    this.editingCard.style.backgroundType = nextType;
+
+    if (nextType === 'default') {
+      this.editingCard.style.backgroundColor = null;
+      this.editingCard.style.backgroundImageUrl = null;
+      this.showImageUrlInput = false;
+      return;
+    }
+
+    if (nextType === 'color') {
+      this.editingCard.style.backgroundColor = this.editingCard.style.backgroundColor ?? '#3B82F6';
+      this.editingCard.style.backgroundImageUrl = null;
+      return;
+    }
+
+    this.editingCard.style.backgroundColor = null;
+    this.editingCard.style.backgroundImageUrl = this.editingCard.style.backgroundImageUrl ?? '';
+  }
+
+  removeBackgroundImage() {
+    if (!this.editingCard.style) return;
+    this.editingCard.style.backgroundImageUrl = null;
+  }
+
+  openImagePreview() {
+    const imageUrl = this.editingCard.style?.backgroundImageUrl;
+    if (!imageUrl) return;
+    this.imagePreviewUrl = imageUrl;
+    this.imagePreviewFitMode = 'contain';
+    this.displayImagePreviewDialog = true;
+  }
+
+  closeImagePreview() {
+    this.displayImagePreviewDialog = false;
+    this.imagePreviewUrl = null;
+    this.imagePreviewFitMode = 'contain';
+  }
+
+  toggleImagePreviewFitMode() {
+    this.imagePreviewFitMode = this.imagePreviewFitMode === 'contain' ? 'cover' : 'contain';
+  }
+
+  onBackgroundImageFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!this.ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Selecciona un archivo de imagen' });
+      input.value = '';
+      return;
+    }
+
+    if (file.size > this.MAX_IMAGE_SIZE_BYTES) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'La imagen no debe exceder 5MB' });
+      input.value = '';
+      return;
+    }
+
+    this.isUploadingImage = true;
+
+    this.kanbanFacade.uploadCardImage(file).subscribe({
+      next: ({ imageUrl }) => {
+        if (!this.editingCard.style) {
+          this.editingCard.style = { backgroundType: 'image', backgroundColor: null, backgroundImageUrl: imageUrl };
+        } else {
+          this.editingCard.style.backgroundType = 'image';
+          this.editingCard.style.backgroundColor = null;
+          this.editingCard.style.backgroundImageUrl = imageUrl;
+        }
+        this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Imagen subida correctamente' });
+      },
+      error: (err) => {
+        const message = err?.error?.message || 'No se pudo subir la imagen';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+      },
+      complete: () => {
+        this.isUploadingImage = false;
+        input.value = '';
+      }
+    });
   }
 
   isValidInput(text: string): boolean {
@@ -321,7 +553,95 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     return pattern.test(text);
   }
 
+  private normalizeAndValidateLabels() {
+    const labels = this.getSafeLabels();
+    const normalized = labels.map((label, index) => ({
+      id: label.id?.trim() || `label-${Date.now()}-${index}`,
+      name: label.name?.trim() || '',
+      color: label.color?.toUpperCase() || ''
+    }));
+
+    const hasEmptyName = normalized.some((label) => label.name.length === 0);
+    if (hasEmptyName) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Todas las etiquetas deben tener nombre'
+      });
+      return null;
+    }
+
+    const hasInvalidColor = normalized.some((label) => !this.HEX_COLOR_REGEX.test(label.color));
+    if (hasInvalidColor) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Todas las etiquetas deben tener color HEX valido'
+      });
+      return null;
+    }
+
+    return normalized;
+  }
+
+  private normalizeAndValidateStyle() {
+    const backgroundType = this.editingCard.style?.backgroundType ?? 'default';
+
+    if (backgroundType === 'default') {
+      return { backgroundType: 'default' as const, backgroundColor: null, backgroundImageUrl: null };
+    }
+
+    if (backgroundType === 'color') {
+      const backgroundColor = this.editingCard.style?.backgroundColor?.toUpperCase() || '';
+      if (!this.HEX_COLOR_REGEX.test(backgroundColor)) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Advertencia',
+          detail: 'Selecciona un color de tarjeta valido'
+        });
+        return null;
+      }
+
+      return { backgroundType: 'color' as const, backgroundColor, backgroundImageUrl: null };
+    }
+
+    const backgroundImageUrl = this.editingCard.style?.backgroundImageUrl?.trim() || '';
+    if (!backgroundImageUrl) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'URL obligatoria o carga una imagen'
+      });
+      return null;
+    }
+
+    if (!this.isValidHttpUrl(backgroundImageUrl)) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'La URL de imagen debe iniciar con http:// o https://'
+      });
+      return null;
+    }
+
+    return { backgroundType: 'image' as const, backgroundColor: null, backgroundImageUrl };
+  }
+
+  private isValidHttpUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
   saveEditedCard() {
+    if (this.isUploadingImage) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Espera a que termine la subida de imagen' });
+      return;
+    }
+
     if (!this.editingCard.title.trim()) {
       this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'El título es obligatorio' });
       return;
@@ -334,10 +654,38 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'La tarea contiene caracteres inválidos' });
       return;
     }
+    if (this.selectedDueDate) {
+      const selected = new Date(this.selectedDueDate);
+      selected.setHours(0, 0, 0, 0);
+
+      const today = new Date(this.todayDate);
+      today.setHours(0, 0, 0, 0);
+
+      if (selected < today) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Advertencia',
+          detail: 'No puedes seleccionar una fecha pasada'
+        });
+        return;
+      }
+    }
+
+    const normalizedLabels = this.normalizeAndValidateLabels();
+    if (!normalizedLabels) return;
+
+    const normalizedStyle = this.normalizeAndValidateStyle();
+    if (!normalizedStyle) return;
+
+    const normalizedDueDate = this.editingCard.dueDate ?? null;
+
     const payload: any = {
-      title: this.editingCard.title,
-      task: this.editingCard.task,
+      title: this.editingCard.title.trim(),
+      task: this.editingCard.task?.trim() ?? '',
       expectedVersion: this.editingCard.version,
+      dueDate: normalizedDueDate,
+      labels: normalizedLabels,
+      style: normalizedStyle,
       assigneeId: this.editingCard.assigneeId
     };
     this.kanbanFacade.updateCard(this.editingCard._id, payload).subscribe({
@@ -354,7 +702,10 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
           }
         }
       },
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar la tarjeta' })
+      error: (err) => {
+        const message = err?.error?.message || 'No se pudo actualizar la tarjeta';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+      }
     });
   }
 
@@ -439,5 +790,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     }
   }
 
-  onAddCard(listId: string) { this.addCard(listId); }
+  onAddCard(listId: string) {
+    this.addCard(listId);
+  }
 }
