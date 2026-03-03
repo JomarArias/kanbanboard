@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
     Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User
+    GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User, updateProfile
 } from '@angular/fire/auth';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, from, Observable } from 'rxjs';
@@ -50,6 +50,14 @@ export class FirebaseAuthService {
         return from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
             switchMap(() => this.syncUserToBackend(name))
         );
+    }
+
+    async updateUserProfile(displayName: string, photoURL: string): Promise<void> {
+        const user = this.auth.currentUser;
+        if (user) {
+            await updateProfile(user, { displayName, photoURL });
+            this._currentUser$.next({ ...this.auth.currentUser } as User); // Using spread trick avoids same-instance bypass just in case
+        }
     }
 
     logout(): Observable<void> {

@@ -13,6 +13,7 @@ import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 
 import { environment } from '../../../../../environments/environment';
+import { FirebaseAuthService } from '../../../../core/services/firebase-auth.service';
 
 interface UserProfile {
     _id: string;
@@ -38,6 +39,7 @@ interface UserProfile {
 export class ProfileComponent implements OnInit {
     private http = inject(HttpClient);
     private messageService = inject(MessageService);
+    private auth = inject(FirebaseAuthService);
 
     profile: UserProfile | null = null;
     loading = false;
@@ -84,9 +86,14 @@ export class ProfileComponent implements OnInit {
             name: this.editName.trim(),
             picture: this.editPicture.trim()
         }).subscribe({
-            next: (updated) => {
+            next: async (updated) => {
                 this.profile = updated;
                 this.picturePreview = updated.picture;
+                try {
+                    await this.auth.updateUserProfile(updated.name, updated.picture);
+                } catch (e) {
+                    console.error('Failed to update Firebase Auth profile', e);
+                }
                 this.messageService.add({ severity: 'success', summary: '¡Guardado!', detail: 'Perfil actualizado correctamente' });
                 this.saving = false;
             },

@@ -43,16 +43,11 @@
     </div>
 </header>
 
-<p-dialog header="Invitar Equipo" [(visible)]="displayInviteDialog" [modal]="true"
-    [style]="{ width: 'min(400px, 95vw)' }" [draggable]="false" [resizable]="false">
-    <div class="flex flex-column gap-3 py-3">
-        <span class="p-text-secondary w-full mb-2">Ingresa el correo electrónico del miembro de tu equipo para darle
-            acceso a este proyecto.</span>
-
-        <div class="flex flex-column gap-2">
-            <label htmlFor="email">Correo Electrónico</label>
-            <input pInputText id="email" type="email" placeholder="ejemplo@google.com" [(ngModel)]="inviteEmail" />
-        </div>
+<p-dialog header="Invitar a un Miembro" [(visible)]="displayInviteDialog" [modal]="true"
+    [style]="{ width: 'min(350px, 90vw)' }" [draggable]="false" [resizable]="false">
+    <div class="flex flex-column py-3">
+        <input pInputText id="email" type="email" placeholder="Correo electrónico" [(ngModel)]="inviteEmail"
+            class="w-full" />
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Cancelar" [text]="true" severity="secondary"
