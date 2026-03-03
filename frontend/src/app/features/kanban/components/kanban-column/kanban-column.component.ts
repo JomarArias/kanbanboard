@@ -10,6 +10,7 @@ import { Kanban } from '../../../../core/models/kanban.model';
   standalone: true,
   imports: [CommonModule, DragDropModule, ButtonModule, KanbanCardComponent],
   templateUrl: './kanban-column.component.html',
+  styleUrl: './kanban-column.component.scss',
   host: {
     class: 'block w-full md:w-80 flex-shrink-0 h-full'
   }
@@ -18,14 +19,24 @@ export class KanbanColumnComponent {
   @Input() title: string = '';
   @Input() listId: string = '';
   @Input() cards: Kanban[] = [];
+  @Input() labelsExpandedGlobal = false;
+  @Output() toggleLabelsExpandedGlobal = new EventEmitter<void>();
   @Input() editingUsers: { [key: string]: string } = {};
+  @Input() members: any[] = [];
+  @Input() isViewer: boolean = false;
   @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
   @Output() addCard = new EventEmitter<void>();
   @Output() editCard = new EventEmitter<Kanban>();
   @Output() deleteCard = new EventEmitter<string>();
+  @Output() archiveCard = new EventEmitter<string>();
   @Output() startEditing = new EventEmitter<string>();
   @Output() stopEditing = new EventEmitter<string>();
 
+
+
+  trackByCard(index: number, card: Kanban): string {
+    return card._id;
+  }
 
   onDrop(event: CdkDragDrop<Kanban[]>) {
     this.drop.emit(event);
@@ -37,5 +48,8 @@ export class KanbanColumnComponent {
 
   onDeleteCard(cardId: string) {
     this.deleteCard.emit(cardId);
+  }
+  onArchiveCard(cardId: string) {
+    this.archiveCard.emit(cardId);
   }
 }

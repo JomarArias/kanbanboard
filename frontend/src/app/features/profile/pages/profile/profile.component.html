@@ -1,0 +1,98 @@
+<p-toast position="top-right"></p-toast>
+
+<div class="profile-page">
+    <div class="profile-container">
+
+        <!-- Back button -->
+        <div class="mb-5">
+            <a routerLink="/" class="back-link">
+                <i class="pi pi-arrow-left"></i>
+                Volver al Tablero
+            </a>
+        </div>
+
+        <!-- Card -->
+        <div class="profile-card">
+
+            <!-- Header: avatar + name + role -->
+            <div class="profile-header">
+                <div class="avatar-wrapper">
+                    <img *ngIf="picturePreview" [src]="picturePreview" (error)="picturePreview=''"
+                        class="profile-avatar" />
+                    <div *ngIf="!picturePreview" class="avatar-fallback">
+                        {{ initials(editName) }}
+                    </div>
+                    <span class="online-dot"></span>
+                </div>
+
+                <div class="profile-identity">
+                    <span class="profile-name">{{ profile?.name || editName }}</span>
+                    <span class="profile-email">{{ profile?.email }}</span>
+                    <p-tag *ngIf="profile" [severity]="getRoleSeverity(profile.role)"
+                        [value]="getRoleLabel(profile.role)" styleClass="text-xs mt-1">
+                    </p-tag>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Loading state -->
+            <div *ngIf="loading" class="skeleton-block">
+                <div class="skeleton-line w-3/4"></div>
+                <div class="skeleton-line w-full"></div>
+                <div class="skeleton-line w-full"></div>
+            </div>
+
+            <!-- Form -->
+            <div *ngIf="!loading && profile" class="profile-form">
+
+                <div class="field-group">
+                    <label class="field-label">Nombre</label>
+                    <span class="p-input-icon-left w-full">
+                        <i class="pi pi-user"></i>
+                        <input pInputText [(ngModel)]="editName" placeholder="Tu nombre" class="w-full" />
+                    </span>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Correo electrónico</label>
+                    <span class="p-input-icon-left w-full">
+                        <i class="pi pi-envelope"></i>
+                        <input pInputText [value]="profile.email" disabled class="w-full" style="opacity: 0.5" />
+                    </span>
+                    <span class="field-hint">Gestionado por Auth0. No modificable aquí.</span>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">URL del avatar</label>
+                    <span class="p-input-icon-left w-full">
+                        <i class="pi pi-image"></i>
+                        <input pInputText [(ngModel)]="editPicture" (blur)="onPictureChange()" placeholder="https://..."
+                            class="w-full" />
+                    </span>
+                    <span class="field-hint">Pega la URL de tu foto (GitHub, Gravatar, etc.).</span>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <!-- Meta info -->
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">Miembro desde</span>
+                        <span class="meta-value">{{ profile.createdAt | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Estado</span>
+                        <span class="meta-value status-active">
+                            <span class="status-dot"></span> Activo
+                        </span>
+                    </div>
+                </div>
+
+                <p-button label="Guardar cambios" icon="pi pi-save" styleClass="w-full mt-2" [loading]="saving"
+                    (onClick)="saveProfile()">
+                </p-button>
+            </div>
+        </div>
+    </div>
+</div>

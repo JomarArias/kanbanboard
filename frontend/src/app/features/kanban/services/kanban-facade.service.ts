@@ -35,7 +35,31 @@ export class KanbanFacadeService {
     return this.kanbanService.moveCard(cardId, listId, prevOrder, nextOrder);
   }
 
+  uploadCardImage(file: File): Observable<{ imageUrl: string; publicId: string }> {
+    return this.kanbanService.uploadCardImage(file);
+  }
+
   getAuditLogs(limit: number = 100, offset: number = 0): Observable<AuditLog[]> {
     return this.auditLogService.getAuditLogs(limit, offset);
   }
+
+  // ── NUEVO: delega la búsqueda al KanbanService ─────────────────────────────
+  searchCards(q: string): Observable<Kanban[]> {
+    return this.kanbanService.searchCards(q);
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ── BANDEJA DE ARCHIVADOS ───────────────────────────────────────────────────
+  archiveCard(id: string): Observable<Kanban> {
+    return this.kanbanService.archiveCard(id);
+  }
+
+  getArchivedCards(): Observable<Kanban[]> {
+    return this.kanbanService.getArchivedCards();
+  }
+
+  restoreCard(id: string): Observable<Kanban> {
+    return this.kanbanService.restoreCard(id);
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 }

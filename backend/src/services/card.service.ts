@@ -2,56 +2,315 @@ import { Card } from '../models/card.js';
 import { LexoRank } from 'lexorank';
 import { saveAuditLog } from './audit.service.js';
 
-export const listCardsByList = async (listId: string) => {
-  const cards = await Card.find({ listId })
+export const listCardsByList = async (listId: string, workspaceId: string) => {
+  const cards = await Card.find({ listId, workspaceId })
     .sort({ order: 1, _id: 1 })
+    .populate('assigneeId', 'name picture email')
     .lean();
 
   return cards;
 };
+// ─── BÚSQUEDA EN BACKEND ──────────────────────────────────────────────────────
+/**
+ * Busca tarjetas cuyo título o tarea contengan el término indicado.
+ * Requiere índice de texto en el modelo Card:
+ *   CardSchema.index({ title: 'text', task: 'text' }, { weights: { title: 10, task: 2 } })
+ */
+export const searchCards = async (q: string, workspaceId: string, limit = 20) => {
+  const trimmed = q.trim();
+  if (!trimmed) return [];
+
+  // $regex permite búsqueda parcial (ej: "ca" encuentra "Card")
+  const regex = new RegExp(trimmed, 'i');
+
+  const cards = await Card.find({
+    workspaceId,
+    $or: [
+      { title: { $regex: regex } },
+      { task: { $regex: regex } }
+    ]
+  })
+    .sort({ listId: 1, order: 1 })
+    .limit(limit)
+    .lean();
+
+  return cards;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── ARCHIVADO ──────────────────────────────────────────────────────────────────
+
+export const archiveCard = async (id: string, workspaceId: string, performedById?: string) => {
+  const card = await Card.findOneAndUpdate(
+    { _id: id, workspaceId },
+    { $set: { archived: true }, $inc: { version: 1 } },
+    { new: true }
+  );
+  if (!card) {
+    const error: any = new Error("Tarjeta no encontrada");
+    error.status = 404;
+    throw error;
+  }
+  await saveAuditLog("ARCHIVE", `Tarjeta "${card.title}" archivada`, performedById, workspaceId);
+  return card;
+};
+
+export const listArchivedCards = async (workspaceId: string) => {
+  const cards = await Card.find({ archived: true, workspaceId })
+    .sort({ updatedAt: -1 })
+    .lean();
+  return cards;
+};
+
+export const restoreCard = async (id: string, workspaceId: string, performedById?: string) => {
+  const card = await Card.findOneAndUpdate(
+    { _id: id, workspaceId },
+    { $set: { archived: false }, $inc: { version: 1 } },
+    { new: true }
+  );
+  if (!card) {
+    const error: any = new Error("Tarjeta no encontrada");
+    error.status = 404;
+    throw error;
+  }
+  await saveAuditLog("RESTORE", `Tarjeta "${card.title}" restaurada a lista ${card.listId}`, performedById, workspaceId);
+  return card;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const createCard = async (
   listId: string,
   title: string,
   task: string,
-
+  workspaceId: string,
+  performedById?: string,
+  assigneeId?: string
 ) => {
 
-  const lastCard = await Card.findOne({ listId }).sort({ order: -1 });
-  const order = lastCard
-    ? LexoRank.parse(lastCard.order).genNext().toString()
+  const firstCard = await Card.findOne({ listId, workspaceId }).sort({ order: 1 });
+  const order = firstCard
+    ? LexoRank.parse(firstCard.order).genPrev().toString()
     : LexoRank.middle().toString();
 
-  const card = await Card.create({ listId, title, task, order });
-
-
+  const card = await Card.create({ listId, title, task, order, workspaceId, assigneeId });
 
   console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
 
-  await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`);
+  await saveAuditLog("CREATE", `Tarjeta "${card.title}" creada en lista ${card.listId}`, performedById, workspaceId);
 
   return card;
+};
 
+const HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{6})$/;
+
+type CardStyleUpdate = {
+  backgroundType?: "default" | "color" | "image";
+  backgroundColor?: string | null;
+  backgroundImageUrl?: string | null;
 }
+
+type CardLabelUpdate = {
+  id: string;
+  name: string;
+  color: string;
+}
+
+const validateLabels = (labels: unknown) => {
+  if (!Array.isArray(labels)){
+    const err: any = new Error ("labels debe ser un arreglo")
+    err.status = 400
+    throw err;
+  }
+
+  for (const label of labels){
+    if (!label || typeof label !== "object"){
+      const err: any = new Error ("Cada label debe ser un objeto");
+      err.status = 400;
+      throw err;
+    }
+
+    const {id, name, color} = label as CardLabelUpdate;
+
+    if (!id || typeof id !== "string"){
+      const err: any = new Error ("Cada label requiere un id valido");
+      err.status = 400;
+      throw err;
+    }
+
+    if (!name || typeof name !== "string" || !name.trim()){
+      const err: any = new Error  ("Cada label requiere un name valido")
+      err.status = 400;
+      throw err;
+    }
+
+    if (!color || typeof color !== "string" || !HEX_COLOR_REGEX.test(color)){
+      const err: any = new Error ("Cada label requiere un color HEX valido (#RRGGBB)");
+      err.status = 400;
+      throw err;
+    }
+  }
+};
+
+
+const isValidHttpUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+  const validateStyle = (style: unknown) => {
+    if (!style || typeof style !== "object"){
+      const err: any = new Error ("style invalido");
+      err.status = 400;
+      throw err;
+      }
+
+      const { backgroundType, backgroundColor, backgroundImageUrl } = style as CardStyleUpdate
+
+      if (backgroundType !== undefined && !["default","color","image"].includes(backgroundType)){
+        const err: any = new Error ("backgroundType invalido");
+        err.status = 400;
+        throw err;
+      }
+
+      if (backgroundType === "color"){
+        if (!backgroundColor || typeof backgroundColor !== "string" || !HEX_COLOR_REGEX.test(backgroundColor)){
+          const err: any = new Error ("backgroundColor es requerido y debe ser HEX valido cuando backgroundType es color");
+          err.status = 400;
+          throw err;
+        }
+        if (backgroundImageUrl !== null && backgroundImageUrl !== undefined) {
+          const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es color");
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      if (backgroundType === "image"){
+        if (!backgroundImageUrl || typeof backgroundImageUrl !== "string" || !isValidHttpUrl(backgroundImageUrl)){
+          const err: any = new Error ("backgroundImageUrl es requerido y debe ser una URL http/https valida cuando backgroundType es image");
+          err.status = 400;
+          throw err;
+        }
+        if (backgroundColor !== null && backgroundColor !== undefined){
+          const err: any = new Error ("backgroundColor debe ser null cuando backgroundType es image");
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      if (backgroundType === "default" && backgroundColor !== null && backgroundColor !== undefined){
+        const err: any = new Error ("backgroundColor debe ser null cuando backgroundType es default");
+        err.status = 400;
+        throw err;
+      }
+      if (backgroundType === "default" && backgroundImageUrl !== null && backgroundImageUrl !== undefined){
+        const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es default");
+        err.status = 400;
+        throw err;
+      }
+      if (backgroundType === undefined && backgroundColor !== undefined){
+        const err: any = new Error("Si envías backgroundColor también debes enviar backgroundType");
+        err.status = 400;
+        throw err;
+      }
+      if (backgroundType === undefined && backgroundImageUrl !== undefined){
+        const err: any = new Error("Si envias backgroundImageUrl tambien debes enviar backgroundType");
+        err.status = 400;
+        throw err;
+      }
+    };
+
+
+
 
 
 export const updateCard = async (
   id: string,
-  title: string,
-  task: string,
-  expectedVersion: number
+  expectedVersion: number,
+  updateData:{
+    title?: string;
+    task?: string;
+    dueDate?: Date | string | null;
+    labels?: Array <{ id: string; name: string; color: string}>;
+    style?: {
+      backgroundType?: "default" | "color" | "image";
+      backgroundColor?: string | null;
+      backgroundImageUrl?: string | null;
+    };
+    assigneeId?: string | null;
+  },
+  workspaceId: string,
+  performedById?: string
 ) => {
+  if(Object.keys(updateData).length === 0){
+    const err: any =new Error ("updateData no debe estar vacio")
+    err.status = 400;
+    throw err;
+  }
+
+  if (updateData.labels !== undefined) {
+    validateLabels(updateData.labels);
+    updateData.labels = updateData.labels.map((label) => ({
+      ...label,
+      name: label.name.trim()
+    }));
+  }
+
+  if (updateData.style !== undefined) {
+    validateStyle(updateData.style);
+  }
+
+if (updateData.dueDate !== undefined && updateData.dueDate !== null) {
+  const raw = String(updateData.dueDate).slice(0, 10); // YYYY-MM-DD
+  const [y, m, d] = raw.split('-').map(Number);
+
+  if (!y || !m || !d) {
+    const err: any = new Error("dueDate invalida");
+    err.status = 400;
+    throw err;
+  }
+
+  const normalizedUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)); // 12:00 UTC
+
+  const today = new Date();
+  const todayUtc = new Date(Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+    12, 0, 0
+  ));
+
+  if (normalizedUtc < todayUtc) {
+    const err: any = new Error("No se permite una fecha de vencimiento pasada");
+    err.status = 400;
+    throw err;
+  }
+
+  updateData.dueDate = normalizedUtc;
+}
+
+
+  const versionQuery =
+    expectedVersion === 0
+      ? { $or: [{ version: 0 }, { version: { $exists: false } }] }
+      : { version: expectedVersion };
+
   const card = await Card.findOneAndUpdate(
-    { _id: id, version: expectedVersion },
+    { _id: id, ...versionQuery, workspaceId },
     {
-      $set: { title, task },
+      $set: updateData,
       $inc: { version: 1 }
     },
     { new: true }
-  );
+  ).populate('assigneeId', 'name picture email');
 
   if (!card) {
-    const freshCard = await Card.findById(id);
+    const freshCard = await Card.findOne({ _id: id, workspaceId });
 
     if (!freshCard) {
       const notFoundError: any = new Error("Tarjeta no encontrada");
@@ -62,52 +321,51 @@ export const updateCard = async (
     const conflictError: any = new Error("La tarjeta cambio y tu vista esta desactualizada");
     conflictError.status = 409;
     conflictError.code = "conflict";
+    const currentVersion = freshCard.version ?? 0;
     conflictError.currentCard = {
       id: freshCard.id,
       title: freshCard.title,
       task: freshCard.task,
       listId: freshCard.listId,
       order: freshCard.order,
-      version: freshCard.version
+      version: currentVersion
     };
     throw conflictError;
   }
 
   console.log(`[BACKEND] Card updated: ${card.title}`);
-  await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`);
+  await saveAuditLog("UPDATE", `Tarjeta "${card.title}" actualizada`, performedById, workspaceId);
 
   return card;
 };
 
-
 export const deleteCard = async (
-  id: string
+  id: string,
+  workspaceId: string,
+  performedById?: string
 ) => {
-  const card = await Card.findByIdAndDelete(id);
+  const card = await Card.findOneAndDelete({ _id: id, workspaceId });
   if (!card) {
     const error: any = new Error("Tarjeta no encontrada");
     error.status = 404;
-    throw error
+    throw error;
   }
 
-  await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`);
+  await saveAuditLog("DELETE", `Tarjeta "${card.title}" eliminada de lista ${card.listId}`, performedById, workspaceId);
 
-  return card
-}
-
-
-
+  return card;
+};
 
 export const moveCard = async (
   cardId: string,
   listId: string,
+  workspaceId: string,
   prevOrder?: string,
   nextOrder?: string
 ) => {
-
-  const cardBeforeMove = await Card.findById(cardId);
+  const cardBeforeMove = await Card.findOne({ _id: cardId, workspaceId });
   if (!cardBeforeMove) {
-    const error: any = new Error("Tarjeta no encontrada");
+    const error: any = new Error("Tarjeta no encontrada en este workspace");
     error.status = 404;
     throw error;
   }
@@ -115,40 +373,29 @@ export const moveCard = async (
   let order: string;
 
   if (!prevOrder && !nextOrder) {
-
     const destinationHasCards = await Card.exists({
       listId,
+      workspaceId,
       _id: { $ne: cardId }
     });
 
     if (destinationHasCards) {
-      const error: any = new Error(
-        "prevOrder y nextOrder son requeridos cuando la lista destino no esta vacia"
-      );
+      const error: any = new Error("prevOrder y nextOrder son requeridos cuando la lista destino no esta vacia");
       error.status = 400;
       throw error;
     }
 
     order = LexoRank.middle().toString();
-
   } else if (!prevOrder) {
-
     order = LexoRank.parse(nextOrder!).genPrev().toString();
-
   } else if (!nextOrder) {
-
     order = LexoRank.parse(prevOrder!).genNext().toString();
-
   } else {
-
-    order = LexoRank
-      .parse(prevOrder!)
-      .between(LexoRank.parse(nextOrder!))
-      .toString();
+    order = LexoRank.parse(prevOrder!).between(LexoRank.parse(nextOrder!)).toString();
   }
 
-  const card = await Card.findByIdAndUpdate(
-    cardId,
+  const card = await Card.findOneAndUpdate(
+    { _id: cardId, workspaceId },
     {
       $set: { listId, order },
       $inc: { version: 1 }
@@ -164,7 +411,9 @@ export const moveCard = async (
 
   await saveAuditLog(
     "MOVE",
-    `Tarjeta "${cardBeforeMove.title}" movida a ${listId}`
+    `Tarjeta "${cardBeforeMove.title}" movida a ${listId}`,
+    undefined,
+    workspaceId
   );
 
   return { ok: true, order };
@@ -189,12 +438,7 @@ type MoveCardRealtimeResult = {
 type ServiceError = Error & {
   status?: number;
   code?: string;
-  currentCard?: {
-    id: string;
-    listId: string;
-    order: string;
-    version: number;
-  };
+  currentCard?: { id: string; listId: string; order: string; version: number };
 };
 
 const buildServiceError = (
@@ -212,51 +456,26 @@ const buildServiceError = (
 
 const getNeighborCard = async (cardId: string, targetListId: string) => {
   const card = await Card.findById(cardId);
-  if (!card) {
-    throw buildServiceError("Tarjeta vecina no encontrada", 400, "invalid_neighbor");
-  }
-  if (card.listId !== targetListId) {
-    throw buildServiceError("Tarjeta vecina no pertenece a la lista destino", 400, "invalid_neighbor_list");
-  }
+  if (!card) throw buildServiceError("Tarjeta vecina no encontrada", 400, "invalid_neighbor");
+  if (card.listId !== targetListId) throw buildServiceError("Tarjeta vecina no pertenece a la lista destino", 400, "invalid_neighbor_list");
   return card;
 };
 
-export const moveCardRealtime = async (
-  input: MoveCardRealtimeInput
-): Promise<MoveCardRealtimeResult> => {
-  const {
-    cardId,
-    targetListId,
-    beforeCardId = null,
-    afterCardId = null,
-    expectedVersion
-  } = input;
+export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<MoveCardRealtimeResult> => {
+  const { cardId, targetListId, beforeCardId = null, afterCardId = null, expectedVersion } = input;
 
   const currentCard = await Card.findById(cardId);
-  if (!currentCard) {
-    throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
-  }
+  if (!currentCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
-  if (beforeCardId && beforeCardId === afterCardId) {
+  if (beforeCardId && beforeCardId === afterCardId)
     throw buildServiceError("beforeCardId y afterCardId no pueden ser iguales", 400, "invalid_neighbors");
-  }
 
   let order: string;
 
   if (!beforeCardId && !afterCardId) {
-    const destinationHasCards = await Card.exists({
-      listId: targetListId,
-      _id: { $ne: cardId }
-    });
-
-    if (destinationHasCards) {
-      throw buildServiceError(
-        "beforeCardId y afterCardId son requeridos cuando la lista destino no esta vacia",
-        400,
-        "missing_neighbors"
-      );
-    }
-
+    const destinationHasCards = await Card.exists({ listId: targetListId, _id: { $ne: cardId } });
+    if (destinationHasCards)
+      throw buildServiceError("beforeCardId y afterCardId son requeridos cuando la lista destino no esta vacia", 400, "missing_neighbors");
     order = LexoRank.middle().toString();
   } else if (!beforeCardId && afterCardId) {
     const afterCard = await getNeighborCard(afterCardId, targetListId);
@@ -270,62 +489,40 @@ export const moveCardRealtime = async (
     order = LexoRank.parse(beforeCard.order).between(LexoRank.parse(afterCard.order)).toString();
   }
 
+
+
+
+
+
+
   const updatedCard = await Card.findOneAndUpdate(
     { _id: cardId, version: expectedVersion },
-    {
-      $set: { listId: targetListId, order },
-      $inc: { version: 1 }
-    },
+    { $set: { listId: targetListId, order }, $inc: { version: 1 } },
     { new: true }
   );
 
   if (!updatedCard) {
     const freshCard = await Card.findById(cardId);
-    if (!freshCard) {
-      throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
-    }
-
+    if (!freshCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
     if (freshCard.version === expectedVersion) {
       const retryCard = await Card.findByIdAndUpdate(
         cardId,
-        {
-          $set: { listId: targetListId, order },
-          $inc: { version: 1 }
-        },
+        { $set: { listId: targetListId, order }, $inc: { version: 1 } },
         { new: true }
       );
 
-      if (!retryCard) {
-        throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
-      }
+      if (!retryCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
       await saveAuditLog("MOVE", `Tarjeta "${retryCard.title}" movida a ${targetListId}`);
-
-      return {
-        cardId: retryCard.id,
-        listId: retryCard.listId,
-        order: retryCard.order,
-        version: retryCard.version,
-        updatedAt: retryCard.updatedAt
-      };
+      return { cardId: retryCard.id, listId: retryCard.listId, order: retryCard.order, version: retryCard.version, updatedAt: retryCard.updatedAt };
     }
 
     throw buildServiceError("La tarjeta cambio y tu vista esta desactualizada", 409, "conflict", {
-      id: freshCard.id,
-      listId: freshCard.listId,
-      order: freshCard.order,
-      version: freshCard.version
+      id: freshCard.id, listId: freshCard.listId, order: freshCard.order, version: freshCard.version
     });
   }
 
   await saveAuditLog("MOVE", `Tarjeta "${updatedCard.title}" movida a ${targetListId}`);
-
-  return {
-    cardId: updatedCard.id,
-    listId: updatedCard.listId,
-    order: updatedCard.order,
-    version: updatedCard.version,
-    updatedAt: updatedCard.updatedAt
-  };
+  return { cardId: updatedCard.id, listId: updatedCard.listId, order: updatedCard.order, version: updatedCard.version, updatedAt: updatedCard.updatedAt };
 };
