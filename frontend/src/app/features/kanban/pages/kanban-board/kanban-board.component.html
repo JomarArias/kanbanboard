@@ -117,14 +117,14 @@
                         <ng-template pTemplate="selectedItem" let-selectedOption>
                             <div class="flex align-items-center gap-2" *ngIf="selectedOption">
                                 <img [src]="selectedOption.picture || 'https://ui-avatars.com/api/?name=' + selectedOption.name"
-                                    class="w-1rem h-1rem border-circle" />
+                                    class="avatar-circle avatar-circle-sm" />
                                 <div>{{ selectedOption.name }}</div>
                             </div>
                         </ng-template>
                         <ng-template let-user pTemplate="item">
                             <div class="flex align-items-center gap-2">
                                 <img [src]="user.picture || 'https://ui-avatars.com/api/?name=' + user.name"
-                                    class="w-2rem h-2rem border-circle" />
+                                    class="avatar-circle avatar-circle-md" />
                                 <div>{{ user.name }}</div>
                                 <small class="text-500 ml-auto" *ngIf="user.email">{{ user.email }}</small>
                             </div>
