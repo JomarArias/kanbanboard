@@ -31,41 +31,40 @@
 
 //
 
-:host ::ng-deep .label-colorpicker-tarjeta .p-colorpicker-preview {
+::ng-deep .edit-card-dialog .label-colorpicker-tarjeta .p-colorpicker-preview {
   width: 6.7rem;
   height: 2.5rem;
-
 }
 
-:host ::ng-deep .label-colorpicker-etiquetas .p-colorpicker-preview {
+::ng-deep .edit-card-dialog .label-colorpicker-etiquetas .p-colorpicker-preview {
   width: 2.7rem;
   height: 2.50rem;
 }
 
 // nota: estilo de la barra de scroll de p-dialog editar tarjetas
 
-:host ::ng-deep .edit-card-dialog .p-dialog-content {
+::ng-deep .edit-card-dialog .p-dialog-content {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
 
-:host ::ng-deep .edit-card-dialog .p-dialog-content:hover {
+::ng-deep .edit-card-dialog .p-dialog-content:hover {
   scrollbar-color: rgba(107, 114, 128, 0.55) transparent;
 }
 
-:host ::ng-deep .edit-card-dialog .p-dialog-content::-webkit-scrollbar {
+::ng-deep .edit-card-dialog .p-dialog-content::-webkit-scrollbar {
   width: 6px;
 }
 
-:host ::ng-deep .edit-card-dialog .p-dialog-content::-webkit-scrollbar-track {
+::ng-deep .edit-card-dialog .p-dialog-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-:host ::ng-deep .edit-card-dialog .p-dialog-content::-webkit-scrollbar-thumb {
+::ng-deep .edit-card-dialog .p-dialog-content::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 9999px;
 }
 
-:host ::ng-deep .edit-card-dialog .p-dialog-content:hover::-webkit-scrollbar-thumb {
+::ng-deep .edit-card-dialog .p-dialog-content:hover::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.55);
 }
