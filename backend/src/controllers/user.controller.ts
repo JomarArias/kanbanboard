@@ -75,7 +75,6 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
             });
             await user.save();
 
-            // Auto-create a personal board for the new user
             await Workspace.create({
                 name: 'Tablero Personal',
                 owners: [user._id],
