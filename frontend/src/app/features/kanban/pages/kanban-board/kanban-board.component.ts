@@ -182,6 +182,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.todayDate.setHours(0, 0, 0, 0);
     this.loadCards();
     this.loadAuditLogs();
+    this.initSearch();
 
     this.items = [
       {
