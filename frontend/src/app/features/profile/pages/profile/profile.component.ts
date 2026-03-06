@@ -14,6 +14,7 @@ import { DividerModule } from 'primeng/divider';
 
 import { environment } from '../../../../../environments/environment';
 import { FirebaseAuthService } from '../../../../core/services/firebase-auth.service';
+import { KanbanService } from '../../../../core/services/kanban.service';
 
 interface UserProfile {
     _id: string;
@@ -37,13 +38,18 @@ interface UserProfile {
     styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit {
+    private readonly MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+    private readonly ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
     private http = inject(HttpClient);
     private messageService = inject(MessageService);
     private auth = inject(FirebaseAuthService);
+    private kanbanService = inject(KanbanService);
 
     profile: UserProfile | null = null;
     loading = false;
     saving = false;
+    isUploadingAvatar = false;
 
     editName = '';
     editPicture = '';
@@ -70,9 +76,40 @@ export class ProfileComponent implements OnInit {
         });
     }
 
-    onPictureChange() {
-        // Simple debounce-free preview on blur
-        this.picturePreview = this.editPicture;
+    onProfileImageFileSelected(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        if (!this.ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Selecciona un archivo JPG, PNG o WEBP' });
+            input.value = '';
+            return;
+        }
+
+        if (file.size > this.MAX_IMAGE_SIZE_BYTES) {
+            this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'La imagen no debe exceder 5MB' });
+            input.value = '';
+            return;
+        }
+
+        this.isUploadingAvatar = true;
+
+        this.kanbanService.uploadProfileImage(file).subscribe({
+            next: ({ imageUrl }) => {
+                this.editPicture = imageUrl;
+                this.picturePreview = imageUrl;
+                this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Imagen de perfil subida correctamente' });
+            },
+            error: (err) => {
+                const message = err?.error?.message || 'No se pudo subir la imagen de perfil';
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+            },
+            complete: () => {
+                this.isUploadingAvatar = false;
+                input.value = '';
+            }
+        });
     }
 
     saveProfile() {

@@ -64,14 +64,15 @@
                     <span class="field-hint">Gestionado por Auth0. No modificable aquí.</span>
                 </div>
 
-                <div class="field-group">
-                    <label class="field-label">URL del avatar</label>
-                    <span class="p-input-icon-left w-full flex items-center gap-2">
-                        <i class="pi pi-image"></i>
-                        <input pInputText [(ngModel)]="editPicture" (blur)="onPictureChange()" placeholder="https://..."
-                            class="w-full" />
-                    </span>
-                    <span class="field-hint">Pega la URL de tu foto (GitHub, Gravatar, etc.).</span>
+                <div class="field-group avatar-upload-group">
+                    <label class="field-label">Subir foto de perfil</label>
+                    <input #profileImageInput type="file" accept="image/jpeg,image/png,image/webp"
+                        (change)="onProfileImageFileSelected($event)" class="hidden-file-input" />
+                    <p-button label="Seleccionar imagen" icon="pi pi-upload" severity="success" styleClass="w-full"
+                        (onClick)="profileImageInput.click()">
+                    </p-button>
+                    <span class="field-hint">Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: 5MB.</span>
+                    <small class="uploading-text" *ngIf="isUploadingAvatar">Subiendo imagen...</small>
                 </div>
 
                 <div class="section-divider"></div>
@@ -89,6 +90,8 @@
                         </span>
                     </div>
                 </div>
+
+
 
                 <p-button label="Guardar cambios" icon="pi pi-save" styleClass="w-full mt-2" [loading]="saving"
                     (onClick)="saveProfile()">
