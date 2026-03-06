@@ -793,23 +793,41 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   drop(event: CdkDragDrop<Kanban[]>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      const card = event.container.data[event.currentIndex];
-      const prevCard = event.container.data[event.currentIndex - 1];
-      const nextCard = event.container.data[event.currentIndex + 1];
-      this.kanbanFacade.moveCard(card._id, card.listId, prevCard?.order, nextCard?.order).subscribe({
-        next: (res) => { card.order = res.order; this.loadCards(); this.loadAuditLogs(); }
-      });
     } else {
       transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
-      const card = event.container.data[event.currentIndex];
-      const newListId = event.container.id;
-      const prevCard = event.container.data[event.currentIndex - 1];
-      const nextCard = event.container.data[event.currentIndex + 1];
-      this.kanbanFacade.moveCard(card._id, newListId, prevCard?.order, nextCard?.order).subscribe({
-        next: (res) => { card.listId = newListId; card.order = res.order; this.loadCards(); this.loadAuditLogs(); },
-        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' })
-      });
     }
+
+    const card = event.item.data as Kanban;
+    const targetListId = event.container.id;
+    const prevCard = event.container.data[event.currentIndex - 1];
+    const nextCard = event.container.data[event.currentIndex + 1];
+
+    let prevOrder = prevCard?.order;
+    let nextOrder = nextCard?.order;
+
+    // If the visible target list is filtered, use full boardData as fallback
+    // so backend always receives at least one neighbor when destination has cards.
+    const fullTargetCards = (this.boardData[targetListId] || []).filter(c => c._id !== card._id);
+    if (!prevOrder && !nextOrder && fullTargetCards.length > 0) {
+      if (event.currentIndex <= 0) {
+        nextOrder = fullTargetCards[0]?.order;
+      } else {
+        prevOrder = fullTargetCards[fullTargetCards.length - 1]?.order;
+      }
+    }
+
+    this.kanbanFacade.moveCard(card._id, targetListId, prevOrder, nextOrder).subscribe({
+      next: (res) => {
+        card.listId = targetListId;
+        card.order = res.order;
+        this.loadCards();
+        this.loadAuditLogs();
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' });
+        this.loadCards();
+      }
+    });
   }
 
   onAddCard(listId: string) {

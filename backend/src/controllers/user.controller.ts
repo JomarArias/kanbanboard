@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User.js';
+import { Workspace } from '../models/Workspace.js';
 import { AuditLog } from '../models/audit-log.js';
 import { sendError } from '../utils/http-response.js';
 
@@ -73,6 +74,12 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
                 picture: picture || '',
             });
             await user.save();
+
+            await Workspace.create({
+                name: 'Tablero Personal',
+                owners: [user._id],
+                members: []
+            });
         } else {
             // Block deactivated accounts before granting access
             if (user.isDeleted) {
