@@ -141,6 +141,18 @@
     opacity: 0.65;
 }
 
+.avatar-upload-group {
+    .hidden-file-input {
+        display: none;
+    }
+
+    .field-hint,
+    .uploading-text {
+        color: #111;
+        opacity: 1;
+    }
+}
+
 // ─── Meta Grid ──────────────────────────────────────────────────
 .meta-grid {
     display: grid;

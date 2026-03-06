@@ -85,4 +85,17 @@ export class KanbanService {
         formData.append('file', file);
         return this.http.post<{ imageUrl: string; publicId: string }>(`${this.apiUrl}/uploads/image`, formData, this.getWorkspaceParams());
     }
+
+
+  uploadProfileImage(file: File): Observable<{ imageUrl: string; publicId: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this.http.post<{ imageUrl: string; publicId: string }>(
+    `${this.apiUrl}/uploads/profile-image`,
+    formData
+    );
+  }
+
+
+
 }
