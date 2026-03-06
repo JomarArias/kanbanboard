@@ -1,6 +1,6 @@
-<div class="p-6 h-full flex flex-col items-center overflow-hidden">
-    <div class="flex items-center justify-between w-full max-w-7xl px-4 mb-2">
-        <div class="flex items-center gap-2" *ngIf="activeWorkspaceId">
+<div class="pb-14 h-full flex flex-col items-center overflow-hidden">
+    <div class="flex items-center w-full max-w-7xl px-4 mt-4 mb-2 py-4">
+        <div class="flex items-center gap-2 " *ngIf="activeWorkspaceId">
             <div *ngFor="let member of workspaceMembers.slice(0,5)" class="relative" [pTooltip]="member.name"
                 tooltipPosition="bottom">
                 <img *ngIf="member.picture" [src]="member.picture"
@@ -22,6 +22,25 @@
                 {{ onlineUsersArray.length }} Online
             </div>
         </div>
+
+        <!-- ?=================================================================== -->
+        <div class="w-full max-w-md translate-x-1/2 px-5">
+            <span class="relative w-full block">
+                <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
+                    [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
+                </i>
+                <input pInputText type="text" [ngModel]="searchTerm"
+                    (ngModelChange)="onSearchChange($event); searchTerm = $event" placeholder="Buscar tareas..."
+                    class="w-full !pl-10 rounded-xl" />
+            </span>
+            <p *ngIf="searchResults !== null && !isSearching" class="text-sm text-gray-500 mt-1 pl-1">
+                {{ searchResults.length === 0
+                ? 'Sin resultados para "' + searchTerm + '"'
+                : searchResults.length + ' resultado(s) encontrado(s)' }}
+            </p>
+        </div>
+
+
     </div>
 
     <div *ngIf="isViewer" class="w-full max-w-7xl px-4 mb-2">
@@ -33,7 +52,7 @@
         </div>
     </div>
 
-    <div class="w-full max-w-md mb-6 px-4">
+    <!-- <div class="w-full max-w-md mb-6 px-4">
         <span class="relative w-full block">
             <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
                 [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
@@ -47,7 +66,7 @@
             ? 'Sin resultados para "' + searchTerm + '"'
             : searchResults.length + ' resultado(s) encontrado(s)' }}
         </p>
-    </div>
+    </div> -->
 
     <!-- Speed Dial con Historial + Archivados -->
     <p-speedDial [model]="items" direction="up"
@@ -117,14 +136,14 @@
                         <ng-template pTemplate="selectedItem" let-selectedOption>
                             <div class="flex align-items-center gap-2" *ngIf="selectedOption">
                                 <img [src]="selectedOption.picture || 'https://ui-avatars.com/api/?name=' + selectedOption.name"
-                                    class="w-1rem h-1rem border-circle" />
+                                    class="avatar-circle avatar-circle-sm" />
                                 <div>{{ selectedOption.name }}</div>
                             </div>
                         </ng-template>
                         <ng-template let-user pTemplate="item">
                             <div class="flex align-items-center gap-2">
                                 <img [src]="user.picture || 'https://ui-avatars.com/api/?name=' + user.name"
-                                    class="w-2rem h-2rem border-circle" />
+                                    class="avatar-circle avatar-circle-md" />
                                 <div>{{ user.name }}</div>
                                 <small class="text-500 ml-auto" *ngIf="user.email">{{ user.email }}</small>
                             </div>
@@ -172,9 +191,9 @@
 
                     <div class=" flex flex-col pt-2 items-center ">
                         <label for="bgColor" class="font-semibold pb-1">Personalizado</label>
-                        <p-colorpicker id="bgColor" type="color" appendTo="body" styleClass="label-colorpicker-tarjeta"
+                        <p-colorpicker id="bgColor" type="color" appendTo="body"
                             [ngModel]="editingCard.style!.backgroundColor" (ngModelChange)="selectCardColor($event)"
-                            class="rounded" />
+                            class="label-colorpicker-tarjeta rounded" />
                     </div>
                 </div>
 
@@ -220,8 +239,8 @@
                             <input pInputText type="text" [(ngModel)]="label.name" placeholder="Nombre"
                                 class="col-span-9 border rounded px-2 py-1">
 
-                            <p-colorpicker type="color" styleClass="label-colorpicker-etiquetas" appendTo="body"
-                                [(ngModel)]="label.color" class="col-span-1 rounded" title="Color personalizado" />
+                            <p-colorpicker type="color" appendTo="body" [(ngModel)]="label.color"
+                                class="label-colorpicker-etiquetas col-span-1 rounded" title="Color personalizado" />
                             <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1 ml-6 "
                                 (click)="removeLabel(i)"></button>
                         </div>

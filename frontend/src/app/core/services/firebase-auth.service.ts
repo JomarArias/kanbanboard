@@ -93,7 +93,17 @@ export class FirebaseAuthService {
         }
 
         return from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
-            switchMap(() => this.syncUserToBackend(name))
+            switchMap(() => {
+                const user = this.auth.currentUser;
+                if (user && name) {
+                    // Guardar el nombre en Firebase Auth para que displayName esté disponible
+                    return from(updateProfile(user, { displayName: name })).pipe(
+                        tap(() => this._currentUser$.next({ ...this.auth.currentUser } as User)),
+                        switchMap(() => this.syncUserToBackend(name))
+                    );
+                }
+                return this.syncUserToBackend(name);
+            })
         );
     }
 

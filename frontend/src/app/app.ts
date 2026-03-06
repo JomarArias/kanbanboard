@@ -5,6 +5,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ToastModule } from 'primeng/toast';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { AuthSyncService } from './core/services/auth-sync.service';
+import { InactivityService } from './core/services/inactivity.service';
 import { ChatPanelComponent } from './features/kanban/components/chat-panel/chat-panel.component';
 
 @Component({
@@ -17,6 +18,7 @@ export class App implements OnInit {
   protected readonly title = signal('frontend');
   chatOpen = false;
   private authSync = inject(AuthSyncService);
+  private inactivityService = inject(InactivityService);
   protected router = inject(Router);
 
   get isLoginPage(): boolean {
@@ -25,5 +27,6 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.authSync.initSyncListener();
+    // The InactivityService starts tracking automatically upon injection because tracking is initialized in its constructor.
   }
 };
