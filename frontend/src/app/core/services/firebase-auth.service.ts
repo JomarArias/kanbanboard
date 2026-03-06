@@ -7,17 +7,30 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, from, Observable } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { WorkspaceService } from './workspace.service';
 
 @Injectable({ providedIn: 'root' })
 export class FirebaseAuthService {
     private auth = inject(Auth);
     private http = inject(HttpClient);
+    private workspaceService = inject(WorkspaceService);
 
     private _currentUser$ = new BehaviorSubject<User | null>(null);
     readonly currentUser$ = this._currentUser$.asObservable();
 
     constructor() {
+        if (!environment.production) {
+            const devToken = localStorage.getItem('DEV_TOKEN');
+            if (devToken && devToken.startsWith('DEV_TOKEN_')) {
+                const email = devToken.replace('DEV_TOKEN_', '');
+                const fakeUser = this.createDevUser(email, email.split('@')[0]);
+                this._currentUser$.next(fakeUser);
+                return;
+            }
+        }
+
         onAuthStateChanged(this.auth, (user) => {
+            if (!environment.production && localStorage.getItem('DEV_TOKEN')) return;
             this._currentUser$.next(user);
         });
     }
@@ -26,14 +39,38 @@ export class FirebaseAuthService {
         return this._currentUser$.value;
     }
 
+    /** Helper to generate fake user for Dev */
+    private createDevUser(email: string, name: string): User {
+        return {
+            uid: `dev_uid_${email}`,
+            email: email,
+            displayName: name,
+            photoURL: '',
+            getIdToken: async () => `DEV_TOKEN_${email}`
+        } as unknown as User;
+    }
+
     /** Get Firebase ID token for HTTP requests */
     async getIdToken(): Promise<string | null> {
+        if (!environment.production) {
+            const devToken = localStorage.getItem('DEV_TOKEN');
+            if (devToken) return devToken;
+        }
+
         const user = this.auth.currentUser;
         if (!user) return null;
         return user.getIdToken();
     }
 
     loginWithEmail(email: string, password: string): Observable<void> {
+        if (!environment.production) {
+            // Bypass Firebase in Dev Mode
+            const fakeUser = this.createDevUser(email, email.split('@')[0]);
+            localStorage.setItem('DEV_TOKEN', `DEV_TOKEN_${email}`);
+            this._currentUser$.next(fakeUser);
+            return this.syncUserToBackend(fakeUser.displayName || '');
+        }
+
         return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
             switchMap(() => this.syncUserToBackend())
         );
@@ -47,6 +84,14 @@ export class FirebaseAuthService {
     }
 
     register(email: string, password: string, name: string): Observable<void> {
+        if (!environment.production) {
+            // Bypass Firebase in Dev Mode
+            const fakeUser = this.createDevUser(email, name);
+            localStorage.setItem('DEV_TOKEN', `DEV_TOKEN_${email}`);
+            this._currentUser$.next(fakeUser);
+            return this.syncUserToBackend(name);
+        }
+
         return from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
             switchMap(() => {
                 const user = this.auth.currentUser;
@@ -71,16 +116,22 @@ export class FirebaseAuthService {
     }
 
     logout(): Observable<void> {
+        if (!environment.production && localStorage.getItem('DEV_TOKEN')) {
+            localStorage.removeItem('DEV_TOKEN');
+            this._currentUser$.next(null);
+            return from(Promise.resolve());
+        }
         return from(signOut(this.auth));
     }
 
     isLoggedIn(): boolean {
+        if (!environment.production && localStorage.getItem('DEV_TOKEN')) return true;
         return !!this._currentUser$.value;
     }
 
     /** Syncs Firebase user to MongoDB backend after login */
     private syncUserToBackend(name?: string): Observable<void> {
-        const user = this.auth.currentUser;
+        const user = this._currentUser$.value || this.auth.currentUser;
         if (!user) return from(Promise.resolve());
         return from(user.getIdToken()).pipe(
             switchMap(token =>
@@ -90,7 +141,10 @@ export class FirebaseAuthService {
                 }, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
-            )
+            ),
+            tap(() => {
+                this.workspaceService.fetchMyWorkspaces().subscribe();
+            })
         );
     }
 }
