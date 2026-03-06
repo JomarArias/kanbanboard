@@ -1,15 +1,16 @@
 <p-toast position="top-right"></p-toast>
 
 <div class="profile-page">
+  <!-- Back button -->
+  <div class="boton-container">
+      <a routerLink="/" class="back-link ">
+          <i class="pi pi-arrow-left"></i>
+          Volver al Tablero
+      </a>
+  </div>
+
     <div class="profile-container">
 
-        <!-- Back button -->
-        <div class="mb-5">
-            <a routerLink="/" class="back-link">
-                <i class="pi pi-arrow-left"></i>
-                Volver al Tablero
-            </a>
-        </div>
 
         <!-- Card -->
         <div class="profile-card">
@@ -48,7 +49,7 @@
 
                 <div class="field-group">
                     <label class="field-label">Nombre</label>
-                    <span class="p-input-icon-left w-full">
+                    <span class="p-input-icon-left w-full flex items-center gap-2">
                         <i class="pi pi-user"></i>
                         <input pInputText [(ngModel)]="editName" placeholder="Tu nombre" class="w-full" />
                     </span>
@@ -56,7 +57,7 @@
 
                 <div class="field-group">
                     <label class="field-label">Correo electrónico</label>
-                    <span class="p-input-icon-left w-full">
+                    <span class="p-input-icon-left w-full flex items-center gap-2">
                         <i class="pi pi-envelope"></i>
                         <input pInputText [value]="profile.email" disabled class="w-full" style="opacity: 0.5" />
                     </span>
@@ -65,7 +66,7 @@
 
                 <div class="field-group">
                     <label class="field-label">URL del avatar</label>
-                    <span class="p-input-icon-left w-full">
+                    <span class="p-input-icon-left w-full flex items-center gap-2">
                         <i class="pi pi-image"></i>
                         <input pInputText [(ngModel)]="editPicture" (blur)="onPictureChange()" placeholder="https://..."
                             class="w-full" />

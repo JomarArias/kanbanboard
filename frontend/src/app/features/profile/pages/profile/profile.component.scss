@@ -3,17 +3,13 @@
 }
 
 .profile-page {
+    position: relative;          /* <<‑ necesario para posicionar children absolutos */
     min-height: 100vh;
     background-color: var(--surface-ground);
-    padding: 2.5rem 1rem;
+    padding: 1.5rem 1rem;
     display: flex;
     align-items: flex-start;
-    justify-content: center;
-}
-
-.profile-container {
-    width: 100%;
-    max-width: 480px;
+    justify-content: center;     /* el contenedor de perfil queda en el centro */
 }
 
 .back-link {
@@ -40,6 +36,18 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+}
+
+/* botón “fijo” a la izquierda */
+.boton-container {
+    position: absolute;
+    left: 1rem;                  /* mismo padding que el padre */
+    top: 2.5rem;                 /* alinear verticalmente con el contenido */
+}
+
+.profile-container {
+    width: 100%;
+    max-width: 480px;
 }
 
 // ─── Header ────────────────────────────────────────────────────
