@@ -7,7 +7,8 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { SocketService, ChatMessage } from '../../../../core/services/socket.service';
-import { Subscription } from 'rxjs';
+import { FirebaseAuthService } from '../../../../core/services/firebase-auth.service';
+import { Subscription, filter, take } from 'rxjs';
 
 @Component({
   selector: 'app-chat-panel',
@@ -23,7 +24,7 @@ import { Subscription } from 'rxjs';
     }
   `],
   template: `
-    <!-- Diálogo de nombre de usuario -->
+    <!-- Diálogo de nombre — solo se muestra si Firebase no tiene displayName -->
     <p-dialog
       header="¡Bienvenido al chat!"
       [(visible)]="showUsernameDialog"
@@ -153,15 +154,36 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   username: string = '';
   usernameInput: string = '';
-  showUsernameDialog: boolean = true;
+  showUsernameDialog: boolean = false; // empieza oculto — se muestra solo si no hay nombre
   isOpen: boolean = false;
 
   private subs: Subscription = new Subscription();
   private shouldScrollToBottom = false;
 
-  constructor(private socketService: SocketService) {}
+  constructor(
+    private socketService: SocketService,
+    private authService: FirebaseAuthService
+  ) {}
 
   ngOnInit(): void {
+    // Esperar a que Firebase restaure la sesión antes de leer el usuario
+    this.subs.add(
+      this.authService.currentUser$.pipe(
+        filter(user => user !== null), // esperar hasta que haya usuario
+        take(1)                        // solo la primera emisión
+      ).subscribe(user => {
+        // Preferir displayName (nombre del registro), fallback a parte del correo
+        const name = user!.displayName || user!.email?.split('@')[0] || '';
+        if (name) {
+          this.username = name;
+          this.showUsernameDialog = false;
+          this.socketService.joinChat(name);
+        } else {
+          this.showUsernameDialog = true;
+        }
+      })
+    );
+
     this.subs.add(
       this.socketService.onChatHistory().subscribe((history: ChatMessage[]) => {
         this.messages = history;
@@ -196,6 +218,7 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.isOpen) this.shouldScrollToBottom = true;
   }
 
+  // Solo se usa como fallback si Firebase no tiene displayName
   confirmUsername(): void {
     const name = this.usernameInput.trim();
     if (!name) return;
