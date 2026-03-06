@@ -117,14 +117,14 @@
                         <ng-template pTemplate="selectedItem" let-selectedOption>
                             <div class="flex align-items-center gap-2" *ngIf="selectedOption">
                                 <img [src]="selectedOption.picture || 'https://ui-avatars.com/api/?name=' + selectedOption.name"
-                                    class="w-1rem h-1rem border-circle" />
+                                    class="avatar-circle avatar-circle-sm" />
                                 <div>{{ selectedOption.name }}</div>
                             </div>
                         </ng-template>
                         <ng-template let-user pTemplate="item">
                             <div class="flex align-items-center gap-2">
                                 <img [src]="user.picture || 'https://ui-avatars.com/api/?name=' + user.name"
-                                    class="w-2rem h-2rem border-circle" />
+                                    class="avatar-circle avatar-circle-md" />
                                 <div>{{ user.name }}</div>
                                 <small class="text-500 ml-auto" *ngIf="user.email">{{ user.email }}</small>
                             </div>
@@ -172,9 +172,9 @@
 
                     <div class=" flex flex-col pt-2 items-center ">
                         <label for="bgColor" class="font-semibold pb-1">Personalizado</label>
-                        <p-colorpicker id="bgColor" type="color" appendTo="body" styleClass="label-colorpicker-tarjeta"
+                        <p-colorpicker id="bgColor" type="color" appendTo="body"
                             [ngModel]="editingCard.style!.backgroundColor" (ngModelChange)="selectCardColor($event)"
-                            class="rounded" />
+                            class="label-colorpicker-tarjeta rounded" />
                     </div>
                 </div>
 
@@ -220,8 +220,9 @@
                             <input pInputText type="text" [(ngModel)]="label.name" placeholder="Nombre"
                                 class="col-span-9 border rounded px-2 py-1">
 
-                            <p-colorpicker type="color" styleClass="label-colorpicker-etiquetas" appendTo="body"
-                                [(ngModel)]="label.color" class="col-span-1 rounded" title="Color personalizado" />
+                            <p-colorpicker type="color" appendTo="body"
+                                [(ngModel)]="label.color" class="label-colorpicker-etiquetas col-span-1 rounded"
+                                title="Color personalizado" />
                             <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1 ml-6 "
                                 (click)="removeLabel(i)"></button>
                         </div>

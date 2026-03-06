@@ -3,7 +3,7 @@ import { LexoRank } from 'lexorank';
 import { saveAuditLog } from './audit.service.js';
 
 export const listCardsByList = async (listId: string, workspaceId: string) => {
-  const cards = await Card.find({ listId, workspaceId })
+  const cards = await Card.find({ listId, workspaceId, archived: false })
     .sort({ order: 1, _id: 1 })
     .populate('assigneeId', 'name picture email')
     .lean();

@@ -75,9 +75,8 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
             });
             await user.save();
 
-            // Crear un tablero personal automáticamente
             await Workspace.create({
-                name: `tablero personal de ${user.name}`,
+                name: 'Tablero Personal',
                 owners: [user._id],
                 members: []
             });

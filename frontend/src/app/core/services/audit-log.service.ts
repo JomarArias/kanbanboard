@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuditLog } from '../models/audit-log.model';
+import { WorkspaceService } from './workspace.service';
 
 @Injectable({
     providedIn: 'root'
@@ -10,9 +11,21 @@ import { AuditLog } from '../models/audit-log.model';
 export class AuditLogService {
     private apiUrl = `${environment.apiUrl}/audit-logs`;
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private workspaceService: WorkspaceService
+    ) { }
 
     getAuditLogs(limit: number = 100, offset: number = 0): Observable<AuditLog[]> {
-        return this.http.get<AuditLog[]>(`${this.apiUrl}?limit=${limit}&offset=${offset}`);
+        let params = new HttpParams()
+            .set('limit', String(limit))
+            .set('offset', String(offset));
+
+        const workspaceId = this.workspaceService.getActiveWorkspaceId();
+        if (workspaceId) {
+            params = params.set('workspaceId', workspaceId);
+        }
+
+        return this.http.get<AuditLog[]>(this.apiUrl, { params });
     }
 }
