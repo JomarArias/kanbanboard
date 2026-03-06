@@ -1,218 +1,136 @@
-CRM Kanban
+# Dapper Kanban
 
-Requisitos: Node.js v20+, MongoDB (Local o Atlas).
+Un sistema Kanban moderno y sincronizado en tiempo real, diseñado con la identidad visual de Dapper.
 
-1. Clonar el proyecto:
-   git clone https://github.com/JomarArias/kanbanboard.git
+## 🚀 Requisitos Previos
 
-2. Configurar el Backend:
+Para ejecutar este proyecto en tu entorno local (ya sea Windows, macOS o Linux), solo necesitas tener instalado:
 
-   cd backend
-   npm install
+- **Docker** y **Docker Compose** (o Podman con Podman Compose).
+- *Opcional pero recomendado:* Git para clonar el repositorio.
 
-   Crear un archivo .env con la variable:
-   MONGO_URI=()
-
-   npm run dev
-
-3. Configurar el Frontend:
-
-   cd frontend
-   npm install
-   ng serve
+No necesitas tener instalados Node.js ni MongoDB localmente, ¡Docker se encarga de todo!
 
 ---
 
-API REST (Backend)
+## 🛠️ Configuración y Ejecución Rápida
 
-Base URL: http://localhost:3000
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/JomarArias/kanbanboard.git
+   cd kanbanboard
+   ```
 
-Listar tarjetas por columna
-GET /lists/:listId/cards
+2. **Levantar el entorno con Docker Compose:**
+   Ejecuta el siguiente comando en la raíz del proyecto para construir y arrancar todos los servicios (Frontend, Backend y Base de Datos):
+   ```bash
+   docker-compose up --build
+   ```
 
-Ejemplo:
-GET /lists/todo/cards
-GET /lists/inProgress/cards
-GET /lists/done/cards
+   *Nota para usuarios de Podman en Linux (SELinux):* El archivo `docker-compose.yml` ya está configurado con las banderas `:z` en los volúmenes para evitar problemas de permisos.
 
-Listar historial de acciones (mas reciente primero)
-GET /audit-logs?limit=100&offset=0
+3. **¡Listo! Accede a la aplicación:**
+   - **Frontend:** [http://localhost:4200](http://localhost:4200)
+   - **Backend API:** [http://localhost:3000](http://localhost:3000)
 
-Notas:
-- `limit` es opcional (default `100`, maximo `500`).
-- `offset` es opcional (default `0`).
-- El historial se registra automaticamente al crear, actualizar, eliminar o mover tarjetas.
+---
 
-Crear tarjeta (LexoRank server-side)
-POST /cards
-Content-Type: application/json
+## 🧪 Usuarios de Prueba (Modo Desarrollo)
 
-Body:
-{
-  "listId": "todo",
-  "title": "Mi tarjeta",
-  "task": "Detalle de la tarea"
-}
+El entorno de Docker incluye un sistema de autenticación de desarrollo que *omite* Firebase para facilitar las pruebas locales. Además, la base de datos se inicializa automáticamente ("Seeding") con datos de prueba.
 
-Actualizar tarjeta
-PUT /cards/:id
-Content-Type: application/json
+Puedes iniciar sesión o registrarte introduciendo **cualquier correo y contraseña** en la pantalla de Login.
 
-Body:
-{
-  "title": "Titulo actualizado",
-  "task": "Detalle actualizado",
-  "expectedVersion": 0
-}
+- Si inicias sesión con un correo nuevo, el sistema te auto-creará un Tablero Personal (Workspace) vacío al instante.
+- Existen dos usuarios pre-creados con datos en la base de datos si deseas utilizarlos:
+  - **Admin:** `admin@test.com` (Contraseña: cualquiera, ej. `123456`)
+  - **User:** `user@test.com` (Contraseña: cualquiera, ej. `123456`)
 
-En casa que 2 usuarios editen una tarjeta al mismo tiempo
-Si `expectedVersion` no coincide con la version actual en base de datos:
-- Respuesta: `409 Conflict`
-- El backend devuelve `currentCard` para sincronizar y reintentar.
+*(Nota: En producción, el sistema requerirá autenticación real validada mediante Firebase).*
 
-Eliminar tarjeta
-DELETE /cards/:id
+---
 
-Mover tarjeta (entre columnas o reordenar)
-PUT /cards/move
-Content-Type: application/json
+## 🛑 Detener el entorno
 
-Body (ejemplo mover al inicio de una columna con tarjetas):
-{
-  "cardId": "ID_DE_LA_TARJETA",
-  "listId": "inProgress",
-  "prevOrder": null,
-  "nextOrder": "ORDER_DE_LA_PRIMERA_TARJETA"
-}
-
-Notas:
-- listId debe ser uno de: todo, inProgress, done (por ahora columnas fijas).
-- prevOrder/nextOrder permiten reordenar dentro de una columna.
-- Si la lista destino no esta vacia, no se permite enviar ambos `prevOrder` y `nextOrder` en `null`.
-- El frontend usara HttpClient para consumir estos endpoints.
-
------------------------------------------------------------------
-
-Socket.IO (Realtime moves)
-
-Servidor socket:
-- URL: `http://localhost:3000`
-- Room unica: `board:default`
-
-Evento cliente -> servidor:
-- `card:move:request`
-
-Payload:
-```json
-{
-  "operationId": "uuid-unico-por-operacion",
-  "cardId": "MONGO_CARD_ID",
-  "targetListId": "todo|inProgress|done",
-  "beforeCardId": null,
-  "afterCardId": "MONGO_NEIGHBOR_ID",
-  "expectedVersion": 0
-}
+Para detener los contenedores y mantener tus datos guardados:
+```bash
+docker-compose stop
 ```
 
-Reglas de payload:
-- `operationId` es obligatorio y se usa para idempotencia básica.
-- `expectedVersion` es obligatorio (`>= 0`).
-- `beforeCardId` y `afterCardId` son opcionales.
-- Si lista destino no esta vacia, no puedes enviar ambos en `null`.
-
-Eventos servidor -> cliente:
-- `card:move:accepted` (solo emisor)
-- `card:moved` (broadcast a `board:default`)
-- `card:move:rejected` (solo emisor)
-
-Ejemplo `card:move:accepted`:
-```json
-{
-  "operationId": "uuid-unico-por-operacion",
-  "cardId": "MONGO_CARD_ID",
-  "listId": "inProgress",
-  "order": "0|i0000q:",
-  "version": 2,
-  "updatedAt": "2026-02-16T22:57:18.750Z"
-}
+Para detener los contenedores y **borrar** la base de datos local (Reset):
+```bash
+docker-compose down -v
 ```
 
-Ejemplo `card:move:rejected` por conflicto:
-```json
-{
-  "operationId": "uuid-unico-por-operacion",
-  "reason": "conflict",
-  "message": "La tarjeta cambio y tu vista esta desactualizada",
-  "currentCard": {
-    "id": "MONGO_CARD_ID",
+---
+
+## 📡 Documentación de la API REST (Backend)
+
+**Base URL:** `http://localhost:3000`
+
+### Tarjetas (Cards)
+
+- **Listar tarjetas por columna:**
+  `GET /api/lists/:listId/cards`
+  *(Ej: `/api/lists/todo/cards`)*
+
+- **Crear tarjeta:**
+  `POST /api/cards`
+  ```json
+  {
+    "listId": "todo",
+    "title": "Mi tarjeta",
+    "task": "Detalle de la tarea"
+  }
+  ```
+
+- **Actualizar tarjeta (Requiere control de concurrencia):**
+  `PUT /api/cards/:id`
+  ```json
+  {
+    "title": "Titulo actualizado",
+    "task": "Detalle actualizado",
+    "expectedVersion": 0,
+    "dueDate": "2026-03-20T00:00:00.000Z",
+    "labels": [
+      { "id": "urgent", "name": "Urgente", "color": "#EF4444" }
+    ],
+    "style": {
+      "backgroundType": "color",
+      "backgroundColor": "#3B82F6"
+    }
+  }
+  ```
+
+- **Mover tarjeta (reordenar o cambiar de columna):**
+  `PUT /api/cards/move`
+  ```json
+  {
+    "cardId": "ID_DE_LA_TARJETA",
     "listId": "inProgress",
-    "order": "0|i0000q:",
-    "version": 2
+    "prevOrder": null,
+    "nextOrder": "ORDER_DE_LA_PRIMERA_TARJETA"
   }
-}
-```
+  ```
 
-Manejo de conflicto recomendado:
-1. Recibir `card:move:rejected` con `reason: "conflict"`.
-2. Actualizar estado local con `currentCard`.
-3. Reintentar move con `expectedVersion` actualizado.
+- **Eliminar tarjeta:**
+  `DELETE /api/cards/:id`
 
-Prueba local sin frontend:
-- Script: `backend/socket-test.js`
-- Comando: `npm run socket:test`
-- Modo estricto (fallar en rejected): `SOCKET_TEST_STRICT=1`
+### Logs (Historial)
 
------------------------------------------------------------------
+- **Listar historial de acciones:**
+  `GET /api/audit-logs?limit=100&offset=0`
 
-Actualización Fase 1 (dueDate, labels, style)
+---
 
-Base URL API (actual):
-- `http://localhost:3000/api`
+## ⚡ Socket.IO (Tiempo Real)
 
-Campos nuevos en tarjeta:
-- `dueDate`: `string | null` (ISO date)
-- `labels`: arreglo de objetos `{ id, name, color }`
-- `style`: objeto `{ backgroundType, backgroundColor }`
+El proyecto utiliza Socket.IO para sincronizar los movimientos y ediciones de las tarjetas entre todos los usuarios conectados instantáneamente.
 
-Reglas importantes:
-- `labels[].name` es obligatorio (no vacío).
-- `labels[].color` debe ser HEX valido (`#RRGGBB`).
-- Si `style.backgroundType = "color"`, `backgroundColor` es obligatorio.
-- Si `style.backgroundType = "default"`, `backgroundColor` debe ser `null`.
-- En `PUT /cards/:id`, `expectedVersion` es obligatorio para control de concurrencia.
+- **URL del Servidor:** `http://localhost:3000`
+- **Room por defecto:** Se agrupa por el ID del *Workspace* (Tablero) activo.
 
-Ejemplo update con campos nuevos:
-`PUT /api/cards/:id`
-```json
-{
-  "title": "Tarjeta actualizada",
-  "task": "Detalle",
-  "expectedVersion": 1,
-  "dueDate": "2026-03-20T00:00:00.000Z",
-  "labels": [
-    { "id": "urgent", "name": "Urgente", "color": "#EF4444" },
-    { "id": "backend", "name": "Backend", "color": "#3B82F6" }
-  ],
-  "style": {
-    "backgroundType": "color",
-    "backgroundColor": "#3B82F6"
-  }
-}
-```
-
-Comportamiento visual en tablero:
-- Franja superior con color de tarjeta (`style.backgroundColor`).
-- Fecha con semaforo:
-- Verde: faltan mas de 2 dias.
-- Amarillo: faltan 2 dias o menos.
-- Rojo: vencida.
-- Labels visibles como barras de color (maximo 4) con tooltip (`label.name`).
-
-Mini checklist QA (Fase 1):
-1. Crear tarjeta normal y editar solo `title/task` (debe guardar sin pedir otros campos).
-2. Editar solo `dueDate` (debe guardar y mostrar badge de fecha).
-3. Editar `style` con color predefinido y personalizado (debe cambiar franja).
-4. Agregar labels con nombre+color (deben verse en tarjeta).
-5. Intentar guardar label sin nombre (debe bloquearse en frontend).
-6. Probar conflicto de version (`expectedVersion` viejo) y validar `409`.
-7. Probar edicion de tarjeta antigua sin `version` (debe actualizar con `expectedVersion: 0`).
+**Flujo en Tiempo Real (Ejemplo Move):**
+1. Cliente emite evento `card:move:request` con payload que incluye el `expectedVersion`.
+2. Servidor valida. Si es exitoso, emite `card:move:accepted` al originador y `card:moved` (broadcast) al resto del Workspace.
+3. Si hay conflicto de versiones (otro usuario movió la tarjeta primero), el servidor emite `card:move:rejected` con `reason: "conflict"` y devuelve la tarjeta actualizada para que el cliente reintente sincronizarse.

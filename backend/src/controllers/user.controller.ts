@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User.js';
+import { Workspace } from '../models/Workspace.js';
 import { AuditLog } from '../models/audit-log.js';
 import { sendError } from '../utils/http-response.js';
 
@@ -65,6 +66,7 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
             }
         }
 
+        let isNewUser = false;
         if (!user) {
             user = new User({
                 firebaseUid,
@@ -73,6 +75,7 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
                 picture: picture || '',
             });
             await user.save();
+            isNewUser = true;
         } else {
             // Block deactivated accounts before granting access
             if (user.isDeleted) {
@@ -83,6 +86,16 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
             user.name = name || user.name;
             user.picture = picture || user.picture;
             await user.save();
+        }
+
+        if (isNewUser) {
+            // Auto-create personal board (Workspace) for the new user
+            const personalBoardName = `tablero personal de ${user.name}`;
+            await Workspace.create({
+                name: personalBoardName,
+                owners: [user._id],
+                members: []
+            });
         }
 
         res.status(200).json({ message: 'User synchronized successfully', user });

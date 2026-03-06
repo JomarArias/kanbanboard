@@ -18,6 +18,17 @@ export const verifyFirebaseToken = async (
     }
 
     const idToken = authHeader.split('Bearer ')[1];
+
+    if (process.env.NODE_ENV === 'development') {
+        if (idToken.startsWith('DEV_TOKEN_')) {
+            const email = idToken.replace('DEV_TOKEN_', '');
+            (req as any).firebaseUid = `dev_uid_${email}`;
+            (req as any).firebaseEmail = email;
+            (req as any).firebaseName = email === 'admin@test.com' ? 'Dev Admin' : (email === 'user@test.com' ? 'Test User' : email.split('@')[0]);
+            return next();
+        }
+    }
+
     try {
         const decodedToken = await firebaseAuth.verifyIdToken(idToken);
         (req as any).firebaseUid = decodedToken.uid;
