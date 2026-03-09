@@ -3,10 +3,11 @@
 <div class="profile-page">
   <!-- Back button -->
   <div class="boton-container">
-      <a routerLink="/" class="back-link ">
+      <button pButton type="button" label="Volver al Tablero" icon="pi pi-th-large" routerLink="/"></button>
+      <!-- <a routerLink="/" class="back-link ">
           <i class="pi pi-arrow-left"></i>
           Volver al Tablero
-      </a>
+      </a> -->
   </div>
 
     <div class="profile-container">
@@ -68,9 +69,11 @@
                     <label class="field-label">Subir foto de perfil</label>
                     <input #profileImageInput type="file" accept="image/jpeg,image/png,image/webp"
                         (change)="onProfileImageFileSelected($event)" class="hidden-file-input" />
-                    <p-button label="Seleccionar imagen" icon="pi pi-upload" severity="success" styleClass="w-full"
-                        (onClick)="profileImageInput.click()">
+
+                    <p-button label="Seleccionar imagen" icon="pi pi-upload"  styleClass="w-full"
+                      (onClick)="profileImageInput.click()">
                     </p-button>
+
                     <span class="field-hint">Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: 5MB.</span>
                     <small class="uploading-text" *ngIf="isUploadingAvatar">Subiendo imagen...</small>
                 </div>
