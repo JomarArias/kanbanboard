@@ -94,6 +94,11 @@ export class NavbarComponent implements OnInit {
         return workspace?.isOwner === true;
     }
 
+    get hasInviteRights(): boolean {
+        const workspace = this.activeWorkspace;
+        return workspace?.isOwner === true || workspace?.myRole === 'admin';
+    }
+
     onWorkspaceChange(event: any) {
         this.workspaceService.setActiveWorkspace(event.value);
     }

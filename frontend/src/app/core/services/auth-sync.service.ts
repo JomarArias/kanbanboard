@@ -1,22 +1,22 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, authState } from '@angular/fire/auth';
 import { Subscription } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import { WorkspaceService } from './workspace.service';
+import { FirebaseAuthService } from './firebase-auth.service';
 
 /**
- * Listens to Firebase auth state and triggers workspace loading once authenticated.
+ * Listens to auth state and triggers workspace loading once authenticated.
  * Sync to backend is now done inside FirebaseAuthService.loginWithEmail/Google/register.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthSyncService {
-    private auth = inject(Auth);
+    private firebaseAuthService = inject(FirebaseAuthService);
     private workspaceService = inject(WorkspaceService);
     private sub?: Subscription;
     private synced = false;
 
     initSyncListener(): void {
-        this.sub = authState(this.auth).pipe(
+        this.sub = this.firebaseAuthService.currentUser$.pipe(
             filter(user => !!user),
             take(1)
         ).subscribe(() => {

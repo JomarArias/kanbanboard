@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node build/src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "socket:test": "node socket-test.js"
+    "socket:test": "node socket-test.js",
+    "seed": "tsx src/scripts/seed.ts"
   },
   "keywords": [],
   "author": "",

@@ -21,8 +21,9 @@
                     <span
                         class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-white rounded-full"></span>
                 </a>
-                <p-button *ngIf="isOwner" icon="pi pi-user-plus" severity="secondary" [outlined]="true" size="small"
-                    pTooltip="Invitar a un Miembro" tooltipPosition="bottom" (onClick)="openInviteDialog()">
+                <p-button *ngIf="hasInviteRights" icon="pi pi-user-plus" severity="secondary" [outlined]="true"
+                    size="small" pTooltip="Invitar a un Miembro" tooltipPosition="bottom"
+                    (onClick)="openInviteDialog()">
                 </p-button>
                 <a *ngIf="isAdmin" routerLink="/admin" class="p-button p-button-sm p-button-outlined p-button-secondary"
                     pTooltip="Panel de Administración" tooltipPosition="bottom">

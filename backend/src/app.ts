@@ -40,9 +40,9 @@ apiRouter.use(workspaceRoutes);
 
 // Card & audit routes — require Firebase token for all
 apiRouter.use(verifyFirebaseToken, requireUser);
+apiRouter.use(uploadRoutes);
 apiRouter.use(cardRoutes);
 apiRouter.use(auditRoutes);
-apiRouter.use(uploadRoutes);
 
 app.use('/api', apiRouter);
 

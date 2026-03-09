@@ -1,0 +1,19 @@
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+# Instalar Angular CLI globalmente y dependencias para compilar node-gyp
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/* && npm install -g @angular/cli
+
+# Copiamos package.json y package-lock.json
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+COPY . .
+
+# Exponemos el puerto de Angular
+EXPOSE 4200
+
+# Host 0.0.0.0 es necesario en Docker para que se exponga hacia la maquina anfitriona
+# Poll 2000 es util por si hay problemas de deteccion de archivos en WSL/Windows
+CMD ["ng", "serve", "--host", "0.0.0.0", "--poll", "2000"]
