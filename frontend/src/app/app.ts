@@ -21,8 +21,8 @@ export class App implements OnInit {
   private inactivityService = inject(InactivityService);
   protected router = inject(Router);
 
-  get isLoginPage(): boolean {
-    return this.router.url.startsWith('/login');
+  get isMinimalLayoutPage(): boolean {
+    return this.router.url.startsWith('/login') || this.router.url.startsWith('/404');
   }
 
   ngOnInit() {
