@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User.js';
+import { Workspace } from '../models/Workspace.js';
 import { AuditLog } from '../models/audit-log.js';
 import { sendError } from '../utils/http-response.js';
 
@@ -73,6 +74,14 @@ export const syncUser = async (req: Request, res: Response): Promise<void> => {
                 picture: picture || '',
             });
             await user.save();
+
+            // Create personal board automatically on registration
+            const personalWorkspace = new Workspace({
+                name: `Tablero personal de ${user.name}`,
+                owners: [user._id],
+                members: [{ userId: user._id, role: 'admin' }]
+            });
+            await personalWorkspace.save();
         } else {
             // Block deactivated accounts before granting access
             if (user.isDeleted) {
