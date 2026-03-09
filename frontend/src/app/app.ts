@@ -5,6 +5,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ToastModule } from 'primeng/toast';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { AuthSyncService } from './core/services/auth-sync.service';
+import { FirebaseAuthService } from './core/services/firebase-auth.service';
 import { InactivityService } from './core/services/inactivity.service';
 import { ChatPanelComponent } from './features/kanban/components/chat-panel/chat-panel.component';
 
@@ -20,6 +21,7 @@ export class App implements OnInit {
   private authSync = inject(AuthSyncService);
   private inactivityService = inject(InactivityService);
   protected router = inject(Router);
+  public auth = inject(FirebaseAuthService);
 
   get isMinimalLayoutPage(): boolean {
     return this.router.url.startsWith('/login') || this.router.url.startsWith('/404');

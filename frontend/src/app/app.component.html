@@ -1,5 +1,5 @@
 <main class="min-h-screen h-screen overflow-hidden bg-surface-50 dark:bg-surface-900 flex flex-col">
-  <app-navbar *ngIf="!isMinimalLayoutPage"></app-navbar>
+  <app-navbar *ngIf="!isMinimalLayoutPage && (auth.currentUser$ | async)"></app-navbar>
   <p-toast></p-toast>
   <p-confirmPopup></p-confirmPopup>
 
@@ -9,5 +9,5 @@
   </div>
 
   <!-- Chat lateral fijo -->
-  <app-chat-panel *ngIf="!isMinimalLayoutPage"></app-chat-panel>
+  <app-chat-panel *ngIf="!isMinimalLayoutPage && (auth.currentUser$ | async)"></app-chat-panel>
 </main>
