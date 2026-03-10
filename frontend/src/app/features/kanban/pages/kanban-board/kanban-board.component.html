@@ -84,24 +84,25 @@
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
             [cards]="filterCards(boardData.todo, 'todo')" [editingUsers]="editingUsers" [members]="workspaceMembers"
-            [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
+            [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('todo')"
+            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
             [labelsExpandedGlobal]="labelsExpandedGlobal" (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
             [cards]="filterCards(boardData.inProgress, 'inProgress')" [editingUsers]="editingUsers"
-            [members]="workspaceMembers" [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('inProgress')"
-            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
-            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
-            [labelsExpandedGlobal]="labelsExpandedGlobal" (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
+            [members]="workspaceMembers" [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)"
+            (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
+            (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
+            (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
+            (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
         <div class="relative min-w-[85vw] md:min-w-[350px] snap-center flex flex-col h-full">
             <app-kanban-column title="Terminado" listId="done" class="w-full h-full"
                 [cards]="filterCards(boardData.done, 'done')" [editingUsers]="editingUsers" [members]="workspaceMembers"
-                [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('done')"
+                [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('done')"
                 (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
                 (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
                 (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"

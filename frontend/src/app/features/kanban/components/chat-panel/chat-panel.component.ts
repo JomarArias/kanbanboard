@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { SocketService, ChatMessage } from '../../../../core/services/socket.service';
 import { FirebaseAuthService } from '../../../../core/services/firebase-auth.service';
+import { WorkspaceService } from '../../../../core/services/workspace.service';
 import { Subscription, filter, take } from 'rxjs';
 
 @Component({
@@ -159,13 +160,33 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   private subs: Subscription = new Subscription();
   private shouldScrollToBottom = false;
+  private currentWorkspaceId: string = '';
 
   constructor(
     private socketService: SocketService,
-    private authService: FirebaseAuthService
-  ) {}
+    private authService: FirebaseAuthService,
+    private workspaceService: WorkspaceService
+  ) { }
 
   ngOnInit(): void {
+    // Escuchar el cambio de workspace
+    this.subs.add(
+      this.workspaceService.activeWorkspaceId$.subscribe(workspaceId => {
+        if (workspaceId) {
+          this.currentWorkspaceId = workspaceId;
+          this.messages = [];
+          this.socketService.getChatHistory(workspaceId);
+
+          if (this.username) {
+            this.socketService.joinChat(this.username, workspaceId);
+          }
+        } else {
+          this.currentWorkspaceId = '';
+          this.messages = [];
+        }
+      })
+    );
+
     // Esperar a que Firebase restaure la sesión antes de leer el usuario
     this.subs.add(
       this.authService.currentUser$.pipe(
@@ -177,7 +198,9 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
         if (name) {
           this.username = name;
           this.showUsernameDialog = false;
-          this.socketService.joinChat(name);
+          if (this.currentWorkspaceId) {
+            this.socketService.joinChat(name, this.currentWorkspaceId);
+          }
         } else {
           this.showUsernameDialog = true;
         }
@@ -224,13 +247,15 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!name) return;
     this.username = name;
     this.showUsernameDialog = false;
-    this.socketService.joinChat(name);
+    if (this.currentWorkspaceId) {
+      this.socketService.joinChat(name, this.currentWorkspaceId);
+    }
   }
 
   sendMessage(): void {
     const text = this.newMessage.trim();
-    if (!text || !this.username) return;
-    this.socketService.sendMessage(this.username, text);
+    if (!text || !this.username || !this.currentWorkspaceId) return;
+    this.socketService.sendMessage(this.username, text, this.currentWorkspaceId);
     this.newMessage = '';
   }
 
@@ -242,6 +267,6 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
     try {
       const el = this.messagesContainer.nativeElement;
       el.scrollTop = el.scrollHeight;
-    } catch {}
+    } catch { }
   }
 }

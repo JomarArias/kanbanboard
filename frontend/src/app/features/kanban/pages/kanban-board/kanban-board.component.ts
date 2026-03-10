@@ -160,6 +160,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   searchSubject = new Subject<string>();
   isSearching = false;
+  isLoadingCards = false;
   searchResults: Kanban[] | null = null;
   searchTerm = '';
   destroy$ = new Subject<void>();
@@ -343,10 +344,22 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   loadCards() {
-    ['todo', 'inProgress', 'done'].forEach(listId => {
+    this.isLoadingCards = true;
+    let completedRequests = 0;
+    const columns = ['todo', 'inProgress', 'done'];
+
+    columns.forEach(listId => {
       this.kanbanFacade.getCards(listId).subscribe({
-        next: (cards) => { this.boardData[listId] = cards; },
-        error: (err) => console.error(err)
+        next: (cards) => {
+          this.boardData[listId] = cards;
+        },
+        error: (err) => console.error(err),
+        complete: () => {
+          completedRequests++;
+          if (completedRequests === columns.length) {
+            this.isLoadingCards = false;
+          }
+        }
       });
     });
   }

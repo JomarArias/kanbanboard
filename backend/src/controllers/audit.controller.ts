@@ -15,10 +15,17 @@ export const listAuditLogs = async (req: Request, res: Response) => {
       return sendError(res, 400, "offset debe ser un entero mayor o igual a 0");
     }
 
-    const logs = await AuditLog.find()
+    const filter: any = {};
+    const workspaceId = req.query.workspaceId as string;
+    if (workspaceId) {
+      filter.workspaceId = workspaceId;
+    }
+
+    const logs = await AuditLog.find(filter)
       .sort({ timestamp: -1, _id: -1 })
       .skip(offset)
-      .limit(limit);
+      .limit(limit)
+      .populate('performedBy', 'name email picture'); // Populate user data if needed
 
     return res.json(logs);
   } catch (err) {

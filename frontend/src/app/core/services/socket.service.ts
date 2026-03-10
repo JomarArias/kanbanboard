@@ -55,12 +55,16 @@ export class SocketService {
   joinBoard(boardId: string = 'default') { }
 
   // ── Chat events ────────────────────────────────────────────────────────────
-  joinChat(username: string): void {
-    this.emit('chat:join', { username });
+  joinChat(username: string, workspaceId: string): void {
+    this.emit('chat:join', { username, workspaceId });
   }
 
-  sendMessage(username: string, text: string): void {
-    this.emit('chat:message', { username, text });
+  sendMessage(username: string, text: string, workspaceId: string): void {
+    this.emit('chat:message', { username, text, workspaceId });
+  }
+
+  getChatHistory(workspaceId: string): void {
+    this.emit('chat:get_history', { workspaceId });
   }
 
   onChatMessage(): Observable<ChatMessage> {

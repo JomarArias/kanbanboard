@@ -23,6 +23,7 @@ export class KanbanColumnComponent {
   @Output() toggleLabelsExpandedGlobal = new EventEmitter<void>();
   @Input() editingUsers: { [key: string]: string } = {};
   @Input() members: any[] = [];
+  @Input() isLoading: boolean = false;
   @Input() isViewer: boolean = false;
   @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
   @Output() addCard = new EventEmitter<void>();
