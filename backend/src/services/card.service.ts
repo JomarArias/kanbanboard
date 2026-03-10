@@ -44,7 +44,7 @@ export const archiveCard = async (id: string, workspaceId: string, performedById
   const card = await Card.findOneAndUpdate(
     { _id: id, workspaceId },
     { $set: { archived: true }, $inc: { version: 1 } },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!card) {
     const error: any = new Error("Tarjeta no encontrada");
@@ -66,7 +66,7 @@ export const restoreCard = async (id: string, workspaceId: string, performedById
   const card = await Card.findOneAndUpdate(
     { _id: id, workspaceId },
     { $set: { archived: false }, $inc: { version: 1 } },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!card) {
     const error: any = new Error("Tarjeta no encontrada");
@@ -117,35 +117,35 @@ type CardLabelUpdate = {
 }
 
 const validateLabels = (labels: unknown) => {
-  if (!Array.isArray(labels)){
-    const err: any = new Error ("labels debe ser un arreglo")
+  if (!Array.isArray(labels)) {
+    const err: any = new Error("labels debe ser un arreglo")
     err.status = 400
     throw err;
   }
 
-  for (const label of labels){
-    if (!label || typeof label !== "object"){
-      const err: any = new Error ("Cada label debe ser un objeto");
+  for (const label of labels) {
+    if (!label || typeof label !== "object") {
+      const err: any = new Error("Cada label debe ser un objeto");
       err.status = 400;
       throw err;
     }
 
-    const {id, name, color} = label as CardLabelUpdate;
+    const { id, name, color } = label as CardLabelUpdate;
 
-    if (!id || typeof id !== "string"){
-      const err: any = new Error ("Cada label requiere un id valido");
+    if (!id || typeof id !== "string") {
+      const err: any = new Error("Cada label requiere un id valido");
       err.status = 400;
       throw err;
     }
 
-    if (!name || typeof name !== "string" || !name.trim()){
-      const err: any = new Error  ("Cada label requiere un name valido")
+    if (!name || typeof name !== "string" || !name.trim()) {
+      const err: any = new Error("Cada label requiere un name valido")
       err.status = 400;
       throw err;
     }
 
-    if (!color || typeof color !== "string" || !HEX_COLOR_REGEX.test(color)){
-      const err: any = new Error ("Cada label requiere un color HEX valido (#RRGGBB)");
+    if (!color || typeof color !== "string" || !HEX_COLOR_REGEX.test(color)) {
+      const err: any = new Error("Cada label requiere un color HEX valido (#RRGGBB)");
       err.status = 400;
       throw err;
     }
@@ -162,68 +162,68 @@ const isValidHttpUrl = (value: string) => {
   }
 };
 
-  const validateStyle = (style: unknown) => {
-    if (!style || typeof style !== "object"){
-      const err: any = new Error ("style invalido");
+const validateStyle = (style: unknown) => {
+  if (!style || typeof style !== "object") {
+    const err: any = new Error("style invalido");
+    err.status = 400;
+    throw err;
+  }
+
+  const { backgroundType, backgroundColor, backgroundImageUrl } = style as CardStyleUpdate
+
+  if (backgroundType !== undefined && !["default", "color", "image"].includes(backgroundType)) {
+    const err: any = new Error("backgroundType invalido");
+    err.status = 400;
+    throw err;
+  }
+
+  if (backgroundType === "color") {
+    if (!backgroundColor || typeof backgroundColor !== "string" || !HEX_COLOR_REGEX.test(backgroundColor)) {
+      const err: any = new Error("backgroundColor es requerido y debe ser HEX valido cuando backgroundType es color");
       err.status = 400;
       throw err;
-      }
+    }
+    if (backgroundImageUrl !== null && backgroundImageUrl !== undefined) {
+      const err: any = new Error("backgroundImageUrl debe ser null cuando backgroundType es color");
+      err.status = 400;
+      throw err;
+    }
+  }
 
-      const { backgroundType, backgroundColor, backgroundImageUrl } = style as CardStyleUpdate
+  if (backgroundType === "image") {
+    if (!backgroundImageUrl || typeof backgroundImageUrl !== "string" || !isValidHttpUrl(backgroundImageUrl)) {
+      const err: any = new Error("backgroundImageUrl es requerido y debe ser una URL http/https valida cuando backgroundType es image");
+      err.status = 400;
+      throw err;
+    }
+    if (backgroundColor !== null && backgroundColor !== undefined) {
+      const err: any = new Error("backgroundColor debe ser null cuando backgroundType es image");
+      err.status = 400;
+      throw err;
+    }
+  }
 
-      if (backgroundType !== undefined && !["default","color","image"].includes(backgroundType)){
-        const err: any = new Error ("backgroundType invalido");
-        err.status = 400;
-        throw err;
-      }
-
-      if (backgroundType === "color"){
-        if (!backgroundColor || typeof backgroundColor !== "string" || !HEX_COLOR_REGEX.test(backgroundColor)){
-          const err: any = new Error ("backgroundColor es requerido y debe ser HEX valido cuando backgroundType es color");
-          err.status = 400;
-          throw err;
-        }
-        if (backgroundImageUrl !== null && backgroundImageUrl !== undefined) {
-          const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es color");
-          err.status = 400;
-          throw err;
-        }
-      }
-
-      if (backgroundType === "image"){
-        if (!backgroundImageUrl || typeof backgroundImageUrl !== "string" || !isValidHttpUrl(backgroundImageUrl)){
-          const err: any = new Error ("backgroundImageUrl es requerido y debe ser una URL http/https valida cuando backgroundType es image");
-          err.status = 400;
-          throw err;
-        }
-        if (backgroundColor !== null && backgroundColor !== undefined){
-          const err: any = new Error ("backgroundColor debe ser null cuando backgroundType es image");
-          err.status = 400;
-          throw err;
-        }
-      }
-
-      if (backgroundType === "default" && backgroundColor !== null && backgroundColor !== undefined){
-        const err: any = new Error ("backgroundColor debe ser null cuando backgroundType es default");
-        err.status = 400;
-        throw err;
-      }
-      if (backgroundType === "default" && backgroundImageUrl !== null && backgroundImageUrl !== undefined){
-        const err: any = new Error ("backgroundImageUrl debe ser null cuando backgroundType es default");
-        err.status = 400;
-        throw err;
-      }
-      if (backgroundType === undefined && backgroundColor !== undefined){
-        const err: any = new Error("Si envías backgroundColor también debes enviar backgroundType");
-        err.status = 400;
-        throw err;
-      }
-      if (backgroundType === undefined && backgroundImageUrl !== undefined){
-        const err: any = new Error("Si envias backgroundImageUrl tambien debes enviar backgroundType");
-        err.status = 400;
-        throw err;
-      }
-    };
+  if (backgroundType === "default" && backgroundColor !== null && backgroundColor !== undefined) {
+    const err: any = new Error("backgroundColor debe ser null cuando backgroundType es default");
+    err.status = 400;
+    throw err;
+  }
+  if (backgroundType === "default" && backgroundImageUrl !== null && backgroundImageUrl !== undefined) {
+    const err: any = new Error("backgroundImageUrl debe ser null cuando backgroundType es default");
+    err.status = 400;
+    throw err;
+  }
+  if (backgroundType === undefined && backgroundColor !== undefined) {
+    const err: any = new Error("Si envías backgroundColor también debes enviar backgroundType");
+    err.status = 400;
+    throw err;
+  }
+  if (backgroundType === undefined && backgroundImageUrl !== undefined) {
+    const err: any = new Error("Si envias backgroundImageUrl tambien debes enviar backgroundType");
+    err.status = 400;
+    throw err;
+  }
+};
 
 
 
@@ -232,11 +232,11 @@ const isValidHttpUrl = (value: string) => {
 export const updateCard = async (
   id: string,
   expectedVersion: number,
-  updateData:{
+  updateData: {
     title?: string;
     task?: string;
     dueDate?: Date | string | null;
-    labels?: Array <{ id: string; name: string; color: string}>;
+    labels?: Array<{ id: string; name: string; color: string }>;
     style?: {
       backgroundType?: "default" | "color" | "image";
       backgroundColor?: string | null;
@@ -247,8 +247,8 @@ export const updateCard = async (
   workspaceId: string,
   performedById?: string
 ) => {
-  if(Object.keys(updateData).length === 0){
-    const err: any =new Error ("updateData no debe estar vacio")
+  if (Object.keys(updateData).length === 0) {
+    const err: any = new Error("updateData no debe estar vacio")
     err.status = 400;
     throw err;
   }
@@ -265,34 +265,34 @@ export const updateCard = async (
     validateStyle(updateData.style);
   }
 
-if (updateData.dueDate !== undefined && updateData.dueDate !== null) {
-  const raw = String(updateData.dueDate).slice(0, 10); // YYYY-MM-DD
-  const [y, m, d] = raw.split('-').map(Number);
+  if (updateData.dueDate !== undefined && updateData.dueDate !== null) {
+    const raw = String(updateData.dueDate).slice(0, 10); // YYYY-MM-DD
+    const [y, m, d] = raw.split('-').map(Number);
 
-  if (!y || !m || !d) {
-    const err: any = new Error("dueDate invalida");
-    err.status = 400;
-    throw err;
+    if (!y || !m || !d) {
+      const err: any = new Error("dueDate invalida");
+      err.status = 400;
+      throw err;
+    }
+
+    const normalizedUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)); // 12:00 UTC
+
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+      12, 0, 0
+    ));
+
+    if (normalizedUtc < todayUtc) {
+      const err: any = new Error("No se permite una fecha de vencimiento pasada");
+      err.status = 400;
+      throw err;
+    }
+
+    updateData.dueDate = normalizedUtc;
   }
-
-  const normalizedUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)); // 12:00 UTC
-
-  const today = new Date();
-  const todayUtc = new Date(Date.UTC(
-    today.getUTCFullYear(),
-    today.getUTCMonth(),
-    today.getUTCDate(),
-    12, 0, 0
-  ));
-
-  if (normalizedUtc < todayUtc) {
-    const err: any = new Error("No se permite una fecha de vencimiento pasada");
-    err.status = 400;
-    throw err;
-  }
-
-  updateData.dueDate = normalizedUtc;
-}
 
 
   const versionQuery =
@@ -306,7 +306,7 @@ if (updateData.dueDate !== undefined && updateData.dueDate !== null) {
       $set: updateData,
       $inc: { version: 1 }
     },
-    { new: true }
+    { returnDocument: 'after' }
   ).populate('assigneeId', 'name picture email');
 
   if (!card) {
@@ -391,7 +391,15 @@ export const moveCard = async (
   } else if (!nextOrder) {
     order = LexoRank.parse(prevOrder!).genNext().toString();
   } else {
-    order = LexoRank.parse(prevOrder!).between(LexoRank.parse(nextOrder!)).toString();
+    if (prevOrder === nextOrder) {
+      order = LexoRank.parse(prevOrder!).genNext().toString();
+    } else {
+      try {
+        order = LexoRank.parse(prevOrder!).between(LexoRank.parse(nextOrder!)).toString();
+      } catch (e) {
+        order = LexoRank.parse(prevOrder!).genNext().toString();
+      }
+    }
   }
 
   const card = await Card.findOneAndUpdate(
@@ -400,7 +408,7 @@ export const moveCard = async (
       $set: { listId, order },
       $inc: { version: 1 }
     },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!card) {
@@ -486,7 +494,15 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
   } else {
     const beforeCard = await getNeighborCard(beforeCardId as string, targetListId);
     const afterCard = await getNeighborCard(afterCardId as string, targetListId);
-    order = LexoRank.parse(beforeCard.order).between(LexoRank.parse(afterCard.order)).toString();
+    if (beforeCard.order === afterCard.order) {
+      order = LexoRank.parse(beforeCard.order).genNext().toString();
+    } else {
+      try {
+        order = LexoRank.parse(beforeCard.order).between(LexoRank.parse(afterCard.order)).toString();
+      } catch (e) {
+        order = LexoRank.parse(beforeCard.order).genNext().toString();
+      }
+    }
   }
 
 
@@ -498,7 +514,7 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
   const updatedCard = await Card.findOneAndUpdate(
     { _id: cardId, version: expectedVersion },
     { $set: { listId: targetListId, order }, $inc: { version: 1 } },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!updatedCard) {
@@ -509,7 +525,7 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
       const retryCard = await Card.findByIdAndUpdate(
         cardId,
         { $set: { listId: targetListId, order }, $inc: { version: 1 } },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (!retryCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
