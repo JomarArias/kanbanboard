@@ -1,15 +1,17 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
 import { Kanban } from '../../../../core/models/kanban.model';
 import { KanbanFacadeService } from '../../services/kanban-facade.service';
+import { WorkspaceService } from '../../../../core/services/workspace.service';
 import { MessageService } from 'primeng/api';
+import { Subscription } from 'rxjs';
 
 const LIST_LABELS: Record<string, string> = {
-  todo:       'Por Hacer',
+  todo: 'Por Hacer',
   inProgress: 'En Proceso',
-  done:       'Terminado'
+  done: 'Terminado'
 };
 
 @Component({
@@ -73,19 +75,40 @@ const LIST_LABELS: Record<string, string> = {
     </p-drawer>
   `
 })
-export class ArchivedPanelComponent implements OnChanges {
-  @Input()  visible: boolean = false;
+export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
+  @Input() visible: boolean = false;
   @Output() visibleChange = new EventEmitter<boolean>();
-  @Output() cardRestored  = new EventEmitter<Kanban>();
-  @Output() cardDeleted   = new EventEmitter<string>();
+  @Output() cardRestored = new EventEmitter<Kanban>();
+  @Output() cardDeleted = new EventEmitter<string>();
 
   cards: Kanban[] = [];
   loadingId: string | null = null;
+  private workspaceSub: Subscription | null = null;
 
   constructor(
     private facade: KanbanFacadeService,
+    private workspaceService: WorkspaceService,
     private messageService: MessageService
-  ) {}
+  ) { }
+
+  ngOnInit() {
+    this.workspaceSub = this.workspaceService.activeWorkspaceId$.subscribe((ws: string | null) => {
+      if (ws) {
+        // Option 1: Always load on switch
+        // this.loadArchived();
+        // Option 2: Clear old cards, let visible=true handle the load, 
+        // OR load immediately so they are ready
+        this.cards = [];
+        if (this.visible) {
+          this.loadArchived();
+        }
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.workspaceSub?.unsubscribe();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible']?.currentValue === true) {
