@@ -32,9 +32,10 @@
                 </a>
             </div>
 
-            <p-button label="Cerrar Sesión" icon="pi pi-sign-out" [text]="true" severity="danger" size="small"
-                (onClick)="logout()">
-            </p-button>
+            <button pButton type="button" class="p-button-text p-button-danger p-button-sm border " (click)="logout()">
+                <i class="pi pi-sign-out"></i>
+                <span class="hidden md:inline ml-2">Cerrar Sesión</span>
+            </button>
         </ng-container>
 
         <ng-template #loggedOut>

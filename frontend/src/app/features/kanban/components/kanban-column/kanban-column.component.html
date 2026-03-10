@@ -8,7 +8,8 @@
         <div cdkDropList [id]="listId" [cdkDropListData]="cards" (cdkDropListDropped)="onDrop($event)"
             class="column-scroll h-full min-h-[100px] pr-1">
             @for (card of cards; track card._id) {
-            <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id] || isViewer">
+            <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id] || isViewer"
+                (cdkDragMoved)="onDragMoved($event)">
                 <app-kanban-card [card]="card" [editingUser]="editingUsers[card._id]" [members]="members"
                     [isViewer]="isViewer" [labelsExpandedGlobal]="labelsExpandedGlobal"
                     (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal.emit()" (edit)="onEditCard($event)"
