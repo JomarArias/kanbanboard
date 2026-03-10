@@ -19,7 +19,10 @@
                     class="bg-gray-200 border-2 border-dashed border-gray-400 min-h-[80px] rounded mb-3"></div>
             </div>
             } @empty {
-            <div
+            <div *ngIf="isLoading" class="h-full min-h-[100px] flex items-center justify-center text-gray-400 text-sm">
+                <i class="pi pi-spinner pi-spin text-2xl"></i>
+            </div>
+            <div *ngIf="!isLoading"
                 class="h-full min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-sm italic">
                 Suelte una tarjeta aquí
             </div>
