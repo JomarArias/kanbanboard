@@ -4,9 +4,9 @@
             <div *ngFor="let member of workspaceMembers.slice(0,5)" class="relative" [pTooltip]="member.name"
                 tooltipPosition="bottom">
                 <img *ngIf="member.picture" [src]="member.picture"
-                    class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm" />
+                    class="w-8 h-8 min-w-8 shrink-0 rounded-full object-cover border-2 border-white shadow-sm" />
                 <div *ngIf="!member.picture"
-                    class="w-8 h-8 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center font-bold border-2 border-white shadow-sm">
+                    class="w-8 h-8 min-w-8 shrink-0 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center font-bold border-2 border-white shadow-sm">
                     {{ member.name?.charAt(0)?.toUpperCase() }}
                 </div>
                 <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white"
@@ -16,15 +16,15 @@
             <span *ngIf="workspaceMembers.length > 5" class="text-xs text-gray-500">
                 +{{ workspaceMembers.length - 5 }}
             </span>
-            <div
-                class="flex items-center gap-1 ml-2 px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold">
+            <div class="flex items-center gap-1 ml-2 px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold">
                 <i class="pi pi-circle-fill text-xs animate-pulse"></i>
-                {{ onlineUsersArray.length }} Online
+                {{ onlineUsersArray.length }}
+                <span class="hidden md:inline">Online</span>
             </div>
         </div>
 
         <!-- ?=================================================================== -->
-        <div class="w-full max-w-md translate-x-1/2 px-5">
+        <div class="w-full max-w-[calc(100%-4rem)] sm:max-w-md px-5 md:translate-x-1/2">
             <span class="relative w-full block">
                 <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
                     [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
@@ -70,7 +70,7 @@
 
     <!-- Speed Dial con Historial + Archivados -->
     <p-speedDial [model]="items" direction="up"
-        [style]="{ position: 'fixed', bottom: '2rem', right: '5rem' }"></p-speedDial>
+        [style]="{ position: 'fixed', bottom: '2rem', right: '4rem', zIndex: 60 }"></p-speedDial>
 
     <!-- Drawer de archivados -->
     <app-archived-panel [(visible)]="displayArchivedPanel" (cardRestored)="onCardRestored($event)"
@@ -79,7 +79,7 @@
 
     <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
 
-    <div class="flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4 snap-x snap-mandatory scroll-smooth"
+    <div class="kanban-board-scroll flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4 snap-x snap-mandatory scroll-smooth"
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"

@@ -29,9 +29,10 @@ $header-height: 60px;
     }
 
     .actions {
+        --actions-gap: 1rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: var(--actions-gap);
 
         .user-profile {
             display: flex;
@@ -40,12 +41,30 @@ $header-height: 60px;
             font-weight: 500;
             color: var(--text-color);
 
+            a {
+                flex: 0 0 auto;
+            }
+
             img.avatar {
                 width: 32px;
                 height: 32px;
+                min-width: 32px;
+                min-height: 32px;
                 border-radius: 50%;
                 border: 2px solid var(--primary-color);
                 object-fit: cover;
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .app-header {
+        .actions {
+            --actions-gap: 0.5rem;
+
+            .user-profile {
+                gap: var(--actions-gap);
             }
         }
     }
