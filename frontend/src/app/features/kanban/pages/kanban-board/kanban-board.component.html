@@ -79,7 +79,7 @@
 
     <!-- Speed Dial con Historial + Archivados -->
     <p-speedDial [model]="items" direction="up"
-        [style]="{ position: 'fixed', bottom: '2rem', right: '4rem', zIndex: 60 }"></p-speedDial>
+        [style]="{ position: 'fixed', bottom: '2rem', right: '4rem', zIndex: 50 }"></p-speedDial>
 
     <!-- Drawer de archivados -->
     <app-archived-panel [(visible)]="displayArchivedPanel" (cardRestored)="onCardRestored($event)"
@@ -163,7 +163,7 @@
 
                 <div class="flex flex-col gap-2">
                     <label for="task" class="font-semibold">Tarea / Descripción</label>
-                    <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full"></textarea>
+                    <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full min-h-10 max-h-50"></textarea>
                 </div>
 
                 <div class="flex flex-col gap-2">
@@ -283,7 +283,14 @@
         </div>
         <ng-template pTemplate="footer">
             <p-button label="Cancelar" icon="pi pi-times" (onClick)="closeEditDialog()" text="true"></p-button>
-            <p-button label="Guardar" icon="pi pi-check" (onClick)="saveEditedCard()" autofocus="true"></p-button>
+ <p-button
+   label="Guardar"
+   icon="pi pi-check"
+   (onClick)="saveEditedCard()"
+   [loading]="isSavingEditCard"
+   [disabled]="isSavingEditCard || isUploadingImage"
+   autofocus="true">
+ </p-button>
         </ng-template>
     </p-dialog>
 

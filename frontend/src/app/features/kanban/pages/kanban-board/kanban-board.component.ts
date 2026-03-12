@@ -28,7 +28,7 @@ import { authState } from '@angular/fire/auth';
 import { DropdownModule } from 'primeng/dropdown';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, finalize, switchMap, takeUntil } from 'rxjs/operators';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ColorPickerModule } from 'primeng/colorpicker';
@@ -132,6 +132,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   imagePreviewUrl: string | null = null;
   imagePreviewFitMode: 'contain' | 'cover' = 'contain';
   isUploadingImage = false;
+  isSavingEditCard = false;
   showImageUrlInput = false;
   editingCard: Kanban = {
     _id: '',
@@ -372,7 +373,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   addCard(columnKey: string) {
-    const newCard: Partial<Kanban> = { title: 'New Card', task: 'New Task', listId: columnKey };
+    const newCard: Partial<Kanban> = { title: 'Nueva tarjeta', task: 'Nueva tarea', listId: columnKey };
     this.kanbanFacade.createCard(newCard).subscribe({
       next: (card) => {
         this._lastCreatedCardId = card._id;
@@ -662,6 +663,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   saveEditedCard() {
+    if (this.isSavingEditCard) return;
     const workspaceId = this.activeWorkspaceId || this.workspaceService.getActiveWorkspaceId();
     if (!workspaceId) {
       this.messageService.add({
@@ -723,25 +725,28 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       style: normalizedStyle,
       assigneeId: this.editingCard.assigneeId
     };
-    this.kanbanFacade.updateCard(this.editingCard._id, payload).subscribe({
-      next: (updatedCard) => {
-        this.onStopEditing(updatedCard._id);
-        for (const key of Object.keys(this.boardData)) {
-          const index = this.boardData[key].findIndex(c => c._id === updatedCard._id);
-          if (index !== -1) {
-            this.boardData[key][index] = updatedCard;
-            this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta actualizada' });
-            this.displayEditDialog = false;
-            this.loadAuditLogs();
-            return;
+    this.isSavingEditCard = true;
+    this.kanbanFacade.updateCard(this.editingCard._id, payload)
+      .pipe(finalize(() => { this.isSavingEditCard = false; }))
+      .subscribe({
+        next: (updatedCard) => {
+          this.onStopEditing(updatedCard._id);
+          for (const key of Object.keys(this.boardData)) {
+            const index = this.boardData[key].findIndex(c => c._id === updatedCard._id);
+            if (index !== -1) {
+              this.boardData[key][index] = updatedCard;
+              this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta actualizada' });
+              this.displayEditDialog = false;
+              this.loadAuditLogs();
+              return;
+            }
           }
+        },
+        error: (err) => {
+          const message = err?.error?.message || 'No se pudo actualizar la tarjeta';
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
         }
-      },
-      error: (err) => {
-        const message = err?.error?.message || 'No se pudo actualizar la tarjeta';
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
-      }
-    });
+      });
   }
 
   // ── LIMPIAR TERMINADO → ARCHIVAR ───────────────────────────────────────────
