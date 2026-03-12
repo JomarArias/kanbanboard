@@ -26,18 +26,27 @@
         <!-- ?=================================================================== -->
         <div class="w-full max-w-[calc(100%-4rem)] sm:max-w-md px-5 md:translate-x-1/2">
             <span class="relative w-full block">
-                <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
-                    [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
-                </i>
-                <input pInputText type="text" [ngModel]="searchTerm"
-                    (ngModelChange)="onSearchChange($event); searchTerm = $event" placeholder="Buscar tareas..."
-                    class="w-full !pl-10 rounded-xl" />
+              <!-- Lupa (siempre visible) -->
+              <i class="pi pi-search absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"></i>
+
+              <!-- Spinner (solo cuando busca) -->
+              <i *ngIf="isSearching"
+                 class="pi pi-spinner pi-spin absolute top-1/2 -translate-y-1/2 right-3 text-gray-500 z-10"></i>
+
+              <input
+                pInputText
+                type="text"
+                [ngModel]="searchTerm"
+                (ngModelChange)="onSearchChange($event); searchTerm = $event"
+                placeholder="Buscar tareas..."
+                class="w-full !pl-10 !pr-10 rounded-xl" />
             </span>
-            <p *ngIf="searchResults !== null && !isSearching" class="text-sm text-gray-500 mt-1 pl-1">
+
+            <!-- <p *ngIf="searchResults !== null && !isSearching" class="text-sm text-gray-500 mt-1 pl-1">
                 {{ searchResults.length === 0
                 ? 'Sin resultados para "' + searchTerm + '"'
                 : searchResults.length + ' resultado(s) encontrado(s)' }}
-            </p>
+            </p> -->
         </div>
 
 
