@@ -176,7 +176,7 @@
                     </p-selectButton>
                 </div>
 
-                <div class="flex gap-9 items-center" *ngIf="editingCard.style?.backgroundType === 'color'">
+                <div class="flex gap-9 items-baseline" *ngIf="editingCard.style?.backgroundType === 'color'">
 
                     <div class="gap-2 items-center pr-1">
                         <label class="font-semibold">Colores predefinidos</label>
@@ -236,14 +236,29 @@
                     </div>
 
                     <div *ngFor="let label of editingCard.labels; let i = index" class="flex flex-col gap-2 rounded ">
-                        <div class="grid grid-cols-12 gap-3 items-center">
-                            <input pInputText type="text" [(ngModel)]="label.name" placeholder="Nombre"
-                                class="col-span-9 border rounded px-2 py-1">
+                        <div class="grid grid-cols-12 gap-2 items-center">
 
-                            <p-colorpicker type="color" appendTo="body" [(ngModel)]="label.color"
-                                class="label-colorpicker-etiquetas col-span-1 rounded" title="Color personalizado" />
-                            <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1 ml-6 "
-                                (click)="removeLabel(i)"></button>
+                            <input pInputText type="text" [(ngModel)]="label.name" placeholder="Nombre"
+                                class="col-span-8 sm:col-span-9 border rounded px-2 py-1">
+
+                            <span class="flex items-center gap-4 col-span-4 sm:col-span-3 md:col-auto md:flex-none">
+                              <p-colorpicker
+                              type="color"
+                              appendTo="body"
+                              [(ngModel)]="label.color"
+                              class="label-colorpicker-etiquetas rounded"
+                              title="Color personalizado"
+                            />
+                            <button
+                              type="button"
+                              pButton
+                              icon="pi pi-trash"
+                              severity="danger"
+                              class="ml-2 flex-none min-w-[2.5rem]"
+                              (click)="removeLabel(i)"
+                            ></button>
+                          </span>
+
                         </div>
 
                         <div class="flex flex-wrap gap-3">
