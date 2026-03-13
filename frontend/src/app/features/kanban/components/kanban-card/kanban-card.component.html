@@ -69,9 +69,11 @@
         type="button"
         class="assignee-avatar"
         pTooltip="Asignado a: {{ assignee.name }}"
-        tooltipPosition="top"
+        [tooltipPosition]="assigneeTooltipPosition"
+        appendTo="body"
+        tooltipStyleClass="assignee-tooltip"
         tooltipEvent="focus"
-        (click)="assigneeBtn.focus()"
+        (click)="onAssigneeClick(assigneeBtn, assignee.name)"
         aria-label="Ver responsable">
         <img [src]="assignee.picture || 'https://ui-avatars.com/api/?name=' + assignee.name" [alt]="assignee.name"
             class="assignee-avatar__img" />

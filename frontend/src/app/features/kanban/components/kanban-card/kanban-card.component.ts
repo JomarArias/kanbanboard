@@ -22,6 +22,7 @@ export class KanbanCardComponent {
   @Input() isViewer: boolean = false;
   @Input() labelsExpandedGlobal = false;
   @Output() toggleLabelsExpandedGlobal = new EventEmitter<void>();
+  assigneeTooltipPosition: 'top' | 'left' | 'right' | 'bottom' = 'top';
 
   private getAssigneeId(): string | undefined {
     const value = this.card?.assigneeId;
@@ -140,6 +141,16 @@ export class KanbanCardComponent {
       }
     });
   }
+
+  onAssigneeClick(target: HTMLElement, name?: string) {
+    if (typeof window === 'undefined') return;
+    const rect = target.getBoundingClientRect();
+    const estimatedTooltipWidth = Math.max(140, (name?.length ?? 0) * 8 + 80);
+    const spaceRight = window.innerWidth - rect.right;
+    this.assigneeTooltipPosition = spaceRight < estimatedTooltipWidth ? 'left' : 'top';
+    target.focus();
+  }
+
   isDoneCard(): boolean {
     return this.card?.listId === "done"
   }
