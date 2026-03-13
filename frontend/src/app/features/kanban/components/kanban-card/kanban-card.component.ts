@@ -120,7 +120,7 @@ export class KanbanCardComponent {
     // Usamos el botón mismo como target para que el popup salga justo debajo
     this.confirmationService.confirm({
       target: event.currentTarget as EventTarget,
-      message: '¿Estás seguro de eliminar esta tarjeta?',
+      message: '¿Estás seguro de archivar esta tarjeta?',
       acceptLabel: 'Sí',
       rejectLabel: 'No',
       icon: 'pi pi-exclamation-triangle',

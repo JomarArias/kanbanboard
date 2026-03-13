@@ -31,7 +31,7 @@ import { Subscription, filter, take } from 'rxjs';
       [(visible)]="showUsernameDialog"
       [modal]="true"
       [closable]="false"
-      [style]="{ width: '320px' }"
+      [style]="{ width: '320px'}"
       [draggable]="false"
       [resizable]="false">
       <div class="flex flex-col gap-3 pt-2">
@@ -55,7 +55,9 @@ import { Subscription, filter, take } from 'rxjs';
     </p-dialog>
 
     <!-- Wrapper fijo en el lateral derecho -->
-    <div class="fixed top-0 right-0 h-full flex items-stretch z-40 pointer-events-none">
+    <div
+      class="fixed top-0 right-0 h-full flex items-stretch pointer-events-none"
+      [style.zIndex]="100">
 
       <!-- Pestaña con flecha (siempre visible) -->
       <div class="pointer-events-auto self-start mt-20">
@@ -137,7 +139,7 @@ import { Subscription, filter, take } from 'rxjs';
             class="flex-1 text-sm rounded-xl" />
           <p-button
             icon="pi pi-send"
-            [disabled]="!newMessage.trim()"
+
             (onClick)="sendMessage()"
             severity="success">
           </p-button>
