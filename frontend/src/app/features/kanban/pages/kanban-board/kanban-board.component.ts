@@ -14,7 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { FormsModule } from '@angular/forms';
 import { KanbanColumnComponent } from '../../components/kanban-column/kanban-column.component';
-import { Kanban, KanbanLabel } from '../../../../core/models/kanban.model';
+import { Kanban, KanbanLabel, KanbanAssigneeRef } from '../../../../core/models/kanban.model';
 import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { AuditLog } from '../../../../core/models/audit-log.model';
 import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
@@ -172,6 +172,13 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   myRole?: string;
   _lastCreatedCardId?: string;
   isViewer: boolean = false;
+
+  private normalizeAssigneeId(value: Kanban['assigneeId']): string | undefined {
+    if (!value) return undefined;
+    if (typeof value === 'string') return value;
+    const ref = value as KanbanAssigneeRef;
+    return ref?._id || undefined;
+  }
 
   constructor(
     private kanbanFacade: KanbanFacadeService,
@@ -352,7 +359,10 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     columns.forEach(listId => {
       this.kanbanFacade.getCards(listId).subscribe({
         next: (cards) => {
-          this.boardData[listId] = cards;
+          this.boardData[listId] = cards.map((card) => ({
+            ...card,
+            assigneeId: this.normalizeAssigneeId(card.assigneeId)
+          }));
         },
         error: (err) => console.error(err),
         complete: () => {
@@ -408,6 +418,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.editingCard = {
       ...card,
       version: card.version ?? 0,
+      assigneeId: this.normalizeAssigneeId(card.assigneeId),
       dueDate: card.dueDate ? card.dueDate.substring(0, 10) : null,
 
       labels: (card.labels ?? []).map((label) => ({
@@ -723,7 +734,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       dueDate: normalizedDueDate,
       labels: normalizedLabels,
       style: normalizedStyle,
-      assigneeId: this.editingCard.assigneeId
+      assigneeId: this.normalizeAssigneeId(this.editingCard.assigneeId) ?? null
     };
     this.isSavingEditCard = true;
     this.kanbanFacade.updateCard(this.editingCard._id, payload)

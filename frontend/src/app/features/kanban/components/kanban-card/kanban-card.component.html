@@ -61,11 +61,23 @@
             <p-button (click)="onDelete($event)" class="text-red-500 hover:text-red-700 text-sm"
                 icon="pi pi-inbox"></p-button>
         </div>
-        <div *ngIf="assignee" class="ml-auto" [title]="'Asignado a: ' + assignee.name">
-            <img [src]="assignee.picture || 'https://ui-avatars.com/api/?name=' + assignee.name" [alt]="assignee.name"
-                class="w-2rem h-2rem border-circle shadow-1 object-cover" />
-        </div>
     </div>
+
+    <button
+        *ngIf="assignee"
+        #assigneeBtn
+        type="button"
+        class="assignee-avatar"
+        pTooltip="Asignado a: {{ assignee.name }}"
+        [tooltipPosition]="assigneeTooltipPosition"
+        appendTo="body"
+        tooltipStyleClass="assignee-tooltip"
+        tooltipEvent="focus"
+        (click)="onAssigneeClick(assigneeBtn, assignee.name)"
+        aria-label="Ver responsable">
+        <img [src]="assignee.picture || 'https://ui-avatars.com/api/?name=' + assignee.name" [alt]="assignee.name"
+            class="assignee-avatar__img" />
+    </button>
 
     <!-- ConfirmPopup va dentro de la tarjeta para que se posicione correctamente -->
     <p-confirmPopup></p-confirmPopup>

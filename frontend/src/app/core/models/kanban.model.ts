@@ -10,6 +10,13 @@ export interface KanbanStyle {
     backgroundImageUrl?: string | null;
 }
 
+export interface KanbanAssigneeRef {
+    _id: string;
+    name?: string;
+    email?: string;
+    picture?: string;
+}
+
 export interface Kanban {
     _id: string;
     title: string;
@@ -21,7 +28,7 @@ export interface Kanban {
     isNew?: boolean;
     version?: number;
     workspaceId?: string;
-    assigneeId?: string;
+    assigneeId?: string | KanbanAssigneeRef | null;
     archived?: boolean;
     dueDate?: string | null;
     labels?: KanbanLabel[];

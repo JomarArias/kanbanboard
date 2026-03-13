@@ -5,19 +5,21 @@
 
   <div class="profile-container">
 
-
     <!-- Card -->
     <div class="profile-card">
-          <div class="boton-container">
-              <button pButton type="button"  icon="pi pi-arrow-left" routerLink="/"></button>
-              <!-- <a routerLink="/" class="back-link ">
-                  <i class="pi pi-arrow-left"></i>
-                  Volver al Tablero
-              </a> -->
-          </div>
 
-            <!-- Header: avatar + name + role -->
-            <div class="profile-header">
+      <!-- Header: avatar + name + role -->
+      <div class="profile-header">
+
+              <div class="boton-container">
+                  <button pButton type="button"  icon="pi pi-arrow-left" routerLink="/"></button>
+                  <!-- <a routerLink="/" class="back-link ">
+                      <i class="pi pi-arrow-left"></i>
+                      Volver al Tablero
+                  </a> -->
+              </div>
+
+
                 <div class="avatar-wrapper">
                     <img *ngIf="picturePreview" [src]="picturePreview" (error)="picturePreview=''"
                         class="profile-avatar" />
@@ -62,7 +64,7 @@
                         <i class="pi pi-envelope"></i>
                         <input pInputText [value]="profile.email" disabled class="w-full" style="opacity: 0.5" />
                     </span>
-                    <span class="field-hint">Gestionado por Auth0. No modificable aquí.</span>
+                    <!-- <span class="field-hint">Gestionado por Auth0. No modificable aquí.</span> -->
                 </div>
 
                 <div class="field-group avatar-upload-group">
@@ -101,5 +103,5 @@
                 </p-button>
             </div>
         </div>
-    </div>
+  </div>
 </div>
