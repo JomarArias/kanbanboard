@@ -1,15 +1,16 @@
 import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Kanban } from '../../../../core/models/kanban.model';
+import { Kanban, KanbanAssigneeRef } from '../../../../core/models/kanban.model';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-kanban-card',
   standalone: true,
-  imports: [CommonModule, ButtonModule, ToastModule, ConfirmPopupModule],
+  imports: [CommonModule, ButtonModule, ToastModule, ConfirmPopupModule, TooltipModule],
   templateUrl: './kanban-card.component.html',
   styleUrl: './kanban-card.component.scss',
   host: { class: 'block' }
@@ -22,8 +23,17 @@ export class KanbanCardComponent {
   @Input() labelsExpandedGlobal = false;
   @Output() toggleLabelsExpandedGlobal = new EventEmitter<void>();
 
+  private getAssigneeId(): string | undefined {
+    const value = this.card?.assigneeId;
+    if (!value) return undefined;
+    if (typeof value === 'string') return value;
+    const ref = value as KanbanAssigneeRef;
+    return ref?._id || undefined;
+  }
+
   get assignee() {
-    return this.members?.find(m => m._id === this.card.assigneeId);
+    const assigneeId = this.getAssigneeId();
+    return assigneeId ? this.members?.find(m => m._id === assigneeId) : undefined;
   }
   @Output() edit = new EventEmitter<Kanban>();
   @Output() delete = new EventEmitter<string>();
