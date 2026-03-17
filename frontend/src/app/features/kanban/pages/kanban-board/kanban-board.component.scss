@@ -87,3 +87,20 @@
 ::ng-deep .edit-card-dialog .p-dialog-content:hover::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.55);
 }
+
+::ng-deep .assignee-dropdown-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 767px) {
+  ::ng-deep .assignee-dropdown-panel {
+    width: min(26rem, calc(100vw - 2rem)) !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+}
+
+
+::ng-deep .assignee-dropdown-panel .p-dropdown-items-wrapper {
+  max-width: 100%;
+}
