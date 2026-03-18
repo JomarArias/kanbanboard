@@ -1,6 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 
+let envPath = path.join(__dirname, '..', '.env');
+if (!fs.existsSync(envPath)) {
+    envPath = path.join(__dirname, '..', '..', 'backend', '.env');
+}
+
+if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+        if (match) {
+            const key = match[1];
+            let value = match[2] || '';
+            value = value.replace(/^['"](.*)['"]$/, '$1').trim();
+            if (!process.env[key]) process.env[key] = value;
+        }
+    });
+}
+
 const requiredKeysMap = {
     'FIREBASE_API_KEY': ['FIREBASE_API_KEY', 'API_KEY', 'apiKey'],
     'FIREBASE_AUTH_DOMAIN': ['FIREBASE_AUTH_DOMAIN', 'AUTH_DOMAIN', 'authDomain'],
@@ -23,9 +41,8 @@ for (const [key, searchKeys] of Object.entries(requiredKeysMap)) {
 }
 
 if (missing.length) {
-    console.error('  Missing required environment variables:', missing.join(', '));
-    console.error('   Set them in the Vercel project dashboard → Settings → Environment Variables.');
-    process.exit(1);
+    console.warn('Warning: Missing some Firebase environment variables: ' + missing.join(', '));
+    console.warn('The app might not connect to Firebase correctly until these are provided at runtime or via environment.');
 }
 
 function cleanVar(val) {
@@ -53,4 +70,4 @@ export const environment = {
 const outPath = path.join(__dirname, '..', 'src', 'environments', 'environment.prod.ts');
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, content);
-console.log('✅  environment.prod.ts generated successfully.');
+console.log('environment.prod.ts generated successfully.');
