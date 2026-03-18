@@ -1,12 +1,12 @@
-<div class="p-6 h-screen flex flex-col items-center overflow-hidden">
-    <div class="flex items-center justify-between w-full max-w-7xl px-4 mt-4 mb-2">
-        <div class="flex items-center gap-2" *ngIf="activeWorkspaceId">
+<div class="pb-14 h-full flex flex-col items-center overflow-hidden">
+    <div class="flex items-center w-full max-w-7xl px-4 mt-4 mb-2 py-4">
+        <div class="flex items-center gap-2 " *ngIf="activeWorkspaceId">
             <div *ngFor="let member of workspaceMembers.slice(0,5)" class="relative" [pTooltip]="member.name"
                 tooltipPosition="bottom">
                 <img *ngIf="member.picture" [src]="member.picture"
-                    class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm" />
+                    class="w-8 h-8 min-w-8 shrink-0 rounded-full object-cover border-2 border-white shadow-sm" />
                 <div *ngIf="!member.picture"
-                    class="w-8 h-8 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center font-bold border-2 border-white shadow-sm">
+                    class="w-8 h-8 min-w-8 shrink-0 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center font-bold border-2 border-white shadow-sm">
                     {{ member.name?.charAt(0)?.toUpperCase() }}
                 </div>
                 <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white"
@@ -16,12 +16,39 @@
             <span *ngIf="workspaceMembers.length > 5" class="text-xs text-gray-500">
                 +{{ workspaceMembers.length - 5 }}
             </span>
-            <div
-                class="flex items-center gap-1 ml-2 px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold">
+            <div class="flex items-center gap-1 ml-2 px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold">
                 <i class="pi pi-circle-fill text-xs animate-pulse"></i>
-                {{ onlineUsersArray.length }} Online
+                {{ onlineUsersArray.length }}
+                <span class="hidden md:inline">Online</span>
             </div>
         </div>
+
+        <!-- ?=================================================================== -->
+        <div class="w-full max-w-[calc(100%-4rem)] sm:max-w-md px-5 md:translate-x-1/2">
+            <span class="relative w-full block">
+
+              <i class="pi pi-search absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"></i>
+
+              <i *ngIf="isSearching"
+                 class="pi pi-spinner pi-spin absolute top-1/2 -translate-y-1/2 right-3 text-gray-500 z-10"></i>
+
+              <input
+                pInputText
+                type="text"
+                [ngModel]="searchTerm"
+                (ngModelChange)="onSearchChange($event); searchTerm = $event"
+                placeholder="Buscar tareas..."
+                class="w-full !pl-10 !pr-10 rounded-xl" />
+            </span>
+
+            <!-- <p *ngIf="searchResults !== null && !isSearching" class="text-sm text-gray-500 mt-1 pl-1">
+                {{ searchResults.length === 0
+                ? 'Sin resultados para "' + searchTerm + '"'
+                : searchResults.length + ' resultado(s) encontrado(s)' }}
+            </p> -->
+        </div>
+
+
     </div>
 
     <div *ngIf="isViewer" class="w-full max-w-7xl px-4 mb-2">
@@ -33,7 +60,7 @@
         </div>
     </div>
 
-    <div class="w-full max-w-md mb-6 px-4">
+    <!-- <div class="w-full max-w-md mb-6 px-4">
         <span class="relative w-full block">
             <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
                 [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
@@ -47,11 +74,11 @@
             ? 'Sin resultados para "' + searchTerm + '"'
             : searchResults.length + ' resultado(s) encontrado(s)' }}
         </p>
-    </div>
+    </div> -->
 
     <!-- Speed Dial con Historial + Archivados -->
     <p-speedDial [model]="items" direction="up"
-        [style]="{ position: 'fixed', bottom: '2rem', right: '5rem' }"></p-speedDial>
+        [style]="{ position: 'fixed', bottom: '2rem', right: '4rem', zIndex: 50 }"></p-speedDial>
 
     <!-- Drawer de archivados -->
     <app-archived-panel [(visible)]="displayArchivedPanel" (cardRestored)="onCardRestored($event)"
@@ -60,29 +87,30 @@
 
     <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
 
-    <div class="flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4 snap-x snap-mandatory scroll-smooth"
+    <div class="kanban-board-scroll flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4 snap-x snap-mandatory scroll-smooth"
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"
             [cards]="filterCards(boardData.todo, 'todo')" [editingUsers]="editingUsers" [members]="workspaceMembers"
-            [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('todo')" (editCard)="onEditCard($event)"
-            (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
+            [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('todo')"
+            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
             [labelsExpandedGlobal]="labelsExpandedGlobal" (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px] snap-center"
             [cards]="filterCards(boardData.inProgress, 'inProgress')" [editingUsers]="editingUsers"
-            [members]="workspaceMembers" [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('inProgress')"
-            (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
-            (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
-            [labelsExpandedGlobal]="labelsExpandedGlobal" (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
+            [members]="workspaceMembers" [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)"
+            (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
+            (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
+            (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
+            (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
         <div class="relative min-w-[85vw] md:min-w-[350px] snap-center flex flex-col h-full">
             <app-kanban-column title="Terminado" listId="done" class="w-full h-full"
                 [cards]="filterCards(boardData.done, 'done')" [editingUsers]="editingUsers" [members]="workspaceMembers"
-                [isViewer]="isViewer" (drop)="drop($event)" (addCard)="onAddCard('done')"
+                [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('done')"
                 (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
                 (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
                 (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
@@ -117,14 +145,14 @@
                         <ng-template pTemplate="selectedItem" let-selectedOption>
                             <div class="flex align-items-center gap-2" *ngIf="selectedOption">
                                 <img [src]="selectedOption.picture || 'https://ui-avatars.com/api/?name=' + selectedOption.name"
-                                    class="w-1rem h-1rem border-circle" />
+                                    class="avatar-circle avatar-circle-sm" />
                                 <div>{{ selectedOption.name }}</div>
                             </div>
                         </ng-template>
                         <ng-template let-user pTemplate="item">
                             <div class="flex align-items-center gap-2">
                                 <img [src]="user.picture || 'https://ui-avatars.com/api/?name=' + user.name"
-                                    class="w-2rem h-2rem border-circle" />
+                                    class="avatar-circle avatar-circle-md" />
                                 <div>{{ user.name }}</div>
                                 <small class="text-500 ml-auto" *ngIf="user.email">{{ user.email }}</small>
                             </div>
@@ -134,7 +162,7 @@
 
                 <div class="flex flex-col gap-2">
                     <label for="task" class="font-semibold">Tarea / Descripción</label>
-                    <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full"></textarea>
+                    <textarea pTextarea id="task" [(ngModel)]="editingCard.task" rows="5" class="w-full min-h-10 max-h-50"></textarea>
                 </div>
 
                 <div class="flex flex-col gap-2">
@@ -156,7 +184,7 @@
                     </p-selectButton>
                 </div>
 
-                <div class="flex gap-9 items-center" *ngIf="editingCard.style?.backgroundType === 'color'">
+                <div class="flex gap-9 items-baseline" *ngIf="editingCard.style?.backgroundType === 'color'">
 
                     <div class="gap-2 items-center pr-1">
                         <label class="font-semibold">Colores predefinidos</label>
@@ -172,9 +200,9 @@
 
                     <div class=" flex flex-col pt-2 items-center ">
                         <label for="bgColor" class="font-semibold pb-1">Personalizado</label>
-                        <p-colorpicker id="bgColor" type="color" appendTo="body" styleClass="label-colorpicker-tarjeta"
+                        <p-colorpicker id="bgColor" type="color" appendTo="body"
                             [ngModel]="editingCard.style!.backgroundColor" (ngModelChange)="selectCardColor($event)"
-                            class="rounded" />
+                            class="label-colorpicker-tarjeta rounded" />
                     </div>
                 </div>
 
@@ -216,14 +244,29 @@
                     </div>
 
                     <div *ngFor="let label of editingCard.labels; let i = index" class="flex flex-col gap-2 rounded ">
-                        <div class="grid grid-cols-12 gap-3 items-center">
-                            <input pInputText type="text" [(ngModel)]="label.name" placeholder="Nombre"
-                                class="col-span-9 border rounded px-2 py-1">
+                        <div class="grid grid-cols-12 gap-2 items-center">
 
-                            <p-colorpicker type="color" styleClass="label-colorpicker-etiquetas" appendTo="body"
-                                [(ngModel)]="label.color" class="col-span-1 rounded" title="Color personalizado" />
-                            <button type="button" pButton icon="pi pi-trash" severity="danger" class="col-span-1 ml-6 "
-                                (click)="removeLabel(i)"></button>
+                            <input pInputText type="text" [(ngModel)]="label.name" placeholder="Nombre"
+                                class="col-span-8 sm:col-span-9 border rounded px-2 py-1">
+
+                            <span class="flex items-center gap-4 col-span-4 sm:col-span-3 md:col-auto md:flex-none">
+                              <p-colorpicker
+                              type="color"
+                              appendTo="body"
+                              [(ngModel)]="label.color"
+                              class="label-colorpicker-etiquetas rounded"
+                              title="Color personalizado"
+                            />
+                            <button
+                              type="button"
+                              pButton
+                              icon="pi pi-trash"
+                              severity="danger"
+                              class="ml-2 flex-none min-w-[2.5rem]"
+                              (click)="removeLabel(i)"
+                            ></button>
+                          </span>
+
                         </div>
 
                         <div class="flex flex-wrap gap-3">
@@ -239,7 +282,14 @@
         </div>
         <ng-template pTemplate="footer">
             <p-button label="Cancelar" icon="pi pi-times" (onClick)="closeEditDialog()" text="true"></p-button>
-            <p-button label="Guardar" icon="pi pi-check" (onClick)="saveEditedCard()" autofocus="true"></p-button>
+ <p-button
+   label="Guardar"
+   icon="pi pi-check"
+   (onClick)="saveEditedCard()"
+   [loading]="isSavingEditCard"
+   [disabled]="isSavingEditCard || isUploadingImage"
+   autofocus="true">
+ </p-button>
         </ng-template>
     </p-dialog>
 

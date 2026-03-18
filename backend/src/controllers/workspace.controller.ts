@@ -122,7 +122,8 @@ export const inviteMember = async (req: Request, res: Response) => {
         if (!email) return sendError(res, 400, 'Email is required');
 
         const isOwner = workspace.owners.some((ownerId: any) => ownerId.toString() === currentUser._id.toString());
-        if (!isOwner) return sendError(res, 403, 'Only Workspace owners can invite members');
+        const isAdmin = workspace.members.some((m: any) => m.userId.toString() === currentUser._id.toString() && m.role === 'admin');
+        if (!isOwner && !isAdmin) return sendError(res, 403, 'Only Workspace owners or admins can invite members');
 
         if (!['admin', 'editor', 'viewer'].includes(role)) {
             return sendError(res, 400, 'Role must be admin, editor, or viewer');
@@ -168,7 +169,8 @@ export const updateMemberRole = async (req: Request, res: Response) => {
         }
 
         const isOwner = workspace.owners.some((ownerId: any) => ownerId.toString() === currentUser._id.toString());
-        if (!isOwner) return sendError(res, 403, 'Only owners can change member roles');
+        const isAdmin = workspace.members.some((m: any) => m.userId.toString() === currentUser._id.toString() && m.role === 'admin');
+        if (!isOwner && !isAdmin) return sendError(res, 403, 'Only owners or admins can change member roles');
 
         const member = workspace.members.find((m: any) => m.userId.toString() === userId);
         if (!member) return sendError(res, 404, 'Member not found in this workspace');
@@ -189,7 +191,8 @@ export const removeMember = async (req: Request, res: Response) => {
         const workspace = res.locals.workspace;
 
         const isOwner = workspace.owners.some((ownerId: any) => ownerId.toString() === currentUser._id.toString());
-        if (!isOwner) return sendError(res, 403, 'Only owners can remove members');
+        const isAdmin = workspace.members.some((m: any) => m.userId.toString() === currentUser._id.toString() && m.role === 'admin');
+        if (!isOwner && !isAdmin) return sendError(res, 403, 'Only owners or admins can remove members');
 
         workspace.members = workspace.members.filter((m: any) => m.userId.toString() !== userId);
         await workspace.save();

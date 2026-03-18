@@ -1,32 +1,39 @@
 version: '3.8'
-
 services:
+  mongo:
+    image: mongo:6-jammy
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
+    volumes:
+      - ./backend:/app:z
+      - /app/node_modules
     environment:
-      - NODE_ENV=production
-    env_file:
-      - ./backend/.env
-    restart: unless-stopped
+      - MONGO_URI=mongodb://mongo:27017/kanban
+      - PORT=3000
+    depends_on:
+      - mongo
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - FIREBASE_API_KEY=${FIREBASE_API_KEY}
-        - FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN}
-        - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
-        - FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET}
-        - FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID}
-        - FIREBASE_APP_ID=${FIREBASE_APP_ID}
-        - FIREBASE_MEASUREMENT_ID=${FIREBASE_MEASUREMENT_ID}
+      dockerfile: Dockerfile.dev
     ports:
-      - "8080:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - NODE_ENV=development
+
+volumes:
+  mongo_data:

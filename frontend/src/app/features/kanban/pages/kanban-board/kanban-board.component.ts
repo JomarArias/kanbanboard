@@ -14,7 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { FormsModule } from '@angular/forms';
 import { KanbanColumnComponent } from '../../components/kanban-column/kanban-column.component';
-import { Kanban, KanbanLabel } from '../../../../core/models/kanban.model';
+import { Kanban, KanbanLabel, KanbanAssigneeRef } from '../../../../core/models/kanban.model';
 import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { AuditLog } from '../../../../core/models/audit-log.model';
 import { AuditLogComponent } from '../../components/audit-log/audit-log.component';
@@ -28,7 +28,7 @@ import { authState } from '@angular/fire/auth';
 import { DropdownModule } from 'primeng/dropdown';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, finalize, switchMap, takeUntil } from 'rxjs/operators';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ColorPickerModule } from 'primeng/colorpicker';
@@ -132,6 +132,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   imagePreviewUrl: string | null = null;
   imagePreviewFitMode: 'contain' | 'cover' = 'contain';
   isUploadingImage = false;
+  isSavingEditCard = false;
   showImageUrlInput = false;
   editingCard: Kanban = {
     _id: '',
@@ -160,6 +161,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   searchSubject = new Subject<string>();
   isSearching = false;
+  isLoadingCards = false;
   searchResults: Kanban[] | null = null;
   searchTerm = '';
   destroy$ = new Subject<void>();
@@ -170,6 +172,13 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   myRole?: string;
   _lastCreatedCardId?: string;
   isViewer: boolean = false;
+
+  private normalizeAssigneeId(value: Kanban['assigneeId']): string | undefined {
+    if (!value) return undefined;
+    if (typeof value === 'string') return value;
+    const ref = value as KanbanAssigneeRef;
+    return ref?._id || undefined;
+  }
 
   constructor(
     private kanbanFacade: KanbanFacadeService,
@@ -182,6 +191,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.todayDate.setHours(0, 0, 0, 0);
     this.loadCards();
     this.loadAuditLogs();
+    this.initSearch();
 
     this.items = [
       {
@@ -342,10 +352,25 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   loadCards() {
-    ['todo', 'inProgress', 'done'].forEach(listId => {
+    this.isLoadingCards = true;
+    let completedRequests = 0;
+    const columns = ['todo', 'inProgress', 'done'];
+
+    columns.forEach(listId => {
       this.kanbanFacade.getCards(listId).subscribe({
-        next: (cards) => { this.boardData[listId] = cards; },
-        error: (err) => console.error(err)
+        next: (cards) => {
+          this.boardData[listId] = cards.map((card) => ({
+            ...card,
+            assigneeId: this.normalizeAssigneeId(card.assigneeId)
+          }));
+        },
+        error: (err) => console.error(err),
+        complete: () => {
+          completedRequests++;
+          if (completedRequests === columns.length) {
+            this.isLoadingCards = false;
+          }
+        }
       });
     });
   }
@@ -358,7 +383,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   addCard(columnKey: string) {
-    const newCard: Partial<Kanban> = { title: 'New Card', task: 'New Task', listId: columnKey };
+    const newCard: Partial<Kanban> = { title: 'Nueva tarjeta', task: 'Nueva tarea', listId: columnKey };
     this.kanbanFacade.createCard(newCard).subscribe({
       next: (card) => {
         this._lastCreatedCardId = card._id;
@@ -393,6 +418,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.editingCard = {
       ...card,
       version: card.version ?? 0,
+      assigneeId: this.normalizeAssigneeId(card.assigneeId),
       dueDate: card.dueDate ? card.dueDate.substring(0, 10) : null,
 
       labels: (card.labels ?? []).map((label) => ({
@@ -508,6 +534,16 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   onBackgroundImageFileSelected(event: Event) {
+    const workspaceId = this.activeWorkspaceId || this.workspaceService.getActiveWorkspaceId();
+    if (!workspaceId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Workspace requerido',
+        detail: 'Selecciona un workspace antes de subir imágenes'
+      });
+      return;
+    }
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -540,6 +576,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       error: (err) => {
         const message = err?.error?.message || 'No se pudo subir la imagen';
         this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+        this.isUploadingImage = false;
       },
       complete: () => {
         this.isUploadingImage = false;
@@ -637,6 +674,17 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   saveEditedCard() {
+    if (this.isSavingEditCard) return;
+    const workspaceId = this.activeWorkspaceId || this.workspaceService.getActiveWorkspaceId();
+    if (!workspaceId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Workspace requerido',
+        detail: 'Selecciona un workspace antes de guardar cambios'
+      });
+      return;
+    }
+
     if (this.isUploadingImage) {
       this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Espera a que termine la subida de imagen' });
       return;
@@ -686,27 +734,30 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       dueDate: normalizedDueDate,
       labels: normalizedLabels,
       style: normalizedStyle,
-      assigneeId: this.editingCard.assigneeId
+      assigneeId: this.normalizeAssigneeId(this.editingCard.assigneeId) ?? null
     };
-    this.kanbanFacade.updateCard(this.editingCard._id, payload).subscribe({
-      next: (updatedCard) => {
-        this.onStopEditing(updatedCard._id);
-        for (const key of Object.keys(this.boardData)) {
-          const index = this.boardData[key].findIndex(c => c._id === updatedCard._id);
-          if (index !== -1) {
-            this.boardData[key][index] = updatedCard;
-            this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta actualizada' });
-            this.displayEditDialog = false;
-            this.loadAuditLogs();
-            return;
+    this.isSavingEditCard = true;
+    this.kanbanFacade.updateCard(this.editingCard._id, payload)
+      .pipe(finalize(() => { this.isSavingEditCard = false; }))
+      .subscribe({
+        next: (updatedCard) => {
+          this.onStopEditing(updatedCard._id);
+          for (const key of Object.keys(this.boardData)) {
+            const index = this.boardData[key].findIndex(c => c._id === updatedCard._id);
+            if (index !== -1) {
+              this.boardData[key][index] = updatedCard;
+              this.messageService.add({ severity: 'success', summary: 'Correcto', detail: 'Tarjeta actualizada' });
+              this.displayEditDialog = false;
+              this.loadAuditLogs();
+              return;
+            }
           }
+        },
+        error: (err) => {
+          const message = err?.error?.message || 'No se pudo actualizar la tarjeta';
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
         }
-      },
-      error: (err) => {
-        const message = err?.error?.message || 'No se pudo actualizar la tarjeta';
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
-      }
-    });
+      });
   }
 
   // ── LIMPIAR TERMINADO → ARCHIVAR ───────────────────────────────────────────
@@ -771,23 +822,41 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   drop(event: CdkDragDrop<Kanban[]>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      const card = event.container.data[event.currentIndex];
-      const prevCard = event.container.data[event.currentIndex - 1];
-      const nextCard = event.container.data[event.currentIndex + 1];
-      this.kanbanFacade.moveCard(card._id, card.listId, prevCard?.order, nextCard?.order).subscribe({
-        next: (res) => { card.order = res.order; this.loadCards(); this.loadAuditLogs(); }
-      });
     } else {
       transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
-      const card = event.container.data[event.currentIndex];
-      const newListId = event.container.id;
-      const prevCard = event.container.data[event.currentIndex - 1];
-      const nextCard = event.container.data[event.currentIndex + 1];
-      this.kanbanFacade.moveCard(card._id, newListId, prevCard?.order, nextCard?.order).subscribe({
-        next: (res) => { card.listId = newListId; card.order = res.order; this.loadCards(); this.loadAuditLogs(); },
-        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' })
-      });
     }
+
+    const card = event.item.data as Kanban;
+    const targetListId = event.container.id;
+    const prevCard = event.container.data[event.currentIndex - 1];
+    const nextCard = event.container.data[event.currentIndex + 1];
+
+    let prevOrder = prevCard?.order;
+    let nextOrder = nextCard?.order;
+
+    // If the visible target list is filtered, use full boardData as fallback
+    // so backend always receives at least one neighbor when destination has cards.
+    const fullTargetCards = (this.boardData[targetListId] || []).filter(c => c._id !== card._id);
+    if (!prevOrder && !nextOrder && fullTargetCards.length > 0) {
+      if (event.currentIndex <= 0) {
+        nextOrder = fullTargetCards[0]?.order;
+      } else {
+        prevOrder = fullTargetCards[fullTargetCards.length - 1]?.order;
+      }
+    }
+
+    this.kanbanFacade.moveCard(card._id, targetListId, prevOrder, nextOrder).subscribe({
+      next: (res) => {
+        card.listId = targetListId;
+        card.order = res.order;
+        this.loadCards();
+        this.loadAuditLogs();
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' });
+        this.loadCards();
+      }
+    });
   }
 
   onAddCard(listId: string) {

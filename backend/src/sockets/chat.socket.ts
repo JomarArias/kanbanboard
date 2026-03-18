@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import { ChatMessageModel } from "../models/chat-message.js";
 
 export type ChatMessage = {
   id: string;
@@ -7,38 +8,63 @@ export type ChatMessage = {
   timestamp: string;
 };
 
-// Historial en memoria — últimos 50 mensajes
-const messageHistory: ChatMessage[] = [];
 const MAX_HISTORY = 50;
 
 export const registerChatSocketHandlers = (io: Server, socket: Socket) => {
 
-  // Al conectar, enviamos el historial solo al cliente que se conectó
-  socket.emit("chat:history", messageHistory);
+  // Emitir historial de un workspace específico
+  socket.on("chat:get_history", async (payload: { workspaceId: string }) => {
+    if (!payload?.workspaceId) return;
+    try {
+      const messagesDb = await ChatMessageModel.find({ workspaceId: payload.workspaceId })
+        .sort({ createdAt: -1 })
+        .limit(MAX_HISTORY)
+        .lean();
 
-  // Nuevo mensaje
-  socket.on("chat:message", (payload: { username: string; text: string }) => {
-    if (!payload?.username?.trim() || !payload?.text?.trim()) return;
+      const history: ChatMessage[] = messagesDb.reverse().map(m => ({
+        id: (m._id as any).toString(),
+        username: m.username,
+        text: m.text,
+        timestamp: m.createdAt.toISOString()
+      }));
 
-    const message: ChatMessage = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      username: payload.username.trim(),
-      text: payload.text.trim().slice(0, 500), // máximo 500 caracteres
-      timestamp: new Date().toISOString()
-    };
-
-    messageHistory.push(message);
-    if (messageHistory.length > MAX_HISTORY) {
-      messageHistory.shift();
+      socket.emit("chat:history", history);
+    } catch (e) {
+      console.error("Error fetching chat history", e);
     }
-
-    // Emitir a todos los clientes conectados (incluido el emisor)
-    io.emit("chat:message", message);
   });
 
-  // Notificar a todos que alguien se unió
-  socket.on("chat:join", (payload: { username: string }) => {
-    if (!payload?.username?.trim()) return;
-    socket.broadcast.emit("chat:user:joined", { username: payload.username.trim() });
+  // Nuevo mensaje
+  socket.on("chat:message", async (payload: { username: string; text: string; workspaceId: string }) => {
+    if (!payload?.username?.trim() || !payload?.text?.trim() || !payload?.workspaceId) return;
+
+    try {
+      const text = payload.text.trim().slice(0, 500);
+      const username = payload.username.trim();
+
+      const newMessage = await ChatMessageModel.create({
+        workspaceId: payload.workspaceId,
+        username,
+        text
+      });
+
+      const message: ChatMessage = {
+        id: newMessage._id.toString(),
+        username: newMessage.username,
+        text: newMessage.text,
+        timestamp: newMessage.createdAt.toISOString()
+      };
+
+      // Emitir a todos los clientes conectados en el workspace (incluido el emisor)
+      io.to(`workspace:${payload.workspaceId}`).emit("chat:message", message);
+    } catch (e) {
+      console.error("Error creating chat message", e);
+    }
+  });
+
+  // Notificar a todos en el workspace que alguien se unió al chat
+  socket.on("chat:join", (payload: { username: string; workspaceId: string }) => {
+    if (!payload?.username?.trim() || !payload?.workspaceId) return;
+    socket.to(`workspace:${payload.workspaceId}`).emit("chat:user:joined", { username: payload.username.trim() });
   });
 };

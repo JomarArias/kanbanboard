@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
-import { uploadCardImage } from "../controllers/upload.controller.js";
+import { uploadCardImage, uploadProfileImage } from "../controllers/upload.controller.js";
+import { requireWorkspaceAccess } from "../middlewares/workspace.middleware.js";
 
 const router = Router();
 
@@ -11,7 +12,9 @@ const upload = multer({
   }
 });
 
-router.post("/uploads/image", upload.single("file"), uploadCardImage);
+router.post("/uploads/image", requireWorkspaceAccess, upload.single("file"), uploadCardImage);
+
+router.post("/uploads/profile-image", upload.single("file"), uploadProfileImage)
 
 export default router;
 

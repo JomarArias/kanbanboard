@@ -21,8 +21,9 @@
                     <span
                         class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-white rounded-full"></span>
                 </a>
-                <p-button *ngIf="isOwner" icon="pi pi-user-plus" severity="secondary" [outlined]="true" size="small"
-                    pTooltip="Invitar a un Miembro" tooltipPosition="bottom" (onClick)="openInviteDialog()">
+                <p-button *ngIf="hasInviteRights" icon="pi pi-user-plus" severity="secondary" [outlined]="true"
+                    size="small" pTooltip="Invitar a un Miembro" tooltipPosition="bottom"
+                    (onClick)="openInviteDialog()">
                 </p-button>
                 <a *ngIf="isAdmin" routerLink="/admin" class="p-button p-button-sm p-button-outlined p-button-secondary"
                     pTooltip="Panel de Administración" tooltipPosition="bottom">
@@ -31,9 +32,10 @@
                 </a>
             </div>
 
-            <p-button label="Cerrar Sesión" icon="pi pi-sign-out" [text]="true" severity="danger" size="small"
-                (onClick)="logout()">
-            </p-button>
+            <button pButton type="button" class="p-button-text p-button-danger p-button-sm border " (click)="logout()">
+                <i class="pi pi-sign-out"></i>
+                <span class="hidden md:inline ml-2">Cerrar Sesión</span>
+            </button>
         </ng-container>
 
         <ng-template #loggedOut>

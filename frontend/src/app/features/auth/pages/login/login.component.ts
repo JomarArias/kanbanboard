@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FirebaseAuthService } from '../../../../core/services/firebase-auth.service';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
     selector: 'app-login',
@@ -36,7 +37,7 @@ export class LoginComponent implements OnInit {
 
     onSubmit(): void {
         this.errorMsg = '';
-        if (!this.email || !this.password) {
+        if (!this.email || !this.password || (this.mode === 'register' && !this.name.trim())) {
             this.errorMsg = 'Por favor completa todos los campos.';
             return;
         }
@@ -54,6 +55,7 @@ export class LoginComponent implements OnInit {
             next: () => { this.loading = false; this.router.navigate(['/']); },
             error: (err) => {
                 this.loading = false;
+                console.error('Registration/Login error:', err);
                 this.errorMsg = this.mapFirebaseError(err.code);
             }
         });
@@ -69,6 +71,7 @@ export class LoginComponent implements OnInit {
 
     private mapFirebaseError(code: string): string {
         const map: Record<string, string> = {
+            'auth/invalid-credential': 'Credenciales incorrectas.',
             'auth/user-not-found': 'Usuario no encontrado.',
             'auth/wrong-password': 'Contraseña incorrecta.',
             'auth/email-already-in-use': 'El correo ya está registrado.',
