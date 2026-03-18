@@ -22,6 +22,13 @@ export class AuditLogComponent {
   @Input() visible: boolean = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
+  readonly actionLabels: Record<AuditLog['action'], string> = {
+    CREATE: 'Crear',
+    UPDATE: 'Actualizar',
+    DELETE: 'Eliminar',
+    MOVE: 'Mover'
+  };
+
   onVisibleChange(value: boolean) {
     this.visible = value;
     this.visibleChange.emit(value);
