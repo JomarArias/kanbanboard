@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - FIREBASE_API_KEY=${FIREBASE_API_KEY}
+        - FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN}
+        - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+        - FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET}
+        - FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID}
+        - FIREBASE_APP_ID=${FIREBASE_APP_ID}
+        - FIREBASE_MEASUREMENT_ID=${FIREBASE_MEASUREMENT_ID}
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
