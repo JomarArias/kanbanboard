@@ -34,6 +34,7 @@ export class NavbarComponent implements OnInit {
 
     displayInviteDialog: boolean = false;
     inviteEmail: string = '';
+    generatedInviteLink: string = '';
     isInviting: boolean = false;
     myUserId: string = '';
     isAdmin: boolean = false;
@@ -118,6 +119,7 @@ export class NavbarComponent implements OnInit {
     openInviteDialog() {
         if (this.activeWorkspaceId) {
             this.inviteEmail = '';
+            this.generatedInviteLink = '';
             this.displayInviteDialog = true;
         } else {
             this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Selecciona un proyecto primero' });
@@ -125,8 +127,8 @@ export class NavbarComponent implements OnInit {
     }
 
     inviteUser() {
-        if (!this.inviteEmail || !this.inviteEmail.includes('@')) {
-            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Ingresa un email válido' });
+        if (this.inviteEmail && !this.inviteEmail.includes('@')) {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Ingresa un email válido o déjalo en blanco para generar un enlace' });
             return;
         }
 
@@ -135,11 +137,16 @@ export class NavbarComponent implements OnInit {
 
         this.isInviting = true;
         this.workspaceService.inviteMember(workspaceId, this.inviteEmail).subscribe({
-            next: (_res: unknown) => {
-                this.messageService.add({ severity: 'success', summary: 'Correcto', detail: `Usuario ${this.inviteEmail} invitado` });
-                this.displayInviteDialog = false;
+            next: (res: any) => {
+                if (this.inviteEmail) {
+                    this.messageService.add({ severity: 'success', summary: 'Correcto', detail: `Usuario ${this.inviteEmail} invitado por correo` });
+                    this.displayInviteDialog = false;
+                    this.inviteEmail = '';
+                } else {
+                    this.generatedInviteLink = res.inviteUrl;
+                    this.messageService.add({ severity: 'success', summary: 'Enlace generado', detail: 'Copia el enlace para compartirlo' });
+                }
                 this.isInviting = false;
-                this.inviteEmail = '';
             },
             error: (err: { error?: { message?: string } }) => {
                 const msg = err.error?.message || 'Error al invitar al usuario';
@@ -147,5 +154,15 @@ export class NavbarComponent implements OnInit {
                 this.isInviting = false;
             }
         });
+    }
+
+    copyInviteLink() {
+        if (this.generatedInviteLink) {
+            navigator.clipboard.writeText(this.generatedInviteLink).then(() => {
+                this.messageService.add({ severity: 'info', summary: 'Copiado', detail: 'Enlace copiado al portapapeles' });
+                this.displayInviteDialog = false;
+                this.generatedInviteLink = '';
+            });
+        }
     }
 }

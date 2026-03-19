@@ -46,14 +46,32 @@
 </header>
 
 <p-dialog header="Invitar a un Miembro" [(visible)]="displayInviteDialog" [modal]="true"
-    [style]="{ width: 'min(350px, 90vw)' }" [draggable]="false" [resizable]="false">
-    <div class="flex flex-column py-3">
-        <input pInputText id="email" type="email" placeholder="Correo electrónico" [(ngModel)]="inviteEmail"
-            class="w-full" />
+    [style]="{ width: 'min(400px, 90vw)' }" [draggable]="false" [resizable]="false">
+    <div class="flex flex-column py-3 gap-3">
+        <div *ngIf="!generatedInviteLink">
+            <p class="mb-2 mt-0 text-sm text-color-secondary">Ingresa un correo para enviar invitación, o déjalo en blanco para crear un enlace.</p>
+            <input pInputText id="email" type="email" placeholder="Correo electrónico (Opcional)" [(ngModel)]="inviteEmail"
+                class="w-full" />
+        </div>
+        
+        <div *ngIf="generatedInviteLink" class="flex flex-column gap-2">
+            <p class="m-0 text-sm font-medium">Enlace generado:</p>
+            <p class="m-0 text-sm text-color-secondary">Copia este enlace y compártelo con el miembro que deseas invitar.</p>
+            <div class="p-inputgroup w-full mt-2">
+                <input type="text" pInputText [value]="generatedInviteLink" readonly class="w-full" />
+                <button type="button" pButton icon="pi pi-copy" (click)="copyInviteLink()"></button>
+            </div>
+        </div>
     </div>
     <ng-template pTemplate="footer">
-        <p-button label="Cancelar" [text]="true" severity="secondary"
-            (onClick)="displayInviteDialog = false"></p-button>
-        <p-button label="Invitar" icon="pi pi-send" [loading]="isInviting" (onClick)="inviteUser()"></p-button>
+        <ng-container *ngIf="!generatedInviteLink">
+            <p-button label="Cancelar" [text]="true" severity="secondary"
+                (onClick)="displayInviteDialog = false"></p-button>
+            <p-button [label]="inviteEmail ? 'Enviar Correo' : 'Generar Enlace'" [icon]="inviteEmail ? 'pi pi-send' : 'pi pi-link'" [loading]="isInviting" (onClick)="inviteUser()"></p-button>
+        </ng-container>
+        <ng-container *ngIf="generatedInviteLink">
+            <p-button label="Cerrar" [text]="true" severity="secondary"
+                (onClick)="displayInviteDialog = false"></p-button>
+        </ng-container>
     </ng-template>
 </p-dialog>

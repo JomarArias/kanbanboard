@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
     getMyWorkspaces, createWorkspace, getWorkspaceMembers, inviteMember,
     updateMemberRole, removeMember, adminListWorkspaces, adminCreateWorkspace,
-    adminUpdateWorkspace, adminDeleteWorkspace, adminAddMemberToWorkspace, adminRemoveMemberFromWorkspace
+    adminUpdateWorkspace, adminDeleteWorkspace, adminAddMemberToWorkspace, adminRemoveMemberFromWorkspace,
+    getInvitationDetails, acceptInvitation
 } from '../controllers/workspace.controller.js';
 import { verifyFirebaseToken, requireUser, requireAdmin } from '../middlewares/auth.middleware.js';
 import { requireWorkspaceAccess } from '../middlewares/workspace.middleware.js';
@@ -21,6 +22,10 @@ router.get('/workspaces/members', requireWorkspaceAccess, getWorkspaceMembers);
 router.post('/workspaces/invite', requireWorkspaceAccess, inviteMember);
 router.patch('/workspaces/members/:userId/role', requireWorkspaceAccess, updateMemberRole);
 router.delete('/workspaces/members/:userId', requireWorkspaceAccess, removeMember);
+
+// Invitations (Authenticated)
+router.get('/invitations/:token', getInvitationDetails);
+router.post('/invitations/:token/accept', acceptInvitation);
 
 // Admin: board/workspace CRUD (all workspaces)
 router.get('/admin/workspaces', requireAdmin, adminListWorkspaces);

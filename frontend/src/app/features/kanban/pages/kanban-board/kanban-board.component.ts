@@ -189,8 +189,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.todayDate.setHours(0, 0, 0, 0);
-    this.loadCards();
-    this.loadAuditLogs();
     this.initSearch();
 
     this.items = [
@@ -352,6 +350,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   loadCards() {
+    if (!this.activeWorkspaceId) return;
     this.isLoadingCards = true;
     let completedRequests = 0;
     const columns = ['todo', 'inProgress', 'done'];
@@ -376,6 +375,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   loadAuditLogs() {
+    if (!this.activeWorkspaceId) return;
     this.kanbanFacade.getAuditLogs().subscribe({
       next: (logs) => { this.auditLogs = logs; },
       error: (err) => console.error(err)

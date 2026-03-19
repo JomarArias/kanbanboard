@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
 import { Workspace, WorkspaceRole } from '../models/Workspace.js';
 import { User } from '../models/User.js';
+import { Invitation } from '../models/Invitation.js';
+import { sendInvitationEmail } from '../services/email.service.js';
 import { sendError } from '../utils/http-response.js';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 export const getMyWorkspaces = async (req: Request, res: Response) => {
     try {
@@ -118,9 +122,6 @@ export const inviteMember = async (req: Request, res: Response) => {
         const { email, role = 'editor' } = req.body;
         const currentUser = res.locals.user;
         const workspace = res.locals.workspace;
-
-        if (!email) return sendError(res, 400, 'Email is required');
-
         const isOwner = workspace.owners.some((ownerId: any) => ownerId.toString() === currentUser._id.toString());
         const isAdmin = workspace.members.some((m: any) => m.userId.toString() === currentUser._id.toString() && m.role === 'admin');
         if (!isOwner && !isAdmin) return sendError(res, 403, 'Only Workspace owners or admins can invite members');
@@ -129,31 +130,112 @@ export const inviteMember = async (req: Request, res: Response) => {
             return sendError(res, 400, 'Role must be admin, editor, or viewer');
         }
 
-        let userToInvite = await User.findOne({ email });
+        // Create invitation record with a temp token
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Valid for 7 days
 
-        if (!userToInvite) {
-            userToInvite = new User({
-                auth0Id: `pending_${Date.now()}_${Math.random()}`,
-                email,
-                name: email.split('@')[0],
-                picture: ''
-            });
-            await userToInvite.save();
+        const invitation = await Invitation.create({
+            token: crypto.randomUUID(), // Temp token to satisfy schema
+            workspaceId: workspace._id,
+            role,
+            email: email ? email.toLowerCase() : null,
+            expiresAt,
+            used: false
+        });
+
+        const jwtSecret = process.env.JWT_SECRET || 'super_secret_kanban_jwt_key_here';
+        const jwtToken = jwt.sign(
+            { invitationId: invitation._id, workspaceId: workspace._id },
+            jwtSecret,
+            { expiresIn: '7d' }
+        );
+
+        invitation.token = jwtToken;
+        await invitation.save();
+
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+        const inviteUrl = `${frontendUrl}/?inviteToken=${jwtToken}`;
+
+        if (email) {
+            try {
+                await sendInvitationEmail(email, workspace.name, inviteUrl);
+            } catch (emailError) {
+                console.error('Failed to send email, but invitation was created', emailError);
+            }
+            return res.json({ message: 'Invitation sent via email', inviteUrl });
         }
 
-        const isAlreadyMember = workspace.members.some((m: any) => m.userId.toString() === userToInvite!._id.toString()) ||
-            workspace.owners.some((ownerId: any) => ownerId.toString() === userToInvite!._id.toString());
-
-        if (isAlreadyMember) {
-            return res.status(400).json({ message: 'User is already a member of this workspace' });
-        }
-
-        workspace.members.push({ userId: userToInvite._id, role });
-        await workspace.save();
-
-        return res.json({ message: 'User invited successfully', user: userToInvite });
+        return res.json({ message: 'Invitation link generated', inviteUrl });
     } catch (error: any) {
-        return sendError(res, 500, 'Error inviting member', error);
+        return sendError(res, 500, 'Error creating invitation', error);
+    }
+};
+
+export const getInvitationDetails = async (req: Request, res: Response) => {
+    try {
+        const token = req.params.token as string;
+        const jwtSecret = process.env.JWT_SECRET || 'super_secret_kanban_jwt_key_here';
+        let decoded: any;
+        try {
+            decoded = jwt.verify(token, jwtSecret);
+        } catch (err) {
+            return sendError(res, 400, 'Invalid or expired invitation token');
+        }
+
+        const invitation = await Invitation.findOne({ _id: decoded.invitationId, used: false });
+        if (!invitation) return sendError(res, 404, 'Invitation not found or already used');
+
+        const workspace = await Workspace.findById(invitation.workspaceId).select('name');
+        if (!workspace) return sendError(res, 404, 'Workspace no longer exists');
+
+        return res.json({
+            workspaceName: workspace.name,
+            role: invitation.role,
+            email: invitation.email
+        });
+    } catch (error: any) {
+        return sendError(res, 500, 'Error fetching invitation details', error);
+    }
+};
+
+export const acceptInvitation = async (req: Request, res: Response) => {
+    try {
+        const token = req.params.token as string;
+        const currentUser = res.locals.user;
+        const jwtSecret = process.env.JWT_SECRET || 'super_secret_kanban_jwt_key_here';
+        
+        let decoded: any;
+        try {
+            decoded = jwt.verify(token, jwtSecret);
+        } catch (err) {
+            return sendError(res, 400, 'Invalid or expired invitation token');
+        }
+
+        const invitation = await Invitation.findOne({ _id: decoded.invitationId, used: false });
+        if (!invitation) return sendError(res, 400, 'Invitation not found or already used');
+
+        // Check email match if strictly assigned to an email
+        if (invitation.email && currentUser.email.toLowerCase() !== invitation.email.toLowerCase()) {
+            return sendError(res, 403, 'This invitation is not for your email address');
+        }
+
+        const workspace = await Workspace.findById(invitation.workspaceId);
+        if (!workspace) return sendError(res, 404, 'Workspace not found');
+
+        const isAlreadyMember = workspace.members.some((m: any) => m.userId.toString() === currentUser._id.toString()) ||
+            workspace.owners.some((ownerId: any) => ownerId.toString() === currentUser._id.toString());
+
+        if (!isAlreadyMember) {
+            workspace.members.push({ userId: currentUser._id, role: invitation.role } as any);
+            await workspace.save();
+        }
+
+        invitation.used = true;
+        await invitation.save();
+
+        return res.json({ message: 'Welcome to the workspace!', workspaceId: workspace._id });
+    } catch (error: any) {
+        return sendError(res, 500, 'Error accepting invitation', error);
     }
 };
 

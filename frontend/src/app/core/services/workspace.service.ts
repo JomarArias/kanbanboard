@@ -61,4 +61,15 @@ export class WorkspaceService {
     inviteMember(workspaceId: string, email: string): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/invite`, { workspaceId, email });
     }
+
+    getInvitationDetails(token: string): Observable<any> {
+        // apiUrl covers /workspaces but invitations are under /workspaces? No, they are under /invitations.
+        // Wait, the routes in workspace.routes.ts prefix depends on index routes... Let's check:
+        // backend/src/index.ts mounts `app.use('/api', workspaceRoutes)` so it is simply `/api/invitations/:token`
+        return this.http.get<any>(`${environment.apiUrl}/invitations/${token}`);
+    }
+
+    acceptInvitation(token: string): Observable<any> {
+        return this.http.post<any>(`${environment.apiUrl}/invitations/${token}/accept`, {});
+    }
 }
