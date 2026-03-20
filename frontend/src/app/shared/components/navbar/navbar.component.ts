@@ -8,6 +8,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
+import { SidebarModule } from 'primeng/sidebar';
+import { DividerModule } from 'primeng/divider';
 import { FormsModule } from '@angular/forms';
 import { WorkspaceService } from '../../../core/services/workspace.service';
 import { MessageService } from 'primeng/api';
@@ -21,7 +23,7 @@ let _isAdminCache: boolean | null = null;
 @Component({
     selector: 'app-navbar',
     standalone: true,
-    imports: [CommonModule, RouterModule, ButtonModule, DropdownModule, FormsModule, DialogModule, InputTextModule, TooltipModule],
+    imports: [CommonModule, RouterModule, ButtonModule, DropdownModule, FormsModule, DialogModule, InputTextModule, TooltipModule, SidebarModule, DividerModule],
     templateUrl: './navbar.component.html',
     styleUrl: './navbar.component.scss'
 })
@@ -32,6 +34,7 @@ export class NavbarComponent implements OnInit {
     private http = inject(HttpClient);
     private router = inject(Router);
 
+    mobileMenuVisible: boolean = false;
     displayInviteDialog: boolean = false;
     inviteEmail: string = '';
     generatedInviteLink: string = '';
@@ -84,6 +87,10 @@ export class NavbarComponent implements OnInit {
         return this.workspaceService.getActiveWorkspaceId();
     }
 
+    get isAdminRoute(): boolean {
+        return this.router.url.startsWith('/admin');
+    }
+
     get activeWorkspace() {
         const workspaces = this.workspaceService['workspacesSubject'].value;
         const activeId = this.activeWorkspaceId;
@@ -102,6 +109,12 @@ export class NavbarComponent implements OnInit {
 
     onWorkspaceChange(event: any) {
         this.workspaceService.setActiveWorkspace(event.value);
+    }
+
+    closeSidebarAfterDelay() {
+        setTimeout(() => {
+            this.mobileMenuVisible = false;
+        }, 50);
     }
 
     login() {

@@ -60,14 +60,14 @@ import { Subscription, filter, take } from 'rxjs';
       [style.zIndex]="100">
 
       <!-- Pestaña con flecha (siempre visible) -->
-      <div class="pointer-events-auto self-start mt-20">
+      <div class="pointer-events-auto self-start mt-12 md:mt-24">
         <button
           (click)="toggleChat()"
           [title]="isOpen ? 'Cerrar chat' : 'Abrir chat'"
-          class="flex items-center gap-1 px-2 py-3 bg-white border border-r-0 border-gray-200
-                 rounded-l-xl shadow-md hover:bg-gray-50 hover:text-green-500
-                 text-gray-500 transition-colors cursor-pointer select-none">
-          <i class="pi pi-comments text-base"></i>
+          class="flex items-center gap-1 px-1.5 py-4 md:px-2 md:py-3 bg-white border border-r-0 border-gray-200
+                 rounded-l-xl opacity-90 hover:opacity-100 shadow-md hover:bg-gray-50 hover:text-green-500
+                 text-gray-500 transition-all cursor-pointer select-none">
+          <i class="pi pi-comments text-lg md:text-base"></i>
           <i class="pi text-xs tab-arrow"
              [class.pi-chevron-left]="!isOpen"
              [class.pi-chevron-right]="isOpen">

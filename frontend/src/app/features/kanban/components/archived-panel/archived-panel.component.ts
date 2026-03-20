@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
-import { DrawerModule } from 'primeng/drawer';
+import { SidebarModule } from 'primeng/sidebar';
 import { Kanban } from '../../../../core/models/kanban.model';
 import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { WorkspaceService } from '../../../../core/services/workspace.service';
@@ -17,14 +17,25 @@ const LIST_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-archived-panel',
   standalone: true,
-  imports: [CommonModule, DrawerModule, ButtonModule],
+  imports: [CommonModule, SidebarModule, ButtonModule],
+  styles: [':host { display: contents; }'],
   template: `
-    <p-drawer
+    <p-sidebar
       [(visible)]="visible"
       (visibleChange)="visibleChange.emit($event)"
-      header="Bandeja de Archivados"
       position="right"
-      [style]="{ width: '380px' }">
+      appendTo="body"
+      [style]="{ width: '420px' }"
+      [modal]="true"
+      [dismissible]="true"
+      [showCloseIcon]="true">
+
+      <ng-template pTemplate="header">
+          <div class="flex items-center gap-2">
+              <i class="pi pi-inbox text-xl"></i>
+              <h3 class="m-0 font-semibold">Bandeja de Archivados</h3>
+          </div>
+      </ng-template>
 
       <!-- Sin tarjetas -->
       <div *ngIf="cards.length === 0"
@@ -72,7 +83,7 @@ const LIST_LABELS: Record<string, string> = {
           </div>
         </div>
       </div>
-    </p-drawer>
+    </p-sidebar>
   `
 })
 export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {

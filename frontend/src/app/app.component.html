@@ -9,5 +9,5 @@
   </div>
 
   <!-- Chat lateral fijo -->
-  <app-chat-panel *ngIf="!isMinimalLayoutPage && (auth.currentUser$ | async)"></app-chat-panel>
+  <app-chat-panel *ngIf="!isMinimalLayoutPage && !isAdminPage && (auth.currentUser$ | async)"></app-chat-panel>
 </main>

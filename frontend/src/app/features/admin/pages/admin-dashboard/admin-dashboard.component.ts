@@ -5,7 +5,6 @@ import { RouterModule } from '@angular/router';
 import { AdminService, AdminUser, AdminAuditLog, AdminWorkspace } from '../../../../core/services/admin.service';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
-import { TabViewModule } from 'primeng/tabview';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { TagModule } from 'primeng/tag';
@@ -25,7 +24,7 @@ type DialogType = 'none' | 'createBoard' | 'editBoard' | 'assignMember';
     standalone: true,
     imports: [
         CommonModule, FormsModule, RouterModule,
-        TableModule, TabViewModule, ButtonModule, DropdownModule,
+        TableModule, ButtonModule, DropdownModule,
         TagModule, ToastModule, ConfirmDialogModule, AvatarModule,
         InputTextModule, CalendarModule, TooltipModule, DialogModule, PanelModule
     ],
@@ -48,6 +47,7 @@ export class AdminDashboardComponent implements OnInit {
 
     // ─── Single dialog state (prevents stacking) ────────────────────────────────
     activeDialog: DialogType = 'none';
+    expandedRows: any = {};
 
     // Create board
     newBoardName = '';
@@ -61,10 +61,14 @@ export class AdminDashboardComponent implements OnInit {
     assignUserId = '';
     assignRole = 'editor';
 
+    // Section state
+    activeSection: 'users' | 'workspaces' | 'history' = 'users';
+
     // Audit log filters
     filterAction: string | null = null;
     filterDateFrom: Date | null = null;
     filterDateTo: Date | null = null;
+    filterWorkspaceId: string | null = null;
 
     actionOptions = [
         { label: 'Todos', value: null },
@@ -265,6 +269,7 @@ export class AdminDashboardComponent implements OnInit {
         if (this.filterAction) filters.action = this.filterAction;
         if (this.filterDateFrom) filters.from = this.filterDateFrom.toISOString();
         if (this.filterDateTo) filters.to = this.filterDateTo.toISOString();
+        if (this.filterWorkspaceId) filters.workspaceId = this.filterWorkspaceId;
         this.adminService.getAuditLogs(filters).subscribe({
             next: (logs) => { this.auditLogs = logs; this.loadingLogs = false; },
             error: () => this.loadingLogs = false

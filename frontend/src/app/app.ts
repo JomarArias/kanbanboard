@@ -31,6 +31,10 @@ export class App implements OnInit {
     return this.router.url.startsWith('/login') || this.router.url.startsWith('/404');
   }
 
+  get isAdminPage(): boolean {
+    return this.router.url.startsWith('/admin');
+  }
+
   ngOnInit() {
     this.authSync.initSyncListener();
     // The InactivityService starts tracking automatically upon injection because tracking is initialized in its constructor.
