@@ -3,7 +3,7 @@
 
 <!-- ─── SINGLE DIALOG ────────────────────────────────────────────────────── -->
 <p-dialog [(visible)]="isDialogOpen" [modal]="true" [draggable]="false" [resizable]="false" [closeOnEscape]="true"
-    appendTo="body" [style]="{ width: 'min(480px, 96vw)' }" [baseZIndex]="10000" (onHide)="closeDialog()">
+    [closable]="false" appendTo="body" [style]="{ width: 'min(480px, 96vw)' }" [baseZIndex]="10000" (onHide)="closeDialog()">
 
     <!-- ONE header for all dialog types -->
     <ng-template pTemplate="header">
@@ -26,7 +26,7 @@
                 (keyup.enter)="submitCreateBoard()" />
         </div>
         <div class="field-group">
-            <label class="field-label">Asignar Dueño (opcional)</label>
+            <label class="field-label">Asignar Propietario (opcional)</label>
             <p-dropdown [options]="users" [(ngModel)]="newBoardOwnerUserId" optionLabel="name" optionValue="_id"
                 placeholder="Por defecto: tú" styleClass="w-full" [filter]="true" filterBy="name,email"
                 [showClear]="true" appendTo="body">
@@ -114,44 +114,55 @@
         </div>
     </div>
 
-    <!-- Tabs -->
-    <p-tabView styleClass="admin-tabs">
+    <!-- Main Layout -->
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <button class="sidebar-item" [class.active]="activeSection === 'users'" (click)="activeSection = 'users'">
+                <i class="pi pi-users"></i>
+                <span class="sidebar-label">Usuarios</span>
+            </button>
+            <button class="sidebar-item" [class.active]="activeSection === 'workspaces'" (click)="activeSection = 'workspaces'">
+                <i class="pi pi-th-large"></i>
+                <span class="sidebar-label">Tableros</span>
+            </button>
+            <button class="sidebar-item" [class.active]="activeSection === 'history'" (click)="activeSection = 'history'">
+                <i class="pi pi-history"></i>
+                <span class="sidebar-label">Historial</span>
+            </button>
+        </div>
 
-        <!-- ─── Usuarios ─────────────────────────────────────────────────── -->
-        <p-tabPanel>
-            <ng-template pTemplate="header"><i class="pi pi-users mr-2"></i>Usuarios</ng-template>
+        <!-- Content Area -->
+        <div class="admin-content">
 
-            <div class="section-toolbar">
-                <h2 class="section-title">Usuarios <span class="badge">{{ users.length }}</span></h2>
-                <p-button icon="pi pi-refresh" label="Actualizar" size="small" [outlined]="true" (onClick)="loadUsers()"
-                    [loading]="loadingUsers"></p-button>
-            </div>
+            <!-- ─── Usuarios ─────────────────────────────────────────────────── -->
+            <div *ngIf="activeSection === 'users'" class="section-container">
 
-            <!-- Desktop table -->
-            <div class="table-wrapper hide-mobile">
+            <!-- Desktop & Mobile table -->
+            <div class="table-wrapper">
                 <p-table [value]="users" [loading]="loadingUsers" [paginator]="true" [rows]="15"
-                    styleClass="p-datatable-sm" [rowHover]="true" emptyMessage="No hay usuarios.">
+                    styleClass="p-datatable-sm" [rowHover]="true" emptyMessage="No hay usuarios."
+                    [scrollable]="true" scrollHeight="flex">
                     <ng-template pTemplate="header">
                         <tr>
                             <th>Usuario</th>
-                            <th>Email</th>
+                            <th class="hide-mobile-col">Email</th>
                             <th>Rol</th>
-                            <th>Estado</th>
-                            <th>Desde</th>
+                            <th class="hide-mobile-col">Estado</th>
+                            <th class="hide-mobile-col">Desde</th>
                             <th style="width:80px"></th>
                         </tr>
                     </ng-template>
                     <ng-template pTemplate="body" let-user>
                         <tr [class.row-disabled]="user.isDeleted">
                             <td>
-                                <div class="flex items-center gap-2">
-                                    <p-avatar *ngIf="user.picture" [image]="user.picture" shape="circle"></p-avatar>
-                                    <p-avatar *ngIf="!user.picture" [label]="avatarLabel(user.name)"
-                                        shape="circle"></p-avatar>
-                                    <span class="font-medium">{{ user.name }}</span>
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <p-avatar *ngIf="user.picture" [image]="user.picture" shape="circle" styleClass="avatar-sm"></p-avatar>
+                                    <p-avatar *ngIf="!user.picture" [label]="avatarLabel(user.name)" shape="circle" styleClass="avatar-sm"></p-avatar>
+                                    <span class="font-medium truncate flex-1">{{ user.name }}</span>
                                 </div>
                             </td>
-                            <td class="text-sm">{{ user.email }}</td>
+                            <td class="text-sm hide-mobile-col">{{ user.email }}</td>
                             <td>
                                 <p-dropdown [options]="roleOptions" [(ngModel)]="user.role"
                                     (onChange)="onRoleChange(user, $event.value)" optionLabel="label"
@@ -159,11 +170,11 @@
                                     appendTo="body">
                                 </p-dropdown>
                             </td>
-                            <td>
+                            <td class="hide-mobile-col">
                                 <p-tag *ngIf="!user.isDeleted" severity="success" value="Activo"></p-tag>
                                 <p-tag *ngIf="user.isDeleted" severity="danger" value="Inactivo"></p-tag>
                             </td>
-                            <td class="text-sm">{{ user.createdAt | date:'dd/MM/yy' }}</td>
+                            <td class="text-sm hide-mobile-col">{{ user.createdAt | date:'dd/MM/yy' }}</td>
                             <td>
                                 <p-button *ngIf="!user.isDeleted" icon="pi pi-ban"
                                     styleClass="p-button-danger p-button-text p-button-sm" pTooltip="Desactivar"
@@ -176,94 +187,59 @@
                     </ng-template>
                 </p-table>
             </div>
-
-            <!-- Mobile cards -->
-            <div class="show-mobile">
-                <div class="mobile-card" *ngFor="let user of users" [class.row-disabled]="user.isDeleted">
-                    <div class="flex items-center gap-3 mb-2">
-                        <p-avatar *ngIf="user.picture" [image]="user.picture" shape="circle"></p-avatar>
-                        <p-avatar *ngIf="!user.picture" [label]="avatarLabel(user.name)" shape="circle"></p-avatar>
-                        <div>
-                            <div class="font-semibold">{{ user.name }}</div>
-                            <div class="text-xs" style="color:var(--text-color-secondary)">{{ user.email }}</div>
-                        </div>
-                        <div class="ml-auto">
-                            <p-tag *ngIf="!user.isDeleted" severity="success" value="Activo"></p-tag>
-                            <p-tag *ngIf="user.isDeleted" severity="danger" value="Inactivo"></p-tag>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between gap-2">
-                        <p-dropdown [options]="roleOptions" [(ngModel)]="user.role"
-                            (onChange)="onRoleChange(user, $event.value)" optionLabel="label" optionValue="value"
-                            [disabled]="user.isDeleted" styleClass="flex-1" appendTo="body">
-                        </p-dropdown>
-                        <p-button *ngIf="!user.isDeleted" icon="pi pi-ban"
-                            styleClass="p-button-danger p-button-text p-button-sm"
-                            (onClick)="confirmDeactivate(user)"></p-button>
-                        <p-button *ngIf="user.isDeleted" icon="pi pi-undo"
-                            styleClass="p-button-success p-button-text p-button-sm"
-                            (onClick)="reactivateUser(user)"></p-button>
-                    </div>
-                </div>
-                <p *ngIf="users.length === 0 && !loadingUsers" class="empty-msg">No hay usuarios.</p>
             </div>
-        </p-tabPanel>
 
         <!-- ─── Tableros ─────────────────────────────────────────────────── -->
-        <p-tabPanel>
-            <ng-template pTemplate="header"><i class="pi pi-th-large mr-2"></i>Tableros</ng-template>
+        <div *ngIf="activeSection === 'workspaces'" class="section-container">
 
             <div class="section-toolbar">
-                <h2 class="section-title">Tableros <span class="badge">{{ workspaces.length }}</span></h2>
                 <div class="flex gap-2">
-                    <p-button icon="pi pi-refresh" size="small" [outlined]="true" (onClick)="loadWorkspaces()"
-                        [loading]="loadingWorkspaces"></p-button>
                     <p-button icon="pi pi-plus" label="Nuevo Tablero" size="small"
                         (onClick)="openCreateBoard()"></p-button>
                 </div>
             </div>
 
-            <!-- Desktop table -->
-            <div class="table-wrapper hide-mobile">
+            <!-- Desktop & Mobile table -->
+            <div class="table-wrapper">
                 <p-table [value]="workspaces" [loading]="loadingWorkspaces" [paginator]="true" [rows]="10" dataKey="_id"
-                    styleClass="p-datatable-sm" [rowHover]="true" emptyMessage="No hay tableros."
-                    [expandedRowKeys]="{}">
+                    [expandedRowKeys]="expandedRows" styleClass="p-datatable-sm" [rowHover]="true" emptyMessage="No hay tableros."
+                    [scrollable]="true" scrollHeight="flex">
                     <ng-template pTemplate="header">
                         <tr>
-                            <th style="width:3rem"></th>
                             <th>Tablero</th>
-                            <th>Dueño</th>
-                            <th>Miembros</th>
-                            <th>Creado</th>
+                            <th class="hide-mobile-col">Propietario</th>
+                            <th style="width:120px">Miembros</th>
+                            <th class="hide-mobile-col">Creado</th>
                             <th style="width:130px">Acciones</th>
                         </tr>
                     </ng-template>
                     <ng-template pTemplate="body" let-ws let-expanded="expanded">
                         <tr>
-                            <td>
-                                <p-button [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                                    [pRowToggler]="ws"
-                                    styleClass="p-button-text p-button-sm p-button-rounded"></p-button>
-                            </td>
                             <td class="font-semibold">{{ ws.name }}</td>
-                            <td>
+                            <td class="hide-mobile-col">
                                 <div class="flex items-center gap-1" *ngIf="ws.owners?.[0]">
                                     <p-avatar *ngIf="ws.owners[0].picture" [image]="ws.owners[0].picture" shape="circle"
                                         styleClass="avatar-sm"></p-avatar>
                                     <span class="text-sm">{{ ws.owners[0].name }}</span>
                                 </div>
                             </td>
-                            <td><span class="badge">{{ ws.members?.length || 0 }}</span></td>
-                            <td class="text-sm">{{ ws.createdAt | date:'dd/MM/yy' }}</td>
                             <td>
-                                <div class="flex gap-1">
-                                    <p-button icon="pi pi-user-plus" pTooltip="Asignar usuario"
+                                <button type="button" class="p-button p-component p-button-text p-button-sm flex items-center gap-2 px-2 py-1"
+                                    [pRowToggler]="ws" pTooltip="Desplegar miembros">
+                                    <span class="badge">{{ ws.members?.length || 0 }}</span>
+                                    <i [class]="expanded ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" style="font-size:0.75rem; color:var(--text-color-secondary)"></i>
+                                </button>
+                            </td>
+                            <td class="text-sm hide-mobile-col">{{ ws.createdAt | date:'dd/MM/yy' }}</td>
+                            <td>
+                                <div class="flex gap-1 justify-content-end">
+                                    <p-button icon="pi pi-user-plus" pTooltip="Asignar" tooltipPosition="top"
                                         styleClass="p-button-info p-button-text p-button-sm"
                                         (onClick)="openAssignDialog(ws)"></p-button>
-                                    <p-button icon="pi pi-pencil" pTooltip="Renombrar"
+                                    <p-button icon="pi pi-pencil" pTooltip="Renombrar" tooltipPosition="top"
                                         styleClass="p-button-secondary p-button-text p-button-sm"
                                         (onClick)="openEditBoard(ws)"></p-button>
-                                    <p-button icon="pi pi-trash" pTooltip="Eliminar"
+                                    <p-button icon="pi pi-trash" pTooltip="Eliminar" tooltipPosition="top"
                                         styleClass="p-button-danger p-button-text p-button-sm"
                                         (onClick)="confirmDeleteWorkspace(ws)"></p-button>
                                 </div>
@@ -272,7 +248,7 @@
                     </ng-template>
                     <ng-template pTemplate="rowexpansion" let-ws>
                         <tr>
-                            <td colspan="6">
+                            <td colspan="5">
                                 <div class="expanded-members">
                                     <p class="expanded-title">Miembros del Tablero</p>
                                     <div *ngIf="ws.members?.length === 0" class="empty-msg">Sin miembros asignados.
@@ -300,51 +276,14 @@
                     </ng-template>
                 </p-table>
             </div>
-
-            <!-- Mobile cards -->
-            <div class="show-mobile">
-                <div class="mobile-card" *ngFor="let ws of workspaces">
-                    <div class="flex items-start justify-between gap-2 mb-2">
-                        <div>
-                            <div class="font-semibold">{{ ws.name }}</div>
-                            <div class="text-xs mt-0.5" style="color:var(--text-color-secondary)"
-                                *ngIf="ws.owners?.[0]">
-                                <i class="pi pi-user mr-1"></i>{{ ws.owners[0].name }}
-                            </div>
-                        </div>
-                        <span class="badge">{{ ws.members.length }} miembros</span>
-                    </div>
-                    <!-- Members list on mobile -->
-                    <div class="flex flex-wrap gap-1 mb-3" *ngIf="ws.members.length">
-                        <div *ngFor="let m of ws.members" class="flex items-center gap-1 px-2 py-0.5 rounded text-xs"
-                            style="background:var(--surface-hover)">
-                            <span>{{ m.name }}</span>
-                            <p-tag [value]="m.role"
-                                [severity]="m.role==='admin'?'danger':m.role==='editor'?'info':'secondary'"
-                                styleClass="text-xs"></p-tag>
-                            <button class="pi pi-times text-xs ml-1"
-                                style="color:var(--red-400); background:none; border:none; cursor:pointer"
-                                (click)="removeMemberFromBoard(ws, m)"></button>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 flex-wrap">
-                        <p-button icon="pi pi-user-plus" label="Asignar" size="small" [outlined]="true"
-                            (onClick)="openAssignDialog(ws)"></p-button>
-                        <p-button icon="pi pi-pencil" label="Editar" size="small" [outlined]="true" severity="secondary"
-                            (onClick)="openEditBoard(ws)"></p-button>
-                        <p-button icon="pi pi-trash" size="small" severity="danger" [outlined]="true"
-                            (onClick)="confirmDeleteWorkspace(ws)"></p-button>
-                    </div>
-                </div>
-                <p *ngIf="workspaces.length === 0 && !loadingWorkspaces" class="empty-msg">No hay tableros.</p>
             </div>
-        </p-tabPanel>
 
         <!-- ─── Historial ────────────────────────────────────────────────── -->
-        <p-tabPanel>
-            <ng-template pTemplate="header"><i class="pi pi-history mr-2"></i>Historial</ng-template>
-
+        <div *ngIf="activeSection === 'history'" class="section-container">
+            
             <div class="log-filters">
+                <p-dropdown [options]="workspaces" [(ngModel)]="filterWorkspaceId" optionLabel="name" optionValue="_id"
+                    placeholder="Tablero" styleClass="w-full" [filter]="true" filterBy="name" [showClear]="true" appendTo="body"></p-dropdown>
                 <p-dropdown [options]="actionOptions" [(ngModel)]="filterAction" optionLabel="label" optionValue="value"
                     placeholder="Acción" styleClass="w-full" appendTo="body"></p-dropdown>
                 <p-calendar [(ngModel)]="filterDateFrom" [showIcon]="true" dateFormat="dd/mm/yy" placeholder="Desde"
@@ -354,11 +293,12 @@
                 <p-button icon="pi pi-search" label="Filtrar" (onClick)="loadAuditLogs()"
                     [loading]="loadingLogs"></p-button>
                 <p-button icon="pi pi-times" [text]="true"
-                    (onClick)="filterAction=null;filterDateFrom=null;filterDateTo=null;loadAuditLogs()"></p-button>
+                    (onClick)="filterAction=null;filterWorkspaceId=null;filterDateFrom=null;filterDateTo=null;loadAuditLogs()"></p-button>
             </div>
 
             <p-table [value]="auditLogs" [loading]="loadingLogs" [paginator]="true" [rows]="20"
-                styleClass="p-datatable-sm" [rowHover]="true" emptyMessage="Sin registros.">
+                styleClass="p-datatable-sm" [rowHover]="true" emptyMessage="Sin registros."
+                [scrollable]="true" scrollHeight="flex" class="flex-table">
                 <ng-template pTemplate="header">
                     <tr>
                         <th style="width:100px">Acción</th>
@@ -391,6 +331,7 @@
                     </tr>
                 </ng-template>
             </p-table>
-        </p-tabPanel>
-    </p-tabView>
+            </div>
+        </div>
+    </div>
 </div>

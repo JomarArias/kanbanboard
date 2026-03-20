@@ -3,9 +3,88 @@
 }
 
 .admin-page {
-    min-height: 100vh;
+    height: 100dvh;
     background-color: var(--surface-ground);
-    padding-bottom: 3rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+// ─── Main Layout ─────────────────────────────────────────────────────────────
+.admin-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    flex-direction: row;
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+.admin-sidebar {
+    width: 240px;
+    background-color: var(--surface-card);
+    border-right: 1px solid var(--surface-border);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    flex-shrink: 0;
+    gap: 0.2rem;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1.25rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-color-secondary);
+    font-weight: 500;
+    text-align: left;
+    transition: background-color 0.2s, color 0.2s;
+    border-left: 3px solid transparent;
+
+    i {
+        font-size: 1.1rem;
+    }
+
+    &:hover {
+        background-color: var(--surface-hover);
+        color: var(--text-color);
+    }
+
+    &.active {
+        background-color: var(--surface-hover);
+        color: var(--primary-color);
+        border-left-color: var(--primary-color);
+        font-weight: 600;
+    }
+}
+
+// ─── Content Area ────────────────────────────────────────────────────────────
+.admin-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background-color: var(--surface-ground);
+    padding: 1rem;
+    overflow: hidden;
+}
+
+.section-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.section-header.show-mobile {
+    margin-bottom: 1rem;
 }
 
 // ─── Header ──────────────────────────────────────────────────────────────────
@@ -59,6 +138,10 @@
     gap: 0.75rem;
     padding: 1rem 0 0.75rem;
     flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--surface-ground);
 }
 
 .section-title {
@@ -127,6 +210,10 @@
     gap: 0.6rem;
     flex-wrap: wrap;
     padding: 0.75rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--surface-ground);
 }
 
 // ─── Mobile cards ────────────────────────────────────────────────────────────
@@ -190,21 +277,41 @@
 :host ::ng-deep {
 
     .avatar-sm.p-avatar {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 0.7rem !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        flex-shrink: 0;
+        font-size: 0.85rem !important;
     }
 
-    // Tab panels
-    .admin-tabs .p-tabview-nav {
-        background-color: var(--surface-card);
-        border-bottom: 1px solid var(--surface-border);
-        padding: 0 1rem;
+    // Prevents standard avatars from squishing
+    p-avatar ::ng-deep .p-avatar {
+        flex-shrink: 0;
     }
 
-    .admin-tabs .p-tabview-panels {
-        background-color: var(--surface-ground);
-        padding: 0 1rem;
+    // Make table wrappers flex so p-table can take remaining height
+    .table-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    // Flex for the p-table component host
+    p-table, .flex-table {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    // Mobile layout scrolling
+    .show-mobile {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 2rem;
     }
 
     // Table rows
@@ -239,34 +346,55 @@
         display: none;
     }
 
-    .hide-mobile {
-        display: none !important;
-    }
-
-    .show-mobile {
-        display: block !important;
-    }
-
     .hide-mobile-col {
         display: none !important;
     }
 
     .log-filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        
+        // Prevent grid blowout from long dropdown text
+        > * {
+            min-width: 0;
+        }
+
+        // Let buttons span exactly to their content or fill
+        p-button {
+            width: 100%;
+            ::ng-deep .p-button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    }
+
+    .admin-layout {
         flex-direction: column;
-        align-items: stretch;
     }
 
-    .section-toolbar {
-        align-items: flex-start;
+    .admin-sidebar {
+        width: 100%;
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 1px solid var(--surface-border);
+        padding: 0;
+        overflow-x: auto;
     }
 
-    :host ::ng-deep {
-        .admin-tabs .p-tabview-nav {
-            padding: 0 0.25rem;
-        }
+    .sidebar-item {
+        padding: 0.8rem 1rem;
+        white-space: nowrap;
+        border-left: none;
+        border-bottom: 3px solid transparent;
 
-        .admin-tabs .p-tabview-panels {
-            padding: 0 0.5rem;
+        &.active {
+            border-bottom-color: var(--primary-color);
         }
+    }
+
+    .admin-content {
+        padding: 0.5rem;
     }
 }

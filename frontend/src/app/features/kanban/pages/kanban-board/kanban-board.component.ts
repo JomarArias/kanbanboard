@@ -7,6 +7,7 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -39,6 +40,7 @@ import { ColorPickerModule } from 'primeng/colorpicker';
   imports: [
     CommonModule,
     DragDropModule,
+    ScrollingModule,
     CardModule,
     KanbanColumnComponent,
     DialogModule,

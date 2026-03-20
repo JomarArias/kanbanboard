@@ -5,41 +5,119 @@
 
     <div class="actions">
         <ng-container *ngIf="isAuthenticated$ | async; else loggedOut">
-            <div class="workspace-selector" *ngIf="(workspaces$ | async) as workspaces">
-                <p-dropdown [options]="workspaces" [(ngModel)]="activeWorkspaceId" optionLabel="name" optionValue="_id"
-                    (onChange)="onWorkspaceChange($event)" placeholder="Seleccionar Proyecto"
-                    styleClass="w-full md:w-14rem" [disabled]="workspaces.length === 0">
-                </p-dropdown>
+            
+            <!-- DESKTOP NAVBAR -->
+            <div class="hidden md:flex align-items-center gap-3">
+                <div class="workspace-selector" *ngIf="!isAdminRoute && (workspaces$ | async) as workspaces">
+                    <p-dropdown [options]="workspaces" [ngModel]="activeWorkspaceId" optionLabel="name" optionValue="_id"
+                        (onChange)="onWorkspaceChange($event)" placeholder="Seleccionar Proyecto" appendTo="body"
+                        styleClass="w-full md:w-14rem" [disabled]="workspaces.length === 0">
+                    </p-dropdown>
+                </div>
+
+                <div class="user-profile flex align-items-center gap-3" *ngIf="auth.currentUser$ | async as user">
+                    <span class="font-semibold">{{ user.displayName || user.email }}</span>
+                    <a routerLink="/profile" pTooltip="Ver mi perfil" tooltipPosition="bottom"
+                        class="relative inline-block cursor-pointer">
+                        <img [src]="user.photoURL || 'assets/default-avatar.png'" [alt]="user.displayName || ''"
+                            class="avatar w-2rem h-2rem border-circle" />
+                        <span
+                            class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-white rounded-full"></span>
+                    </a>
+                    <p-button *ngIf="!isAdminRoute && hasInviteRights" icon="pi pi-user-plus" severity="secondary" [outlined]="true"
+                        size="small" pTooltip="Invitar a un Miembro" tooltipPosition="bottom"
+                        (onClick)="openInviteDialog()">
+                    </p-button>
+                    <a *ngIf="isAdmin" routerLink="/admin" class="p-button p-button-sm p-button-outlined p-button-secondary"
+                        pTooltip="Panel de Administración" tooltipPosition="bottom">
+                        <i class="pi pi-shield"></i>
+                        <span class="ml-1">Admin</span>
+                    </a>
+                </div>
+
+                <button pButton type="button" class="p-button-text p-button-danger p-button-sm border" (click)="logout()">
+                    <i class="pi pi-sign-out"></i>
+                    <span class="ml-2">Cerrar Sesión</span>
+                </button>
             </div>
 
-            <div class="user-profile flex align-items-center gap-3" *ngIf="auth.currentUser$ | async as user">
-                <span class="hidden md:inline font-semibold">{{ user.displayName || user.email }}</span>
-                <a routerLink="/profile" pTooltip="Ver mi perfil" tooltipPosition="bottom"
-                    class="relative inline-block cursor-pointer">
+            <!-- MOBILE NAVBAR -->
+            <div class="flex md:hidden align-items-center gap-2" *ngIf="auth.currentUser$ | async as user">
+                <!-- Avatar Button -->
+                <button type="button" class="p-link flex items-center justify-center p-1 rounded-full hover:bg-surface-hover transition-colors"
+                    (click)="mobileMenuVisible = true">
                     <img [src]="user.photoURL || 'assets/default-avatar.png'" [alt]="user.displayName || ''"
-                        class="avatar w-2rem h-2rem border-circle" />
-                    <span
-                        class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-white rounded-full"></span>
-                </a>
-                <p-button *ngIf="hasInviteRights" icon="pi pi-user-plus" severity="secondary" [outlined]="true"
-                    size="small" pTooltip="Invitar a un Miembro" tooltipPosition="bottom"
-                    (onClick)="openInviteDialog()">
-                </p-button>
-                <a *ngIf="isAdmin" routerLink="/admin" class="p-button p-button-sm p-button-outlined p-button-secondary"
-                    pTooltip="Panel de Administración" tooltipPosition="bottom">
-                    <i class="pi pi-shield"></i>
-                    <span class="hidden md:inline ml-1">Admin</span>
-                </a>
+                        class="w-[32px] h-[32px] min-w-[32px] rounded-full border-2 border-[var(--primary-color)] object-cover" />
+                </button>
             </div>
+            
+            
+            <!-- MOBILE SIDEBAR / OFF-CANVAS -->
+            <p-sidebar [(visible)]="mobileMenuVisible" position="right" styleClass="w-[85vw] max-w-[350px]" (onHide)="mobileMenuVisible = false">
+                <ng-template pTemplate="header">
+                    <span class="font-bold text-lg">Menú Principal</span>
+                </ng-template>
 
-            <button pButton type="button" class="p-button-text p-button-danger p-button-sm border " (click)="logout()">
-                <i class="pi pi-sign-out"></i>
-                <span class="hidden md:inline ml-2">Cerrar Sesión</span>
-            </button>
+                <div class="flex flex-col gap-4 py-3" *ngIf="auth.currentUser$ | async as user">
+                    
+                    <div class="flex items-center gap-3 px-2">
+                        <img [src]="user.photoURL || 'assets/default-avatar.png'" alt="avatar" class="w-[48px] h-[48px] rounded-full object-cover shadow-sm" />
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-base truncate">{{ user.displayName || 'Usuario' }}</div>
+                            <div class="text-xs text-gray-500 truncate mb-1" *ngIf="user.email">{{ user.email }}</div>
+                            <div class="text-sm"><a routerLink="/profile" (click)="mobileMenuVisible = false" class="text-[var(--primary-color)] no-underline font-medium hover:underline">Ver mi perfil</a></div>
+                        </div>
+                    </div>
+
+                    <p-divider styleClass="m-0"></p-divider>
+
+                    <div *ngIf="!isAdminRoute && (workspaces$ | async) as workspaces" class="flex flex-col gap-2 px-2">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Tus Tableros</span>
+                        
+                        <div class="flex flex-col gap-1 max-h-[35vh] overflow-y-auto pr-1">
+                            <button *ngFor="let ws of workspaces" type="button" class="p-link w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-colors"
+                                [class.bg-indigo-50]="ws._id === activeWorkspaceId"
+                                [class.text-indigo-700]="ws._id === activeWorkspaceId"
+                                [class.font-semibold]="ws._id === activeWorkspaceId"
+                                [class.hover:bg-surface-hover]="ws._id !== activeWorkspaceId"
+                                [class.text-gray-700]="ws._id !== activeWorkspaceId"
+                                (click)="onWorkspaceChange({value: ws._id}); closeSidebarAfterDelay()">
+                                <i class="pi" [ngClass]="ws._id === activeWorkspaceId ? 'pi-folder-open' : 'pi-folder'"></i>
+                                <span class="truncate flex-1">{{ ws.name }}</span>
+                                <i *ngIf="ws._id === activeWorkspaceId" class="pi pi-check text-xs"></i>
+                            </button>
+                            <div *ngIf="workspaces.length === 0" class="text-sm text-gray-500 italic px-3 py-2">No tienes proyectos</div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col mt-2">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Acciones Rápidas</span>
+                        
+                        <button *ngIf="!isAdminRoute && hasInviteRights" type="button" class="p-link w-full flex items-center gap-3 px-3 py-3 rounded hover:bg-surface-hover text-left transition-colors"
+                            (click)="mobileMenuVisible = false; openInviteDialog()">
+                            <i class="pi pi-user-plus text-gray-600"></i>
+                            <span class="font-medium text-gray-800 dark:text-gray-200">Invitar a un Miembro</span>
+                        </button>
+                        
+                        <a *ngIf="isAdmin" routerLink="/admin" class="w-full flex items-center gap-3 px-3 py-3 rounded hover:bg-surface-hover text-left transition-colors no-underline"
+                            (click)="mobileMenuVisible = false">
+                            <i class="pi pi-shield text-gray-600"></i>
+                            <span class="font-medium text-gray-800 dark:text-gray-200">Panel de Administración</span>
+                        </a>
+
+                        <button type="button" class="p-link w-full flex items-center gap-3 px-3 py-3 rounded hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"
+                            (click)="mobileMenuVisible = false; logout()">
+                            <i class="pi pi-sign-out text-red-500"></i>
+                            <span class="font-medium text-red-600 dark:text-red-400">Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </p-sidebar>
+
         </ng-container>
 
         <ng-template #loggedOut>
-            <p-button label="Iniciar Sesión" icon="pi pi-user" (onClick)="login()">
+            <p-button label="Iniciar Sesión" icon="pi pi-user" size="small" (onClick)="login()">
             </p-button>
         </ng-template>
     </div>

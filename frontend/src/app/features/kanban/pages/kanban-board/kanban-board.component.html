@@ -48,7 +48,15 @@
             </p> -->
         </div>
 
-        <div class="hidden md:block"></div>
+        <!-- Toolbar para historial y archivados -->
+        <div class="flex items-center justify-start md:justify-end gap-2 shrink-0 overflow-x-auto pb-1 md:pb-0">
+            <button pButton type="button" icon="pi pi-history" label="Historial"
+                class="p-button-outlined p-button-sm p-button-secondary whitespace-nowrap"
+                (click)="displayAuditLog = true; loadAuditLogs()"></button>
+            <button pButton type="button" icon="pi pi-inbox" label="Archivados"
+                class="p-button-outlined p-button-sm p-button-secondary whitespace-nowrap"
+                (click)="displayArchivedPanel = true"></button>
+        </div>
 
 
     </div>
@@ -62,34 +70,14 @@
         </div>
     </div>
 
-    <!-- <div class="w-full max-w-md mb-6 px-4">
-        <span class="relative w-full block">
-            <i class="pi absolute top-1/2 -translate-y-1/2 left-3 text-gray-500 z-10"
-                [ngClass]="isSearching ? 'pi-spinner pi-spin' : 'pi-search'">
-            </i>
-            <input pInputText type="text" [ngModel]="searchTerm"
-                (ngModelChange)="onSearchChange($event); searchTerm = $event" placeholder="Buscar tareas..."
-                class="w-full !pl-10 rounded-xl" />
-        </span>
-        <p *ngIf="searchResults !== null && !isSearching" class="text-sm text-gray-500 mt-1 pl-1">
-            {{ searchResults.length === 0
-            ? 'Sin resultados para "' + searchTerm + '"'
-            : searchResults.length + ' resultado(s) encontrado(s)' }}
-        </p>
-    </div> -->
 
-    <!-- Speed Dial con Historial + Archivados -->
-    <p-speedDial [model]="items" direction="up"
-        [style]="{ position: 'fixed', bottom: '2rem', right: '4rem', zIndex: 50 }"></p-speedDial>
-
-    <!-- Drawer de archivados -->
     <app-archived-panel [(visible)]="displayArchivedPanel" (cardRestored)="onCardRestored($event)"
         (cardDeleted)="onArchivedCardDeleted($event)">
     </app-archived-panel>
 
     <app-audit-log [logs]="auditLogs" [(visible)]="displayAuditLog"></app-audit-log>
 
-    <div class="kanban-board-scroll flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4 snap-x snap-mandatory scroll-smooth"
+    <div cdkScrollable class="kanban-board-scroll flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4 snap-x snap-mandatory"
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px] snap-center"

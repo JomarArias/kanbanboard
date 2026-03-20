@@ -52,12 +52,13 @@ export class AdminService {
         return this.http.patch<{ message: string; user: AdminUser }>(`${this.base}/${userId}/reactivate`, {});
     }
 
-    getAuditLogs(filters?: { action?: string; from?: string; to?: string; limit?: number }) {
+    getAuditLogs(filters?: { action?: string; from?: string; to?: string; limit?: number; workspaceId?: string }) {
         let params = new HttpParams();
         if (filters?.action) params = params.set('action', filters.action);
         if (filters?.from) params = params.set('from', filters.from);
         if (filters?.to) params = params.set('to', filters.to);
         if (filters?.limit) params = params.set('limit', filters.limit.toString());
+        if (filters?.workspaceId) params = params.set('workspaceId', filters.workspaceId);
         return this.http.get<AdminAuditLog[]>(`${this.base}/audit-logs`, { params });
     }
 
