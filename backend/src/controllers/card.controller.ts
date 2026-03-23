@@ -204,6 +204,7 @@ export const moveCard = async (req: Request, res: Response) => {
   try {
     const { cardId, listId, prevOrder, nextOrder } = req.body ?? {};
     const workspaceId = res.locals.workspaceId as string;
+    const performedById = res.locals.user._id;
 
     if (!cardId || !listId) {
       return sendError(res, 400, "cardId y listId son requeridos");
@@ -213,7 +214,7 @@ export const moveCard = async (req: Request, res: Response) => {
       return sendError(res, 400, "cardId invalido");
     }
 
-    const result = await cardService.moveCard(cardId, listId, workspaceId, prevOrder, nextOrder);
+    const result = await cardService.moveCard(cardId, listId, workspaceId, performedById, prevOrder, nextOrder);
 
     try {
       getIO().to(`workspace:${workspaceId}`).emit("card:moved", { cardId, listId, order: result.order });

@@ -280,7 +280,7 @@
 
         <!-- ─── Historial ────────────────────────────────────────────────── -->
         <div *ngIf="activeSection === 'history'" class="section-container">
-            
+
             <div class="log-filters">
                 <p-dropdown [options]="workspaces" [(ngModel)]="filterWorkspaceId" optionLabel="name" optionValue="_id"
                     placeholder="Tablero" styleClass="w-full" [filter]="true" filterBy="name" [showClear]="true" appendTo="body"></p-dropdown>

@@ -16,6 +16,11 @@
   transition: background-color 0.2s ease;
 }
 
+.kanban-board-scroll.drag-auto-scrolling {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+
 .file-input-custom::file-selector-button {
   color: #000000;
   background: #10b981;

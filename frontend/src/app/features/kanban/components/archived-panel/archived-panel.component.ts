@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { SidebarModule } from 'primeng/sidebar';
@@ -22,12 +22,13 @@ const LIST_LABELS: Record<string, string> = {
   template: `
     <p-sidebar
       [(visible)]="visible"
-      (visibleChange)="visibleChange.emit($event)"
+      (visibleChange)="onVisibleChange($event)"
       position="right"
       appendTo="body"
+      styleClass="archived-panel-sidebar"
       [style]="{ width: '420px' }"
       [modal]="true"
-      [dismissible]="true"
+      [dismissible]="false"
       [showCloseIcon]="true">
 
       <ng-template pTemplate="header">
@@ -37,49 +38,51 @@ const LIST_LABELS: Record<string, string> = {
           </div>
       </ng-template>
 
-      <!-- Sin tarjetas -->
-      <div *ngIf="cards.length === 0"
-           class="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-        <i class="pi pi-inbox text-4xl"></i>
-        <p class="text-sm">No hay tarjetas archivadas</p>
-      </div>
+      <div (click)="$event.stopPropagation()">
+        <!-- Sin tarjetas -->
+        <div *ngIf="cards.length === 0"
+             class="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+          <i class="pi pi-inbox text-4xl"></i>
+          <p class="text-sm">No hay tarjetas archivadas</p>
+        </div>
 
-      <!-- Lista de tarjetas archivadas -->
-      <div class="flex flex-col gap-3 p-1">
-        <div *ngFor="let card of cards"
-             class="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col gap-2">
+        <!-- Lista de tarjetas archivadas -->
+        <div class="flex flex-col gap-3 p-1">
+          <div *ngFor="let card of cards"
+               class="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col gap-2">
 
-          <!-- Cabecera: título + badge de columna -->
-          <div class="flex items-start justify-between gap-2">
-            <span class="font-semibold text-gray-800 leading-tight">{{ card.title }}</span>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 whitespace-nowrap">
-              {{ listLabel(card.listId) }}
-            </span>
-          </div>
+            <!-- Cabecera: título + badge de columna -->
+            <div class="flex items-start justify-between gap-2">
+              <span class="font-semibold text-gray-800 leading-tight">{{ card.title }}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 whitespace-nowrap">
+                {{ listLabel(card.listId) }}
+              </span>
+            </div>
 
-          <!-- Descripción -->
-          <p class="text-sm text-gray-500 line-clamp-2">{{ card.task }}</p>
+            <!-- Descripción -->
+            <p class="text-sm text-gray-500 line-clamp-2">{{ card.task }}</p>
 
-          <!-- Acciones -->
-          <div class="flex gap-2 pt-1">
-            <p-button
-              label="Restaurar"
-              icon="pi pi-undo"
-              size="small"
-              severity="success"
-              [text]="true"
-              [loading]="loadingId === card._id + '_restore'"
-              (onClick)="onRestore(card)">
-            </p-button>
-            <p-button
-              label="Eliminar"
-              icon="pi pi-trash"
-              size="small"
-              severity="danger"
-              [text]="true"
-              [loading]="loadingId === card._id + '_delete'"
-              (onClick)="onDelete(card)">
-            </p-button>
+            <!-- Acciones -->
+            <div class="flex gap-2 pt-1">
+              <p-button
+                label="Restaurar"
+                icon="pi pi-undo"
+                size="small"
+                severity="success"
+                [text]="true"
+                [loading]="loadingId === card._id + '_restore'"
+                (onClick)="onRestore(card)">
+              </p-button>
+              <p-button
+                label="Eliminar"
+                icon="pi pi-trash"
+                size="small"
+                severity="danger"
+                [text]="true"
+                [loading]="loadingId === card._id + '_delete'"
+                (onClick)="onDelete(card)">
+              </p-button>
+            </div>
           </div>
         </div>
       </div>
@@ -127,6 +130,18 @@ export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
     }
   }
 
+  @HostListener('document:mousedown', ['$event'])
+  onDocumentMouseDown(event: MouseEvent): void {
+    if (!this.visible) return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    if (target.closest('.archived-panel-sidebar')) return;
+
+    this.onVisibleChange(false);
+  }
+
   loadArchived(): void {
     this.facade.getArchivedCards().subscribe({
       next: (cards) => { this.cards = cards; },
@@ -136,6 +151,11 @@ export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
 
   listLabel(listId: string): string {
     return LIST_LABELS[listId] ?? listId;
+  }
+
+  onVisibleChange(value: boolean): void {
+    this.visible = value;
+    this.visibleChange.emit(value);
   }
 
   onRestore(card: Kanban): void {

@@ -26,8 +26,10 @@ export class AuditLogComponent {
     CREATE: 'Crear',
     UPDATE: 'Actualizar',
     DELETE: 'Eliminar',
-    MOVE: 'Mover'
+    MOVE: 'Mover',
+    ARCHIVE: 'Archivar'
   };
+
 
   onVisibleChange(value: boolean) {
     this.visible = value;
