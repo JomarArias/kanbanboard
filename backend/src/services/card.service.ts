@@ -88,7 +88,7 @@ export const createCard = async (
   assigneeId?: string
 ) => {
 
-  const firstCard = await Card.findOne({ listId, workspaceId }).sort({ order: 1 });
+  const firstCard = await Card.findOne({ listId, workspaceId, archived: false }).sort({ order: 1 });
   const order = firstCard
     ? LexoRank.parse(firstCard.order).genPrev().toString()
     : LexoRank.middle().toString();
@@ -377,6 +377,7 @@ export const moveCard = async (
     const destinationHasCards = await Card.exists({
       listId,
       workspaceId,
+      archived: false,
       _id: { $ne: cardId }
     });
 
@@ -465,10 +466,9 @@ const buildServiceError = (
   return err;
 };
 
-const getNeighborCard = async (cardId: string, targetListId: string) => {
-  const card = await Card.findById(cardId);
+const getNeighborCard = async (cardId: string, targetListId: string, workspaceId: string) => {
+  const card = await Card.findOne({ _id: cardId, listId: targetListId, workspaceId, archived: false });
   if (!card) throw buildServiceError("Tarjeta vecina no encontrada", 400, "invalid_neighbor");
-  if (card.listId !== targetListId) throw buildServiceError("Tarjeta vecina no pertenece a la lista destino", 400, "invalid_neighbor_list");
   return card;
 };
 
@@ -484,19 +484,24 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
   let order: string;
 
   if (!beforeCardId && !afterCardId) {
-    const destinationHasCards = await Card.exists({ listId: targetListId, _id: { $ne: cardId } });
+    const destinationHasCards = await Card.exists({
+      listId: targetListId,
+      workspaceId,
+      archived: false,
+      _id: { $ne: cardId }
+    });
     if (destinationHasCards)
       throw buildServiceError("beforeCardId y afterCardId son requeridos cuando la lista destino no esta vacia", 400, "missing_neighbors");
     order = LexoRank.middle().toString();
   } else if (!beforeCardId && afterCardId) {
-    const afterCard = await getNeighborCard(afterCardId, targetListId);
+    const afterCard = await getNeighborCard(afterCardId, targetListId, workspaceId);
     order = LexoRank.parse(afterCard.order).genPrev().toString();
   } else if (beforeCardId && !afterCardId) {
-    const beforeCard = await getNeighborCard(beforeCardId, targetListId);
+    const beforeCard = await getNeighborCard(beforeCardId, targetListId, workspaceId);
     order = LexoRank.parse(beforeCard.order).genNext().toString();
   } else {
-    const beforeCard = await getNeighborCard(beforeCardId as string, targetListId);
-    const afterCard = await getNeighborCard(afterCardId as string, targetListId);
+    const beforeCard = await getNeighborCard(beforeCardId as string, targetListId, workspaceId);
+    const afterCard = await getNeighborCard(afterCardId as string, targetListId, workspaceId);
     if (beforeCard.order === afterCard.order) {
       order = LexoRank.parse(beforeCard.order).genNext().toString();
     } else {
