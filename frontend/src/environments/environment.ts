@@ -1,7 +1,11 @@
+const runtimeProtocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
+const runtimeHostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const runtimeBackendOrigin = `${runtimeProtocol}//${runtimeHostname}:3000`;
+
 export const environment = {
     production: false,
-    apiUrl: 'http://localhost:3000/api',
-    socketUrl: 'http://localhost:3000',
+    apiUrl: `${runtimeBackendOrigin}/api`,
+    socketUrl: runtimeBackendOrigin,
     firebase: {
         apiKey: 'AIzaSyAHY6KX5bSx7uyKWR-lxgzoQxXJCJDPe1c',
         authDomain: 'dapperkanban.firebaseapp.com',

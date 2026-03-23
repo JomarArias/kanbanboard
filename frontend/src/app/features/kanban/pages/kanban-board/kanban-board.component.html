@@ -79,39 +79,31 @@
 
     <div cdkScrollable
         class="kanban-board-scroll flex flex-row overflow-x-auto overflow-y-hidden w-full md:w-fit md:max-w-full h-full pb-8 gap-4 px-4"
-        [class.snap-x]="!isMobileCardDragging"
-        [class.snap-mandatory]="!isMobileCardDragging"
         cdkDropListGroup>
 
         <app-kanban-column title="Por Hacer" listId="todo" class="min-w-[85vw] md:min-w-[350px]"
-            [class.snap-center]="!isMobileCardDragging"
             [cards]="filterCards(boardData.todo, 'todo')" [editingUsers]="editingUsers" [members]="workspaceMembers"
             [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('todo')"
             (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
-            (dragStarted)="onCardDragStarted()" (dragEnded)="onCardDragEnded()"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
             [labelsExpandedGlobal]="labelsExpandedGlobal" (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
         <app-kanban-column title="En Proceso" listId="inProgress" class="min-w-[85vw] md:min-w-[350px]"
-            [class.snap-center]="!isMobileCardDragging"
             [cards]="filterCards(boardData.inProgress, 'inProgress')" [editingUsers]="editingUsers"
             [members]="workspaceMembers" [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)"
             (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
             (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
-            (dragStarted)="onCardDragStarted()" (dragEnded)="onCardDragEnded()"
             (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
             (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
-        <div class="relative min-w-[85vw] md:min-w-[350px] flex flex-col h-full"
-            [class.snap-center]="!isMobileCardDragging">
+        <div class="relative min-w-[85vw] md:min-w-[350px] flex flex-col h-full">
             <app-kanban-column title="Terminado" listId="done" class="w-full h-full"
                 [cards]="filterCards(boardData.done, 'done')" [editingUsers]="editingUsers" [members]="workspaceMembers"
                 [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('done')"
                 (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
                 (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
-                (dragStarted)="onCardDragStarted()" (dragEnded)="onCardDragEnded()"
                 (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
                 (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
             </app-kanban-column>

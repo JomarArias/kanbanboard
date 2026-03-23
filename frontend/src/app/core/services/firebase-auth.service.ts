@@ -1,11 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import {
     Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User, updateProfile
+    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, User, updateProfile
 } from '@angular/fire/auth';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, from, Observable } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, from, Observable, of } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { WorkspaceService } from './workspace.service';
 
@@ -78,8 +78,27 @@ export class FirebaseAuthService {
 
     loginWithGoogle(): Observable<void> {
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        if (this.shouldUseRedirectForGoogleAuth()) {
+            return from(signInWithRedirect(this.auth, provider)).pipe(
+                map(() => void 0)
+            );
+        }
+
         return from(signInWithPopup(this.auth, provider)).pipe(
+            tap((credential) => this._currentUser$.next(credential.user)),
             switchMap(() => this.syncUserToBackend())
+        );
+    }
+
+    completeGoogleRedirect(): Observable<boolean> {
+        return from(getRedirectResult(this.auth)).pipe(
+            switchMap((result) => {
+                if (!result?.user) return of(false);
+                this._currentUser$.next(result.user);
+                return this.syncUserToBackend().pipe(map(() => true));
+            })
         );
     }
 
@@ -146,5 +165,15 @@ export class FirebaseAuthService {
                 this.workspaceService.fetchMyWorkspaces().subscribe();
             })
         );
+    }
+
+    private shouldUseRedirectForGoogleAuth(): boolean {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+
+        const hasCoarsePointer = window.matchMedia?.('(pointer: coarse)')?.matches ?? false;
+        const isSmallViewport = window.innerWidth < 768;
+        const mobileUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+        return hasCoarsePointer || isSmallViewport || mobileUserAgent;
     }
 }

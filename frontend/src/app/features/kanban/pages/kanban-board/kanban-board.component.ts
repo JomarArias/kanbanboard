@@ -149,7 +149,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   auditLogs: AuditLog[] = [];
   displayAuditLog: boolean = false;
-  isMobileCardDragging = false;
 
   // ── BANDEJA DE ARCHIVADOS ───────────────────────────────────────────────────
   displayArchivedPanel: boolean = false;
@@ -822,16 +821,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.displayEditDialog = false;
   }
 
-  onCardDragStarted() {
-    this.isMobileCardDragging = true;
-  }
-
-  onCardDragEnded() {
-    this.isMobileCardDragging = false;
-  }
-
   drop(event: CdkDragDrop<Kanban[]>) {
-    this.isMobileCardDragging = false;
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
