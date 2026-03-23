@@ -75,6 +75,8 @@
     overflow: hidden;
 }
 
+
+
 .section-container {
     flex: 1;
     display: flex;
@@ -169,6 +171,18 @@
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--surface-border);
+}
+
+.users-table {
+    max-height: 520px;
+}
+
+.workspaces-table {
+    max-height: 480px;
+}
+
+.history-table {
+    max-height: 520px;
 }
 
 .row-disabled {
@@ -367,7 +381,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
-        
+
         // Prevent grid blowout from long dropdown text
         > * {
             min-width: 0;
