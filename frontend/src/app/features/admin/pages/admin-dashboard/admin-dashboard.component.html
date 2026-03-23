@@ -281,18 +281,28 @@
         <div *ngIf="activeSection === 'history'" class="section-container">
 
             <div class="log-filters">
-                <p-dropdown [options]="workspaces" [(ngModel)]="filterWorkspaceId" optionLabel="name" optionValue="_id"
-                    placeholder="Tablero" styleClass="w-full" [filter]="true" filterBy="name" [showClear]="true" appendTo="body"></p-dropdown>
-                <p-dropdown [options]="actionOptions" [(ngModel)]="filterAction" optionLabel="label" optionValue="value"
-                    placeholder="Acción" styleClass="w-full" appendTo="body"></p-dropdown>
-                <p-calendar [(ngModel)]="filterDateFrom" [showIcon]="true" dateFormat="dd/mm/yy" placeholder="Desde"
-                    styleClass="w-full" appendTo="body"></p-calendar>
-                <p-calendar [(ngModel)]="filterDateTo" [showIcon]="true" dateFormat="dd/mm/yy" placeholder="Hasta"
-                    styleClass="w-full" appendTo="body"></p-calendar>
-                <p-button icon="pi pi-search" label="Filtrar" (onClick)="loadAuditLogs()"
-                    [loading]="loadingLogs"></p-button>
-                <p-button icon="pi pi-times" [text]="true"
-                    (onClick)="filterAction=null;filterWorkspaceId=null;filterDateFrom=null;filterDateTo=null;loadAuditLogs()"></p-button>
+                <div class="filter-item filter-item-workspace">
+                    <p-dropdown [options]="workspaces" [(ngModel)]="filterWorkspaceId" optionLabel="name" optionValue="_id"
+                        placeholder="Tablero" styleClass="w-full" [filter]="true" filterBy="name" [showClear]="true" appendTo="body"></p-dropdown>
+                </div>
+                <div class="filter-item filter-item-action">
+                    <p-dropdown [options]="actionOptions" [(ngModel)]="filterAction" optionLabel="label" optionValue="value"
+                        placeholder="Acción" styleClass="w-full" appendTo="body"></p-dropdown>
+                </div>
+                <div class="filter-item filter-item-date">
+                    <p-calendar [(ngModel)]="filterDateFrom" [showIcon]="true" dateFormat="dd/mm/yy" placeholder="Desde"
+                        styleClass="w-full" appendTo="body"></p-calendar>
+                </div>
+                <div class="filter-item filter-item-date">
+                    <p-calendar [(ngModel)]="filterDateTo" [showIcon]="true" dateFormat="dd/mm/yy" placeholder="Hasta"
+                        styleClass="w-full" appendTo="body"></p-calendar>
+                </div>
+                <div class="filter-actions">
+                    <p-button icon="pi pi-search" label="Filtrar" (onClick)="loadAuditLogs()"
+                        [loading]="loadingLogs"></p-button>
+                    <p-button icon="pi pi-times" [text]="true"
+                        (onClick)="filterAction=null;filterWorkspaceId=null;filterDateFrom=null;filterDateTo=null;loadAuditLogs()"></p-button>
+                </div>
             </div>
 
             <div class="table-wrapper history-table">
