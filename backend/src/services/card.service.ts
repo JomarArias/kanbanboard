@@ -360,6 +360,7 @@ export const moveCard = async (
   cardId: string,
   listId: string,
   workspaceId: string,
+  performedById?: string,
   prevOrder?: string,
   nextOrder?: string
 ) => {
@@ -420,7 +421,7 @@ export const moveCard = async (
   await saveAuditLog(
     "MOVE",
     `Tarjeta "${cardBeforeMove.title}" movida a ${listId}`,
-    undefined,
+    performedById,
     workspaceId
   );
 
@@ -433,6 +434,8 @@ type MoveCardRealtimeInput = {
   beforeCardId?: string | null;
   afterCardId?: string | null;
   expectedVersion: number;
+  workspaceId: string;
+  performedById?: string | null;
 };
 
 type MoveCardRealtimeResult = {
@@ -470,7 +473,7 @@ const getNeighborCard = async (cardId: string, targetListId: string) => {
 };
 
 export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<MoveCardRealtimeResult> => {
-  const { cardId, targetListId, beforeCardId = null, afterCardId = null, expectedVersion } = input;
+  const { cardId, targetListId, beforeCardId = null, afterCardId = null, expectedVersion, workspaceId, performedById } = input;
 
   const currentCard = await Card.findById(cardId);
   if (!currentCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
@@ -530,7 +533,7 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
 
       if (!retryCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
-      await saveAuditLog("MOVE", `Tarjeta "${retryCard.title}" movida a ${targetListId}`);
+      await saveAuditLog("MOVE", `Tarjeta "${retryCard.title}" movida a ${targetListId}`, performedById || undefined, workspaceId);
       return { cardId: retryCard.id, listId: retryCard.listId, order: retryCard.order, version: retryCard.version, updatedAt: retryCard.updatedAt };
     }
 
@@ -539,6 +542,6 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
     });
   }
 
-  await saveAuditLog("MOVE", `Tarjeta "${updatedCard.title}" movida a ${targetListId}`);
+  await saveAuditLog("MOVE", `Tarjeta "${updatedCard.title}" movida a ${targetListId}`, performedById || undefined, workspaceId);
   return { cardId: updatedCard.id, listId: updatedCard.listId, order: updatedCard.order, version: updatedCard.version, updatedAt: updatedCard.updatedAt };
 };

@@ -29,7 +29,9 @@
                         'bg-green-100 text-green-700': log.action === 'CREATE',
                         'bg-blue-100 text-blue-700': log.action === 'UPDATE',
                         'bg-red-100 text-red-700': log.action === 'DELETE',
-                        'bg-orange-100 text-orange-700': log.action === 'MOVE'
+                        'bg-orange-100 text-orange-700': log.action === 'MOVE',
+                        'bg-yellow-100 text-yellow-700' : log.action === 'ARCHIVE'
+
                     }">{{ actionLabels[log.action] }}</span>
                 </div>
                 <!-- Right: Details + Who + When -->
@@ -37,8 +39,11 @@
                     <span class="text-sm text-gray-700 dark:text-gray-200">{{ log.details }}</span>
                     <div class="flex items-center gap-1.5 text-xs text-gray-400">
                         <ng-container *ngIf="log.performedBy">
-                            <img *ngIf="log.performedBy.picture" [src]="log.performedBy.picture"
-                                class="w-4 h-4 rounded-full" />
+                            <span class="w-4 h-4 rounded-full overflow-hidden inline-block">
+                                    <img *ngIf="log.performedBy.picture"
+                                    [src]="log.performedBy.picture"
+                                    class="w-full h-full object-cover"/>
+                                </span>
                             <span class="font-medium text-gray-600 dark:text-gray-300">{{ log.performedBy.name }}</span>
                             <span>·</span>
                         </ng-container>

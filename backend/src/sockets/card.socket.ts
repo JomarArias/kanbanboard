@@ -172,7 +172,15 @@ export const registerCardSocketHandlers = (io: Server, socket: Socket) => {
         return;
       }
 
-      const result = await moveCardRealtime({ cardId, targetListId, beforeCardId, afterCardId, expectedVersion } as any);
+      const result = await moveCardRealtime({
+        cardId,
+        targetListId,
+        beforeCardId,
+        afterCardId,
+        expectedVersion,
+        workspaceId,
+        performedById: currentUserId
+      });
 
       const acceptedPayload = { operationId, ...result };
       cacheOperation(operationId, acceptedPayload);

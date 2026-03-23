@@ -33,6 +33,20 @@ export class LoginComponent implements OnInit {
                 this.errorMsg = 'Tu cuenta ha sido desactivada. Contacta al administrador.';
             }
         });
+
+        this.loading = true;
+        this.authService.completeGoogleRedirect().subscribe({
+            next: (redirectCompleted) => {
+                this.loading = false;
+                if (redirectCompleted) {
+                    this.router.navigate(['/']);
+                }
+            },
+            error: (err) => {
+                this.loading = false;
+                this.errorMsg = this.mapFirebaseError(err?.code);
+            }
+        });
     }
 
     onSubmit(): void {
@@ -78,6 +92,10 @@ export class LoginComponent implements OnInit {
             'auth/invalid-email': 'Correo electrónico inválido.',
             'auth/weak-password': 'La contraseña es muy débil.',
             'auth/popup-closed-by-user': 'Cerraste el popup de Google.',
+            'auth/popup-blocked': 'El navegador bloqueó la ventana de Google.',
+            'auth/operation-not-supported-in-this-environment': 'Este navegador no permite popup; usa redirección o prueba en otro navegador.',
+            'auth/network-request-failed': 'No se pudo conectar con el servicio de autenticación.',
+            'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase Authentication.',
             'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde.',
         };
         return map[code] || 'Ocurrió un error. Intenta de nuevo.';

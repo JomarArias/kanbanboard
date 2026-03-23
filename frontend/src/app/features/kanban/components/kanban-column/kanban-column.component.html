@@ -5,11 +5,11 @@
     </div>
 
     <div class="relative flex-1 min-h-[100px]">
-        <div cdkDropList [id]="listId" [cdkDropListData]="cards" (cdkDropListDropped)="onDrop($event)"
+        <div cdkDropList [id]="listId" [cdkDropListData]="cards" [cdkDropListAutoScrollStep]="5"
+            (cdkDropListDropped)="onDrop($event)"
             class="column-scroll h-full min-h-[100px] pr-1">
             @for (card of cards; track card._id) {
-            <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id] || isViewer"
-                (cdkDragMoved)="onDragMoved($event)">
+            <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id] || isViewer">
                 <app-kanban-card [card]="card" [editingUser]="editingUsers[card._id]" [members]="members"
                     [isViewer]="isViewer" [labelsExpandedGlobal]="labelsExpandedGlobal"
                     (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal.emit()" (edit)="onEditCard($event)"
