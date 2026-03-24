@@ -75,6 +75,8 @@
     overflow: hidden;
 }
 
+
+
 .section-container {
     flex: 1;
     display: flex;
@@ -171,6 +173,18 @@
     border: 1px solid var(--surface-border);
 }
 
+.users-table {
+    max-height: 550px;
+}
+
+.workspaces-table {
+    max-height: 480px;
+}
+
+.history-table {
+    max-height: 480px;
+}
+
 .row-disabled {
     opacity: 0.45;
 }
@@ -205,15 +219,27 @@
 
 // ─── Audit log filters ────────────────────────────────────────────────────────
 .log-filters {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: minmax(220px, 1.3fr) minmax(180px, 1fr) minmax(150px, 0.85fr) minmax(150px, 0.85fr) auto;
+    align-items: end;
     gap: 0.6rem;
-    flex-wrap: wrap;
     padding: 0.75rem 0;
     position: sticky;
     top: 0;
     z-index: 10;
     background-color: var(--surface-ground);
+}
+
+.filter-item {
+    min-width: 0;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    white-space: nowrap;
 }
 
 // ─── Mobile cards ────────────────────────────────────────────────────────────
@@ -367,19 +393,24 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
-        
+
         // Prevent grid blowout from long dropdown text
         > * {
             min-width: 0;
         }
 
-        // Let buttons span exactly to their content or fill
-        p-button {
+        .filter-actions {
+            grid-column: 1 / -1;
+            justify-content: stretch;
+        }
+
+        .filter-actions p-button {
+            flex: 1;
+        }
+
+        .filter-actions p-button ::ng-deep .p-button {
             width: 100%;
-            ::ng-deep .p-button {
-                width: 100%;
-                justify-content: center;
-            }
+            justify-content: center;
         }
     }
 

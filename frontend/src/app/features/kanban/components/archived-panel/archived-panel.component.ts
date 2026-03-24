@@ -2,10 +2,12 @@ import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnIni
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { SidebarModule } from 'primeng/sidebar';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+
 import { Kanban } from '../../../../core/models/kanban.model';
 import { KanbanFacadeService } from '../../services/kanban-facade.service';
 import { WorkspaceService } from '../../../../core/services/workspace.service';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { Subscription } from 'rxjs';
 
 const LIST_LABELS: Record<string, string> = {
@@ -17,7 +19,7 @@ const LIST_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-archived-panel',
   standalone: true,
-  imports: [CommonModule, SidebarModule, ButtonModule],
+  imports: [CommonModule, SidebarModule, ButtonModule, ConfirmDialogModule],
   styles: [':host { display: contents; }'],
   template: `
     <p-sidebar
@@ -87,6 +89,8 @@ const LIST_LABELS: Record<string, string> = {
         </div>
       </div>
     </p-sidebar>
+    <p-confirmDialog key="archived-delete-dialog" appendTo="body"></p-confirmDialog>
+
   `
 })
 export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
@@ -102,7 +106,8 @@ export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
   constructor(
     private facade: KanbanFacadeService,
     private workspaceService: WorkspaceService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) { }
 
   ngOnInit() {
@@ -110,7 +115,7 @@ export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
       if (ws) {
         // Option 1: Always load on switch
         // this.loadArchived();
-        // Option 2: Clear old cards, let visible=true handle the load, 
+        // Option 2: Clear old cards, let visible=true handle the load,
         // OR load immediately so they are ready
         this.cards = [];
         if (this.visible) {
@@ -138,6 +143,8 @@ export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
     if (!target) return;
 
     if (target.closest('.archived-panel-sidebar')) return;
+    if (target.closest('.p-confirm-dialog')) return;
+    if (target.closest('.p-dialog-mask')) return;
 
     this.onVisibleChange(false);
   }
@@ -175,18 +182,38 @@ export class ArchivedPanelComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   onDelete(card: Kanban): void {
-    this.loadingId = card._id + '_delete';
-    this.facade.deleteCard(card._id).subscribe({
-      next: () => {
-        this.cards = this.cards.filter(c => c._id !== card._id);
-        this.cardDeleted.emit(card._id);
-        this.messageService.add({ severity: 'success', summary: 'Eliminada', detail: `"${card.title}" eliminada permanentemente` });
-        this.loadingId = null;
-      },
-      error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar la tarjeta' });
-        this.loadingId = null;
+    this.confirmationService.confirm({
+      key: 'archived-delete-dialog',
+      header: 'Eliminar tarjeta',
+      message: '¿Deseas eliminar la tarjeta? Esta acción es permanente.',
+      acceptLabel: 'Sí',
+      rejectLabel: 'No',
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.loadingId = card._id + '_delete';
+        this.facade.deleteCard(card._id).subscribe({
+          next: () => {
+            this.cards = this.cards.filter(c => c._id !== card._id);
+            this.cardDeleted.emit(card._id);
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Eliminada',
+              detail: `"${card.title}" eliminada permanentemente`
+            });
+            this.loadingId = null;
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo eliminar la tarjeta'
+            });
+            this.loadingId = null;
+          }
+        });
       }
     });
   }
+
 }
