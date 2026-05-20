@@ -1,6 +1,7 @@
 import { Card } from '../models/card.js';
 import { LexoRank } from 'lexorank';
 import { saveAuditLog } from './audit.service.js';
+import { sendCardWorkflowEmail } from './email.service.js';
 
 export const listCardsByList = async (listId: string, workspaceId: string) => {
   const cards = await Card.find({ listId, workspaceId, archived: false })
@@ -448,6 +449,26 @@ export const moveCard = async (
     workspaceId
   );
 
+  const previousListId = cardBeforeMove.listId;
+  const hasRealStageChange = previousListId !== listId;
+  const workflowStage = listId === 'inProgress' || listId === 'done' ? listId : null;
+  const prospectEmail = cardBeforeMove.prospectEmail?.trim();
+
+  if (hasRealStageChange && workflowStage && prospectEmail) {
+    try {
+      await sendCardWorkflowEmail(
+        prospectEmail,
+        workflowStage,
+        {
+          prospectName: cardBeforeMove.prospectName,
+          cardTitle: cardBeforeMove.title
+        }
+      );
+    } catch (error) {
+      console.error('Error sending workflow email (moveCard):', error);
+    }
+  }
+
   return { ok: true, order };
 };
 
@@ -570,5 +591,26 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
   }
 
   await saveAuditLog("MOVE", `Tarjeta "${updatedCard.title}" movida a ${targetListId}`, performedById || undefined, workspaceId);
+
+  const previousListId = currentCard.listId;
+  const hasRealStageChange = previousListId !== targetListId;
+  const workflowStage = targetListId === 'inProgress' || targetListId === 'done' ? targetListId : null;
+  const prospectEmail = currentCard.prospectEmail?.trim();
+
+  if (hasRealStageChange && workflowStage && prospectEmail) {
+    try {
+      await sendCardWorkflowEmail(
+        prospectEmail,
+        workflowStage,
+        {
+          prospectName: currentCard.prospectName,
+          cardTitle: currentCard.title
+        }
+      );
+    } catch (error) {
+      console.error('Error sending workflow email (moveCardRealtime):', error);
+    }
+  }
+
   return { cardId: updatedCard.id, listId: updatedCard.listId, order: updatedCard.order, version: updatedCard.version, updatedAt: updatedCard.updatedAt };
 };

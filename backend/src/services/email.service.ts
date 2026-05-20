@@ -12,6 +12,42 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+type CardWorkflowStage = 'inProgress' | 'done';
+
+type CardWorkflowTemplateData = {
+    prospectName?: string | null;
+    cardTitle: string;
+};
+
+const buildWorkflowEmailTemplate = (stage: CardWorkflowStage, data: CardWorkflowTemplateData) => {
+    const safeName = data.prospectName?.trim() || 'cliente';
+    const safeTitle = data.cardTitle?.trim() || 'tu solicitud';
+
+    if (stage === 'inProgress') {
+        return {
+            subject: `Seguimiento de ${safeTitle}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2>Hola ${safeName},</h2>
+                    <p>Estamos avanzando con <strong>${safeTitle}</strong>.</p>
+                    <p>En breve compartiremos la propuesta y próximos pasos.</p>
+                </div>
+            `
+        };
+    }
+
+    return {
+        subject: `Cierre de ${safeTitle}`,
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2>Hola ${safeName},</h2>
+                <p>Hemos cerrado exitosamente <strong>${safeTitle}</strong>.</p>
+                <p>Gracias por confiar en nosotros.</p>
+            </div>
+        `
+    };
+};
+
 export const sendInvitationEmail = async (toEmail: string, workspaceName: string, inviteUrl: string) => {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.warn('SMTP credentials not configured, falling back to console logging.');
@@ -40,4 +76,28 @@ export const sendInvitationEmail = async (toEmail: string, workspaceName: string
         console.error('Error sending invitation email:', error);
         throw error;
     }
+};
+
+export const sendCardWorkflowEmail = async (
+    toEmail: string,
+    stage: CardWorkflowStage,
+    data: CardWorkflowTemplateData
+) => {
+    const normalizedEmail = toEmail?.trim();
+    if (!normalizedEmail) return;
+
+    const template = buildWorkflowEmailTemplate(stage, data);
+
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        console.warn('SMTP credentials not configured, falling back to console logging.');
+        console.log(`[EMAIL SIMULATION] To: ${normalizedEmail} | Subject: ${template.subject}`);
+        return;
+    }
+
+    await transporter.sendMail({
+        from: `"Kanban Board" <${process.env.SMTP_USER}>`,
+        to: normalizedEmail,
+        subject: template.subject,
+        html: template.html
+    });
 };
