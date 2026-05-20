@@ -80,6 +80,9 @@ export const registerCardSocketHandlers = (io: Server, socket: Socket) => {
     currentWorkspaceId = workspaceId;
     currentUsername = username;
     currentUserId = userId || null;
+    if (currentUserId) {
+      socket.join(`user:${currentUserId}`);
+    }
 
     // Update presence map
     addPresence(workspaceId, socket.id, username, currentUserId);

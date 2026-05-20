@@ -10,6 +10,7 @@ import userRoutes from "./routes/user.routes.js";
 import { verifyFirebaseToken, requireUser } from "./middlewares/auth.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import uploadRoutes from "./routes/upload.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 const app = express();
 
@@ -43,6 +44,7 @@ apiRouter.use(verifyFirebaseToken, requireUser);
 apiRouter.use(uploadRoutes);
 apiRouter.use(cardRoutes);
 apiRouter.use(auditRoutes);
+apiRouter.use(notificationRoutes);
 
 app.use('/api', apiRouter);
 
