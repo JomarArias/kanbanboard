@@ -129,6 +129,23 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
+                    <label for="prospectName" class="font-semibold">Nombre prospecto</label>
+                    <input pInputText id="prospectName" [(ngModel)]="editingCard.prospectName" class="w-full" />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-2">
+                        <label for="prospectEmail" class="font-semibold">Email prospecto</label>
+                        <input pInputText id="prospectEmail" type="email" [(ngModel)]="editingCard.prospectEmail"
+                            class="w-full" />
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label for="prospectPhone" class="font-semibold">Teléfono prospecto</label>
+                        <input pInputText id="prospectPhone" [(ngModel)]="editingCard.prospectPhone" class="w-full" />
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
                     <label for="assignee" class="font-semibold">Responsable</label>
                     <p-dropdown id="assignee" [options]="workspaceMembers" [(ngModel)]="editingCard.assigneeId"
                         optionValue="_id" optionLabel="name" [showClear]="true" placeholder="Sin Asignar"

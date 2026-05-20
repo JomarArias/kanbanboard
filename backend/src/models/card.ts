@@ -35,6 +35,30 @@ const cardSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User'
     },
+    prospectName: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    prospectEmail: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    prospectPhone: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    calendarEventId: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    lastReminderSentAt: {
+      type: Date,
+      default: null
+    },
     // ── ARCHIVADO ────────────────────────────────────────────────────────────────
     archived: {
       type: Boolean,

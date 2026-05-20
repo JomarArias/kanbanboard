@@ -730,6 +730,9 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     const normalizedDueDate = this.editingCard.dueDate ?? null;
 
     const payload: any = {
+      prospectName: this.editingCard.prospectName?.trim() || null,
+      prospectEmail: this.editingCard.prospectEmail?.trim() || null,
+      prospectPhone: this.editingCard.prospectPhone?.trim() || null,
       title: this.editingCard.title.trim(),
       task: this.editingCard.task?.trim() ?? '',
       expectedVersion: this.editingCard.version,

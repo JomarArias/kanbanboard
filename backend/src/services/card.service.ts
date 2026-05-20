@@ -85,7 +85,12 @@ export const createCard = async (
   task: string,
   workspaceId: string,
   performedById?: string,
-  assigneeId?: string
+  assigneeId?: string,
+  prospectName?: string,
+  prospectEmail?: string,
+  prospectPhone?: string,
+  calendarEventId?: string,
+  lastReminderSentAt?: Date | string | null
 ) => {
 
   const firstCard = await Card.findOne({ listId, workspaceId, archived: false }).sort({ order: 1 });
@@ -93,7 +98,19 @@ export const createCard = async (
     ? LexoRank.parse(firstCard.order).genPrev().toString()
     : LexoRank.middle().toString();
 
-  const card = await Card.create({ listId, title, task, order, workspaceId, assigneeId });
+  const card = await Card.create({
+    listId,
+    title,
+    task,
+    order,
+    workspaceId,
+    assigneeId,
+    prospectName: prospectName?.trim() || null,
+    prospectEmail: prospectEmail?.trim() || null,
+    prospectPhone: prospectPhone?.trim() || null,
+    calendarEventId: calendarEventId?.trim() || null,
+    lastReminderSentAt: lastReminderSentAt || null
+  });
 
   console.log(`[BACKEND] Card created: ${card.title} in ${card.listId}`);
 
@@ -243,6 +260,11 @@ export const updateCard = async (
       backgroundImageUrl?: string | null;
     };
     assigneeId?: string | null;
+    prospectName?: string | null;
+    prospectEmail?: string | null;
+    prospectPhone?: string | null;
+    calendarEventId?: string | null;
+    lastReminderSentAt?: Date | string | null;
   },
   workspaceId: string,
   performedById?: string

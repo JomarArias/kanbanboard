@@ -29,6 +29,11 @@ export interface Kanban {
     version?: number;
     workspaceId?: string;
     assigneeId?: string | KanbanAssigneeRef | null;
+    prospectName?: string | null;
+    prospectEmail?: string | null;
+    prospectPhone?: string | null;
+    calendarEventId?: string | null;
+    lastReminderSentAt?: string | null;
     archived?: boolean;
     dueDate?: string | null;
     labels?: KanbanLabel[];

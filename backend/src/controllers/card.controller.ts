@@ -103,7 +103,17 @@ export const restoreCard = async (req: Request, res: Response) => {
 
 export const createCard = async (req: Request, res: Response) => {
   try {
-    const { listId, title, task, assigneeId } = req.body ?? {};
+    const {
+      listId,
+      title,
+      task,
+      assigneeId,
+      prospectName,
+      prospectEmail,
+      prospectPhone,
+      calendarEventId,
+      lastReminderSentAt
+    } = req.body ?? {};
     const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
@@ -111,7 +121,19 @@ export const createCard = async (req: Request, res: Response) => {
       return sendError(res, 400, "listId, title y task son requeridos");
     }
 
-    const card = await cardService.createCard(listId, title, task, workspaceId, performedById, assigneeId);
+    const card = await cardService.createCard(
+      listId,
+      title,
+      task,
+      workspaceId,
+      performedById,
+      assigneeId,
+      prospectName,
+      prospectEmail,
+      prospectPhone,
+      calendarEventId,
+      lastReminderSentAt
+    );
 
     try {
       getIO().to(`workspace:${workspaceId}`).emit("card:created", card);
@@ -132,7 +154,20 @@ export const createCard = async (req: Request, res: Response) => {
 export const updateCard = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { title, task, expectedVersion, dueDate, labels, style, assigneeId } = req.body ?? {};
+    const {
+      title,
+      task,
+      expectedVersion,
+      dueDate,
+      labels,
+      style,
+      assigneeId,
+      prospectName,
+      prospectEmail,
+      prospectPhone,
+      calendarEventId,
+      lastReminderSentAt
+    } = req.body ?? {};
     const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
@@ -149,6 +184,11 @@ export const updateCard = async (req: Request, res: Response) => {
     if (labels !== undefined) updateData.labels = labels
     if (style !== undefined) updateData.style = style
     if (assigneeId !== undefined) updateData.assigneeId = assigneeId || null;
+    if (prospectName !== undefined) updateData.prospectName = prospectName || null;
+    if (prospectEmail !== undefined) updateData.prospectEmail = prospectEmail || null;
+    if (prospectPhone !== undefined) updateData.prospectPhone = prospectPhone || null;
+    if (calendarEventId !== undefined) updateData.calendarEventId = calendarEventId || null;
+    if (lastReminderSentAt !== undefined) updateData.lastReminderSentAt = lastReminderSentAt || null;
 
     if (Object.keys(updateData).length === 0) {
       return sendError(res, 400, "No hay campos para actualizar")

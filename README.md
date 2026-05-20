@@ -1,3 +1,7 @@
+Levantar proyecto:
+ podman machine start
+  podman compose up --build
+
 # Dapper Kanban
 
 Un sistema Kanban moderno y sincronizado en tiempo real, diseñado con la identidad visual de Dapper.
