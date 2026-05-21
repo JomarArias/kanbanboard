@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import "dotenv/config";
 import { initSocketServer, setIO } from "./sockets/socket.server.js";
 import { migrateWorkspaces } from "./utils/migrateWorkspaces.js";
+import { startReminderJob } from "./jobs/reminder.job.js";
 
 // ─── Global error handlers (evita crashes por errores no capturados) ──────────
 process.on("uncaughtException", (err) => {
@@ -45,6 +46,7 @@ const STATUS_CHECK_URL = "https://share.google/gs8ZCcUuoPJtawEFd";
 httpServer.listen(PORT, () => {
   console.log(`Servidor en ${PORT}`);
   checkApiStatus(STATUS_CHECK_URL);
+  startReminderJob();
 });
 
 async function checkApiStatus(url: string) {
