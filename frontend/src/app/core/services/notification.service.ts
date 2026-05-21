@@ -1,10 +1,22 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
-import { firstValueFrom, distinctUntilChanged, map, Subscription } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, distinctUntilChanged, map, Subscription } from 'rxjs';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { RealtimeNotification, SocketService } from './socket.service';
 import { environment } from '../../../environments/environment';
+
+export type NotificationItem = {
+  _id: string;
+  userId: string;
+  cardId: string | null;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 @Injectable({
   providedIn: 'root'
@@ -20,12 +32,28 @@ export class NotificationService {
   private notificationSubscription?: Subscription;
   private currentAuthUid: string | null = null;
   private currentMongoUserId: string | null = null;
+  private readonly notificationsSubject = new BehaviorSubject<NotificationItem[]>([]);
+  private readonly unreadCountSubject = new BehaviorSubject<number>(0);
+
+  readonly notifications$ = this.notificationsSubject.asObservable();
+  readonly unreadCount$ = this.unreadCountSubject.asObservable();
 
   init(): void {
     if (this.started) return;
     this.started = true;
 
     this.notificationSubscription = this.socketService.onNotificationNew().subscribe((notification) => {
+      this.appendRealtimeNotification({
+        _id: notification.id,
+        userId: this.currentMongoUserId || '',
+        cardId: notification.cardId,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        isRead: false,
+        createdAt: notification.createdAt,
+        updatedAt: notification.createdAt
+      });
       this.showToast(notification);
     });
 
@@ -47,6 +75,8 @@ export class NotificationService {
 
     if (!uid) {
       this.currentMongoUserId = null;
+      this.notificationsSubject.next([]);
+      this.unreadCountSubject.next(0);
       return;
     }
 
@@ -59,6 +89,7 @@ export class NotificationService {
 
     this.currentMongoUserId = mongoUserId;
     this.socketService.joinUserRoom(mongoUserId);
+    await this.loadNotifications();
   }
 
   private async resolveMongoUserId(): Promise<string | null> {
@@ -101,5 +132,51 @@ export class NotificationService {
       detail: notification.message,
       life: 6000
     });
+  }
+
+  async loadNotifications(): Promise<void> {
+    const token = await this.auth.getIdToken();
+    if (!token) return;
+
+    try {
+      const notifications = await firstValueFrom(
+        this.http.get<NotificationItem[]>(`${environment.apiUrl}/notifications`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      );
+
+      this.notificationsSubject.next(notifications);
+      this.unreadCountSubject.next(notifications.filter((notification) => !notification.isRead).length);
+    } catch (error) {
+      console.error('Failed to load notifications', error);
+    }
+  }
+
+  async markAsRead(notificationId: string): Promise<void> {
+    const token = await this.auth.getIdToken();
+    if (!token) return;
+
+    try {
+      const updated = await firstValueFrom(
+        this.http.patch<NotificationItem>(`${environment.apiUrl}/notifications/${notificationId}/read`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      );
+
+      const current = this.notificationsSubject.value.map((notification) =>
+        notification._id === updated._id ? updated : notification
+      );
+
+      this.notificationsSubject.next(current);
+      this.unreadCountSubject.next(current.filter((notification) => !notification.isRead).length);
+    } catch (error) {
+      console.error('Failed to mark notification as read', error);
+    }
+  }
+
+  appendRealtimeNotification(notification: NotificationItem): void {
+    const current = [notification, ...this.notificationsSubject.value.filter((item) => item._id !== notification._id)];
+    this.notificationsSubject.next(current);
+    this.unreadCountSubject.next(current.filter((item) => !item.isRead).length);
   }
 }

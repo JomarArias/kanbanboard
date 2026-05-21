@@ -10,6 +10,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { SidebarModule } from 'primeng/sidebar';
 import { DividerModule } from 'primeng/divider';
+import { BadgeModule } from 'primeng/badge';
+import { OverlayPanelModule, OverlayPanel } from 'primeng/overlaypanel';
 import { FormsModule } from '@angular/forms';
 import { WorkspaceService } from '../../../core/services/workspace.service';
 import { MessageService } from 'primeng/api';
@@ -17,13 +19,14 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { map, filter, take, switchMap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { NotificationService, NotificationItem } from '../../../core/services/notification.service';
 
 let _isAdminCache: boolean | null = null;
 
 @Component({
     selector: 'app-navbar',
     standalone: true,
-    imports: [CommonModule, RouterModule, ButtonModule, DropdownModule, FormsModule, DialogModule, InputTextModule, TooltipModule, SidebarModule, DividerModule],
+    imports: [CommonModule, RouterModule, ButtonModule, DropdownModule, FormsModule, DialogModule, InputTextModule, TooltipModule, SidebarModule, DividerModule, BadgeModule, OverlayPanelModule],
     templateUrl: './navbar.component.html',
     styleUrl: './navbar.component.scss'
 })
@@ -31,6 +34,7 @@ export class NavbarComponent implements OnInit {
     public auth = inject(FirebaseAuthService);
     public workspaceService = inject(WorkspaceService);
     public messageService = inject(MessageService);
+    public notificationService = inject(NotificationService);
     private http = inject(HttpClient);
     private router = inject(Router);
 
@@ -41,6 +45,8 @@ export class NavbarComponent implements OnInit {
     isInviting: boolean = false;
     myUserId: string = '';
     isAdmin: boolean = false;
+    readonly notifications$ = this.notificationService.notifications$;
+    readonly unreadCount$ = this.notificationService.unreadCount$;
 
     /** Equivalente a isAuthenticated$ de Auth0 */
     isAuthenticated$: Observable<boolean> = this.auth.currentUser$.pipe(
@@ -177,5 +183,14 @@ export class NavbarComponent implements OnInit {
                 this.generatedInviteLink = '';
             });
         }
+    }
+
+    toggleNotifications(event: Event, panel: OverlayPanel) {
+        panel.toggle(event);
+    }
+
+    markNotificationAsRead(notification: NotificationItem) {
+        if (notification.isRead) return;
+        void this.notificationService.markAsRead(notification._id);
     }
 }
