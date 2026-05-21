@@ -10,6 +10,15 @@ export type ChatMessage = {
   timestamp: string;
 };
 
+export type RealtimeNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  cardId: string | null;
+  createdAt: string;
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -54,6 +63,10 @@ export class SocketService {
   onCardDeleted() { return this.listen<{ _id: string }>('card:deleted'); }
   joinBoard(boardId: string = 'default') { }
 
+  onNotificationNew() {
+    return this.listen<RealtimeNotification>('notification:new');
+  }
+
   // ── Chat events ────────────────────────────────────────────────────────────
   joinChat(username: string, workspaceId: string): void {
     this.emit('chat:join', { username, workspaceId });
@@ -97,6 +110,14 @@ export class SocketService {
 
   stopEditing(cardId: string, workspaceId: string) {
     this.emit('card:editing:stop', { cardId, workspaceId });
+  }
+
+  joinUserRoom(userId: string) {
+    this.emit('user:join', { userId });
+  }
+
+  leaveUserRoom(userId: string) {
+    this.emit('user:leave', { userId });
   }
 
   onChatUserJoined(): Observable<{ username: string }> {

@@ -57,6 +57,18 @@ export const registerCardSocketHandlers = (io: Server, socket: Socket) => {
   let currentUsername: string | null = null;
   let currentUserId: string | null = null;
 
+  socket.on("user:join", ({ userId }: { userId?: string }) => {
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
+  });
+
+  socket.on("user:leave", ({ userId }: { userId?: string }) => {
+    if (userId) {
+      socket.leave(`user:${userId}`);
+    }
+  });
+
   socket.on("workspace:join", async ({ workspaceId, username, userId }: { workspaceId: string, username: string, userId?: string }) => {
     // ── Leave previous workspace ──────────────────────────────
     if (currentWorkspaceId) {

@@ -10,6 +10,7 @@ import { InactivityService } from './core/services/inactivity.service';
 import { WorkspaceService } from './core/services/workspace.service';
 import { ChatPanelComponent } from './features/kanban/components/chat-panel/chat-panel.component';
 import { MessageService } from 'primeng/api';
+import { NotificationService } from './core/services/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,7 @@ export class App implements OnInit {
   public auth = inject(FirebaseAuthService);
   private workspaceService = inject(WorkspaceService);
   private messageService = inject(MessageService);
+  private notificationService = inject(NotificationService);
 
   get isMinimalLayoutPage(): boolean {
     return this.router.url.startsWith('/login') || this.router.url.startsWith('/404');
@@ -37,6 +39,7 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.authSync.initSyncListener();
+    this.notificationService.init();
     // The InactivityService starts tracking automatically upon injection because tracking is initialized in its constructor.
     
     // Capture invite token from URL if present
