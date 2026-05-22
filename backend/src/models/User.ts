@@ -5,6 +5,7 @@ export interface IUser extends Document {
     email: string;
     name: string;
     picture: string;
+    pushTokens: string[];
     role: 'admin' | 'member';
     status: 'active' | 'offline';
     isDeleted: boolean;
@@ -33,6 +34,10 @@ const UserSchema = new Schema<IUser>(
         picture: {
             type: String,
             default: '',
+        },
+        pushTokens: {
+            type: [String],
+            default: [],
         },
         role: {
             type: String,

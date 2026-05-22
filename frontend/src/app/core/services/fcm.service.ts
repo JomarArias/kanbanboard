@@ -1,13 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { FirebaseApp } from '@angular/fire/app';
+import { HttpClient } from '@angular/common/http';
 import { getMessaging, getToken, isSupported, Messaging, onMessage } from 'firebase/messaging';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { FirebaseAuthService } from './firebase-auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FcmService {
   private readonly firebaseApp = inject(FirebaseApp);
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(FirebaseAuthService);
   private messaging?: Messaging;
   private initialized = false;
 
@@ -68,6 +73,7 @@ export class FcmService {
 
       if (token) {
         console.log('FCM token:', token);
+        await this.registerTokenInBackend(token);
       } else {
         console.warn('FCM token not available');
       }
@@ -82,5 +88,25 @@ export class FcmService {
     onMessage(this.messaging, (payload) => {
       console.log('FCM foreground message:', payload);
     });
+  }
+
+  private async registerTokenInBackend(token: string): Promise<void> {
+    try {
+      const idToken = await this.auth.getIdToken();
+      if (!idToken) {
+        console.warn('Skipping push token registration: missing auth token');
+        return;
+      }
+
+      await firstValueFrom(
+        this.http.post(
+          `${environment.apiUrl}/push-tokens`,
+          { token },
+          { headers: { Authorization: `Bearer ${idToken}` } }
+        )
+      );
+    } catch (error) {
+      console.error('Failed to register push token in backend', error);
+    }
   }
 }

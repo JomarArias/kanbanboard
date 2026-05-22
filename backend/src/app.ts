@@ -11,6 +11,7 @@ import { verifyFirebaseToken, requireUser } from "./middlewares/auth.middleware.
 import { errorHandler } from "./middlewares/error.middleware.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import pushTokenRoutes from "./routes/push-token.routes.js";
 
 const app = express();
 
@@ -43,6 +44,7 @@ apiRouter.use(workspaceRoutes);
 apiRouter.use(verifyFirebaseToken, requireUser);
 apiRouter.use(uploadRoutes);
 apiRouter.use(notificationRoutes);
+apiRouter.use(pushTokenRoutes);
 apiRouter.use(cardRoutes);
 apiRouter.use(auditRoutes);
 
