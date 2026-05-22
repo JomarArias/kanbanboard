@@ -31,6 +31,16 @@ const requiredKeysMap = {
 
 const missing = [];
 const configArgs = {};
+const defaultFirebaseConfig = {
+    FIREBASE_API_KEY: 'AIzaSyAHY6KX5bSx7uyKWR-lxgzoQxXJCJDPe1c',
+    FIREBASE_AUTH_DOMAIN: 'dapperkanban.firebaseapp.com',
+    FIREBASE_PROJECT_ID: 'dapperkanban',
+    FIREBASE_STORAGE_BUCKET: 'dapperkanban.firebasestorage.app',
+    FIREBASE_MESSAGING_SENDER_ID: '6310512244',
+    FIREBASE_APP_ID: '1:6310512244:web:077d8bbac2d1af3473f321',
+    FIREBASE_MEASUREMENT_ID: 'G-4LPHMRRPN4',
+    FIREBASE_VAPID_KEY: 'BI_8Ml64DnUbm9FJRk_KqwbbIzVZ5nm07T6RVATz_-xpVLV0SnOH6tUrJXZRjug5_ADoYBamVSSx1hTj5TPoiv0'
+};
 
 for (const [key, searchKeys] of Object.entries(requiredKeysMap)) {
     const foundKey = searchKeys.find(k => process.env[k]);
@@ -57,14 +67,14 @@ export const environment = {
     apiUrl: '${cleanVar(process.env.API_URL) || 'https://kanbanboard-yckr.onrender.com/api'}',
     socketUrl: '${cleanVar(process.env.SOCKET_URL) || 'https://kanbanboard-yckr.onrender.com'}',
     firebase: {
-        apiKey: '${cleanVar(configArgs.FIREBASE_API_KEY)}',
-        authDomain: '${cleanVar(configArgs.FIREBASE_AUTH_DOMAIN)}',
-        projectId: '${cleanVar(configArgs.FIREBASE_PROJECT_ID)}',
-        storageBucket: '${cleanVar(configArgs.FIREBASE_STORAGE_BUCKET)}',
-        messagingSenderId: '${cleanVar(configArgs.FIREBASE_MESSAGING_SENDER_ID)}',
-        appId: '${cleanVar(configArgs.FIREBASE_APP_ID)}',
-        measurementId: '${cleanVar(process.env.FIREBASE_MEASUREMENT_ID || process.env.MEASUREMENT_ID || process.env.measurementId)}',
-        vapidKey: '${cleanVar(configArgs.FIREBASE_VAPID_KEY)}'
+        apiKey: '${cleanVar(configArgs.FIREBASE_API_KEY || defaultFirebaseConfig.FIREBASE_API_KEY)}',
+        authDomain: '${cleanVar(configArgs.FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.FIREBASE_AUTH_DOMAIN)}',
+        projectId: '${cleanVar(configArgs.FIREBASE_PROJECT_ID || defaultFirebaseConfig.FIREBASE_PROJECT_ID)}',
+        storageBucket: '${cleanVar(configArgs.FIREBASE_STORAGE_BUCKET || defaultFirebaseConfig.FIREBASE_STORAGE_BUCKET)}',
+        messagingSenderId: '${cleanVar(configArgs.FIREBASE_MESSAGING_SENDER_ID || defaultFirebaseConfig.FIREBASE_MESSAGING_SENDER_ID)}',
+        appId: '${cleanVar(configArgs.FIREBASE_APP_ID || defaultFirebaseConfig.FIREBASE_APP_ID)}',
+        measurementId: '${cleanVar(process.env.FIREBASE_MEASUREMENT_ID || process.env.MEASUREMENT_ID || process.env.measurementId || defaultFirebaseConfig.FIREBASE_MEASUREMENT_ID)}',
+        vapidKey: '${cleanVar(configArgs.FIREBASE_VAPID_KEY || defaultFirebaseConfig.FIREBASE_VAPID_KEY)}'
     }
 };
 `;
