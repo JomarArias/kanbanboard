@@ -1,6 +1,7 @@
 Levantar proyecto:
  podman machine start
   podman compose up --build
+  podman compose down
 
 # Dapper Kanban
 

@@ -11,6 +11,7 @@ import { WorkspaceService } from './core/services/workspace.service';
 import { ChatPanelComponent } from './features/kanban/components/chat-panel/chat-panel.component';
 import { MessageService } from 'primeng/api';
 import { NotificationService } from './core/services/notification.service';
+import { FcmService } from './core/services/fcm.service';
 
 @Component({
   selector: 'app-root',
@@ -28,6 +29,7 @@ export class App implements OnInit {
   private workspaceService = inject(WorkspaceService);
   private messageService = inject(MessageService);
   private notificationService = inject(NotificationService);
+  private fcmService = inject(FcmService);
 
   get isMinimalLayoutPage(): boolean {
     return this.router.url.startsWith('/login') || this.router.url.startsWith('/404');
@@ -40,6 +42,7 @@ export class App implements OnInit {
   ngOnInit() {
     this.authSync.initSyncListener();
     this.notificationService.init();
+    void this.fcmService.init();
     // The InactivityService starts tracking automatically upon injection because tracking is initialized in its constructor.
     
     // Capture invite token from URL if present

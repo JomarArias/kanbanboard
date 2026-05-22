@@ -13,7 +13,8 @@ export const environment = {
         storageBucket: 'dapperkanban.firebasestorage.app',
         messagingSenderId: '6310512244',
         appId: '1:6310512244:web:077d8bbac2d1af3473f321',
-        measurementId: 'G-4LPHMRRPN4'
+        measurementId: 'G-4LPHMRRPN4',
+        vapidKey: 'BI_8Ml64DnUbm9FJRk_KqwbbIzVZ5nm07T6RVATz_-xpVLV0SnOH6tUrJXZRjug5_ADoYBamVSSx1hTj5TPoiv0'
     }
 };
 

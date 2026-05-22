@@ -205,6 +205,7 @@ export const updateCard = async (req: Request, res: Response) => {
     return res.json(card);
   } catch (err: any) {
     if (err?.status === 409) return res.status(409).json({ message: err.message, currentCard: err.currentCard });
+    if (err?.status === 400) return sendError(res, 400, err.message);
     if (err?.status === 404) return sendError(res, 404, err.message);
     return sendError(res, 500, "Error actualizando tarjeta", err);
   }

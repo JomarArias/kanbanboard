@@ -243,6 +243,17 @@ const validateStyle = (style: unknown) => {
   }
 };
 
+const APP_TIME_ZONE = process.env.APP_TIME_ZONE || "America/Cancun";
+
+const getTodayYmdInTimezone = (timeZone: string): string => {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+};
+
 
 
 
@@ -299,16 +310,9 @@ export const updateCard = async (
     }
 
     const normalizedUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)); // 12:00 UTC
+    const todayYmd = getTodayYmdInTimezone(APP_TIME_ZONE);
 
-    const today = new Date();
-    const todayUtc = new Date(Date.UTC(
-      today.getUTCFullYear(),
-      today.getUTCMonth(),
-      today.getUTCDate(),
-      12, 0, 0
-    ));
-
-    if (normalizedUtc < todayUtc) {
+    if (raw < todayYmd) {
       const err: any = new Error("No se permite una fecha de vencimiento pasada");
       err.status = 400;
       throw err;

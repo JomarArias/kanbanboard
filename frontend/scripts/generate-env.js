@@ -26,6 +26,7 @@ const requiredKeysMap = {
     'FIREBASE_STORAGE_BUCKET': ['FIREBASE_STORAGE_BUCKET', 'STORAGE_BUCKET', 'storageBucket'],
     'FIREBASE_MESSAGING_SENDER_ID': ['FIREBASE_MESSAGING_SENDER_ID', 'MESSAGING_SENDER_ID', 'messagingSenderId'],
     'FIREBASE_APP_ID': ['FIREBASE_APP_ID', 'APP_ID', 'appId'],
+    'FIREBASE_VAPID_KEY': ['FIREBASE_VAPID_KEY', 'VAPID_KEY', 'vapidKey'],
 };
 
 const missing = [];
@@ -62,7 +63,8 @@ export const environment = {
         storageBucket: '${cleanVar(configArgs.FIREBASE_STORAGE_BUCKET)}',
         messagingSenderId: '${cleanVar(configArgs.FIREBASE_MESSAGING_SENDER_ID)}',
         appId: '${cleanVar(configArgs.FIREBASE_APP_ID)}',
-        measurementId: '${cleanVar(process.env.FIREBASE_MEASUREMENT_ID || process.env.MEASUREMENT_ID || process.env.measurementId)}'
+        measurementId: '${cleanVar(process.env.FIREBASE_MEASUREMENT_ID || process.env.MEASUREMENT_ID || process.env.measurementId)}',
+        vapidKey: '${cleanVar(configArgs.FIREBASE_VAPID_KEY)}'
     }
 };
 `;

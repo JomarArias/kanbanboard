@@ -8,6 +8,7 @@ import Aura from '@primeng/themes/aura';
 import { routes } from './app.routes';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
+import { getMessaging, provideMessaging } from '@angular/fire/messaging';
 import { getStorage, provideStorage } from '@angular/fire/storage';
 import { environment } from '../environments/environment';
 import { firebaseAuthInterceptor } from './core/interceptors/firebase-auth.interceptor';
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
+    provideMessaging(() => getMessaging()),
     provideStorage(() => getStorage()),
     provideAnimationsAsync(),
     providePrimeNG({
