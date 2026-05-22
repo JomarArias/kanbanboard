@@ -2,6 +2,7 @@
   <app-navbar *ngIf="!isMinimalLayoutPage && (auth.currentUser$ | async)"></app-navbar>
   <p-toast></p-toast>
   <p-confirmPopup></p-confirmPopup>
+  <p-confirmPopup key="notifications-clear" styleClass="notifications-clear-confirm"></p-confirmPopup>
 
   <!-- Contenido principal (board) -->
   <div class="flex-1 overflow-y-auto overflow-x-hidden">

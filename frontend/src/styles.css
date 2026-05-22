@@ -17,3 +17,10 @@
   height: 0;
   display: none;
 }
+
+/* Notification clear-all ConfirmPopup arrow alignment (global because popup is mounted at app/root level) */
+.notifications-clear-confirm.p-confirmpopup::before,
+.notifications-clear-confirm.p-confirmpopup::after {
+  left: auto !important;
+  right: 1.25rem !important;
+}

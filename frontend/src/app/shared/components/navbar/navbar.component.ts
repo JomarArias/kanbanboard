@@ -198,6 +198,7 @@ export class NavbarComponent implements OnInit {
     confirmClearAllNotifications(event: Event) {
         this.confirmationService.confirm({
             target: event.currentTarget as EventTarget,
+            key: 'notifications-clear',
             message: '¿Estás seguro de eliminar todas las notificaciones?',
             icon: 'pi pi-exclamation-triangle',
             acceptButtonStyleClass: 'p-button-danger p-button-sm',
