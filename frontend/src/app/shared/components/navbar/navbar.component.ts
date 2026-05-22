@@ -14,7 +14,7 @@ import { BadgeModule } from 'primeng/badge';
 import { OverlayPanelModule, OverlayPanel } from 'primeng/overlaypanel';
 import { FormsModule } from '@angular/forms';
 import { WorkspaceService } from '../../../core/services/workspace.service';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { map, filter, take, switchMap } from 'rxjs/operators';
@@ -35,6 +35,7 @@ export class NavbarComponent implements OnInit {
     public workspaceService = inject(WorkspaceService);
     public messageService = inject(MessageService);
     public notificationService = inject(NotificationService);
+    private confirmationService = inject(ConfirmationService);
     private http = inject(HttpClient);
     private router = inject(Router);
 
@@ -192,5 +193,20 @@ export class NavbarComponent implements OnInit {
     markNotificationAsRead(notification: NotificationItem) {
         if (notification.isRead) return;
         void this.notificationService.markAsRead(notification._id);
+    }
+
+    confirmClearAllNotifications(event: Event) {
+        this.confirmationService.confirm({
+            target: event.currentTarget as EventTarget,
+            message: '¿Estás seguro de eliminar todas las notificaciones?',
+            icon: 'pi pi-exclamation-triangle',
+            acceptButtonStyleClass: 'p-button-danger p-button-sm',
+            rejectButtonStyleClass: 'p-button-text p-button-sm',
+            acceptLabel: 'Eliminar',
+            rejectLabel: 'Cancelar',
+            accept: () => {
+                void this.notificationService.clearAll();
+            }
+        });
     }
 }

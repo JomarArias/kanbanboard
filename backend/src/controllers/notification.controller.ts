@@ -26,3 +26,13 @@ export const markNotificationRead = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteAllNotifications = async (_req: Request, res: Response) => {
+  try {
+    const userId = res.locals.user._id.toString();
+    await notificationService.deleteAllNotificationsByUser(userId);
+    return res.status(200).json({ ok: true });
+  } catch (error: any) {
+    return sendError(res, 500, 'Error eliminando notificaciones', error);
+  }
+};
+

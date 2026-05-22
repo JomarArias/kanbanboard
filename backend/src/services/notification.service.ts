@@ -75,3 +75,7 @@ export const markNotificationAsRead = async (notificationId: string, userId: str
   return notification;
 };
 
+export const deleteAllNotificationsByUser = async (userId: string) => {
+  await Notification.deleteMany({ userId });
+};
+

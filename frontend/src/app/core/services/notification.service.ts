@@ -174,6 +174,24 @@ export class NotificationService {
     }
   }
 
+  async clearAll(): Promise<void> {
+    const token = await this.auth.getIdToken();
+    if (!token) return;
+
+    try {
+      await firstValueFrom(
+        this.http.delete<{ ok: boolean }>(`${environment.apiUrl}/notifications`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      );
+
+      this.notificationsSubject.next([]);
+      this.unreadCountSubject.next(0);
+    } catch (error) {
+      console.error('Failed to clear notifications', error);
+    }
+  }
+
   appendRealtimeNotification(notification: NotificationItem): void {
     const current = [notification, ...this.notificationsSubject.value.filter((item) => item._id !== notification._id)];
     this.notificationsSubject.next(current);

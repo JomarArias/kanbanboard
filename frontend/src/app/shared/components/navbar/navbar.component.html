@@ -35,9 +35,22 @@
                                 <div class="notification-panel__title">Notificaciones</div>
                                 <div class="notification-panel__subtitle">Actividad reciente de tus tarjetas</div>
                             </div>
-                            <button type="button" pButton class="p-button-text p-button-sm" (click)="notificationPanel.hide()">
-                                <i class="pi pi-times"></i>
-                            </button>
+                            <div class="notification-panel__header-actions" *ngIf="(notifications$ | async) as notifications">
+                                <button
+                                    *ngIf="notifications.length > 0"
+                                    type="button"
+                                    pButton
+                                    class="p-button-text p-button-danger p-button-sm"
+                                    pTooltip="Eliminar todas"
+                                    tooltipPosition="bottom"
+                                    (click)="confirmClearAllNotifications($event)"
+                                >
+                                    <i class="pi pi-trash"></i>
+                                </button>
+                                <button type="button" pButton class="p-button-text p-button-sm" (click)="notificationPanel.hide()">
+                                    <i class="pi pi-times"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="notification-list" *ngIf="(notifications$ | async) as notifications">
