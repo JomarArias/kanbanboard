@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Notification } from '../models/Notification.js';
 import { getIO } from '../sockets/socket.server.js';
+import { sendPushNotificationToUser } from './push-notification.service.js';
 
 type CreateNotificationInput = {
   userId: string;
@@ -28,6 +29,14 @@ export const createNotification = async (data: CreateNotificationInput) => {
     cardId: notification.cardId ? notification.cardId.toString() : null,
     createdAt: notification.createdAt
   };
+
+  await sendPushNotificationToUser({
+    userId: data.userId,
+    title: notification.title,
+    body: notification.message,
+    notificationId: notification._id.toString(),
+    type: notification.type
+  });
 
   try {
     getIO().to(`user:${data.userId}`).emit('notification:new', payload);
