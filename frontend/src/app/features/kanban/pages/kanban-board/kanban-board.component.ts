@@ -33,6 +33,7 @@ import { debounceTime, distinctUntilChanged, finalize, switchMap, takeUntil } fr
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ColorPickerModule } from 'primeng/colorpicker';
+import { MeetingRequestService } from '../../../../core/services/meeting-request.service';
 
 @Component({
   selector: 'app-kanban-board',
@@ -131,10 +132,12 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   displayEditDialog: boolean = false;
   displayImagePreviewDialog: boolean = false;
+  displayMeetingRequestDialog: boolean = false;
   imagePreviewUrl: string | null = null;
   imagePreviewFitMode: 'contain' | 'cover' = 'contain';
   isUploadingImage = false;
   isSavingEditCard = false;
+  isSavingMeetingRequest = false;
   showImageUrlInput = false;
   editingCard: Kanban = {
     _id: '',
@@ -145,6 +148,15 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     dueDate: null,
     labels: [],
     style: { backgroundType: 'default', backgroundColor: null, backgroundImageUrl: null }
+  };
+  meetingRequestForm = {
+    title: '',
+    description: '',
+    prospectName: '',
+    prospectEmail: '',
+    prospectPhone: '',
+    startAt: null as Date | null,
+    endAt: null as Date | null,
   };
 
   auditLogs: AuditLog[] = [];
@@ -186,7 +198,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     private kanbanFacade: KanbanFacadeService,
     private messageService: MessageService,
     private socketService: SocketService,
-    private workspaceService: WorkspaceService
+    private workspaceService: WorkspaceService,
+    private meetingRequestService: MeetingRequestService
   ) { }
 
   ngOnInit(): void {
@@ -822,6 +835,111 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   closeEditDialog() {
     if (this.editingCard?._id) this.onStopEditing(this.editingCard._id);
     this.displayEditDialog = false;
+  }
+
+  openMeetingRequestDialog() {
+    if (!this.editingCard || !this.editingCard._id) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Primero abre una tarjeta válida para solicitar cita'
+      });
+      return;
+    }
+
+    this.meetingRequestForm = {
+      title: this.editingCard.title?.trim() ? `Reunión: ${this.editingCard.title.trim()}` : '',
+      description: this.editingCard.task?.trim() || '',
+      prospectName: this.editingCard.prospectName?.trim() || '',
+      prospectEmail: this.editingCard.prospectEmail?.trim() || '',
+      prospectPhone: this.editingCard.prospectPhone?.trim() || '',
+      startAt: null,
+      endAt: null,
+    };
+
+    this.displayMeetingRequestDialog = true;
+  }
+
+  closeMeetingRequestDialog() {
+    this.displayMeetingRequestDialog = false;
+    this.isSavingMeetingRequest = false;
+  }
+
+  private validateMeetingRequestForm(): boolean {
+    const title = this.meetingRequestForm.title.trim();
+    const prospectName = this.meetingRequestForm.prospectName.trim();
+    const prospectEmail = this.meetingRequestForm.prospectEmail.trim();
+    const startAt = this.meetingRequestForm.startAt;
+    const endAt = this.meetingRequestForm.endAt;
+
+    if (!title) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'El título de la cita es obligatorio' });
+      return false;
+    }
+
+    if (!prospectName) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'El nombre del prospecto es obligatorio' });
+      return false;
+    }
+
+    if (!startAt || !endAt) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Inicio y fin son obligatorios' });
+      return false;
+    }
+
+    const now = new Date();
+    if (startAt.getTime() < now.getTime()) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'La fecha/hora de inicio no puede estar en el pasado' });
+      return false;
+    }
+
+    if (endAt.getTime() <= startAt.getTime()) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'La fecha/hora de fin debe ser posterior al inicio' });
+      return false;
+    }
+
+    if (prospectEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(prospectEmail)) {
+      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'El correo del prospecto no es válido' });
+      return false;
+    }
+
+    return true;
+  }
+
+  submitMeetingRequest() {
+    if (this.isSavingMeetingRequest) return;
+    if (!this.validateMeetingRequestForm()) return;
+
+    const payload: any = {
+      prospectName: this.meetingRequestForm.prospectName.trim(),
+      prospectEmail: this.meetingRequestForm.prospectEmail.trim() || null,
+      prospectPhone: this.meetingRequestForm.prospectPhone.trim() || null,
+      title: this.meetingRequestForm.title.trim(),
+      description: this.meetingRequestForm.description.trim() || null,
+      startAt: this.meetingRequestForm.startAt!.toISOString(),
+      endAt: this.meetingRequestForm.endAt!.toISOString(),
+    };
+    if (this.editingCard?._id) {
+      payload.cardId = this.editingCard._id;
+    }
+
+    this.isSavingMeetingRequest = true;
+    this.meetingRequestService.create(payload)
+      .pipe(finalize(() => { this.isSavingMeetingRequest = false; }))
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Correcto',
+            detail: 'Solicitud de cita creada correctamente'
+          });
+          this.displayMeetingRequestDialog = false;
+        },
+        error: (err) => {
+          const message = err?.error?.message || 'No se pudo crear la solicitud de cita';
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
+        }
+      });
   }
 
   drop(event: CdkDragDrop<Kanban[]>) {

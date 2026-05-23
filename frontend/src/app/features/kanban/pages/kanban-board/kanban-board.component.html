@@ -291,6 +291,14 @@
         <ng-template pTemplate="footer">
             <p-button label="Cancelar" icon="pi pi-times" (onClick)="closeEditDialog()" text="true"></p-button>
  <p-button
+   label="Solicitar cita"
+   icon="pi pi-calendar-plus"
+   severity="secondary"
+   [text]="true"
+   [disabled]="isSavingEditCard || isUploadingImage"
+   (onClick)="openMeetingRequestDialog()">
+ </p-button>
+ <p-button
    label="Guardar"
    icon="pi pi-check"
    (onClick)="saveEditedCard()"
@@ -298,6 +306,57 @@
    [disabled]="isSavingEditCard || isUploadingImage"
    autofocus="true">
  </p-button>
+        </ng-template>
+    </p-dialog>
+
+    <p-dialog header="Solicitar cita CRM" [(visible)]="displayMeetingRequestDialog" [modal]="true" [draggable]="false"
+        [resizable]="false" [style]="{ width: '95vw', maxWidth: '720px' }" appendTo="body"
+        (onHide)="closeMeetingRequestDialog()">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-2 md:col-span-2">
+                <label class="font-semibold" for="mr-title">Título de la reunión</label>
+                <input pInputText id="mr-title" [(ngModel)]="meetingRequestForm.title" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold" for="mr-prospect-name">Nombre del prospecto</label>
+                <input pInputText id="mr-prospect-name" [(ngModel)]="meetingRequestForm.prospectName" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold" for="mr-prospect-email">Email del prospecto</label>
+                <input pInputText id="mr-prospect-email" type="email" [(ngModel)]="meetingRequestForm.prospectEmail" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold" for="mr-prospect-phone">Teléfono (opcional)</label>
+                <input pInputText id="mr-prospect-phone" [(ngModel)]="meetingRequestForm.prospectPhone" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 md:col-span-2">
+                <label class="font-semibold" for="mr-description">Descripción (opcional)</label>
+                <textarea pTextarea id="mr-description" [(ngModel)]="meetingRequestForm.description" rows="3" class="w-full"></textarea>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold" for="mr-start">Inicio</label>
+                <p-datepicker id="mr-start" [(ngModel)]="meetingRequestForm.startAt" [showTime]="true" hourFormat="24"
+                    [minDate]="todayDate" appendTo="body" [style]="{ width: '100%' }" inputStyleClass="w-full">
+                </p-datepicker>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold" for="mr-end">Fin</label>
+                <p-datepicker id="mr-end" [(ngModel)]="meetingRequestForm.endAt" [showTime]="true" hourFormat="24"
+                    [minDate]="todayDate" appendTo="body" [style]="{ width: '100%' }" inputStyleClass="w-full">
+                </p-datepicker>
+            </div>
+        </div>
+
+        <ng-template pTemplate="footer">
+            <p-button label="Cancelar" icon="pi pi-times" text="true" (onClick)="closeMeetingRequestDialog()"></p-button>
+            <p-button label="Crear solicitud" icon="pi pi-check" [loading]="isSavingMeetingRequest"
+                [disabled]="isSavingMeetingRequest" (onClick)="submitMeetingRequest()"></p-button>
         </ng-template>
     </p-dialog>
 
