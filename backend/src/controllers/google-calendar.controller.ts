@@ -10,10 +10,10 @@ import {
 export const getGoogleCalendarConnectUrl = async (_req: Request, res: Response) => {
   try {
     const userId = res.locals.user._id.toString();
-    const authUrl = buildGoogleConsentUrl(userId);
+    const authUrl = await buildGoogleConsentUrl(userId);
     return res.json({ authUrl });
   } catch (error) {
-    return sendError(res, 500, 'Error generating Google OAuth URL', error);
+    return sendError(res, 500, 'Error generating Google OAuth URL');
   }
 };
 
@@ -35,11 +35,10 @@ export const googleCalendarOAuthCallback = async (req: Request, res: Response) =
     return res.status(200).json({
       ok: true,
       connected: true,
-      userId: result.userId,
       googleEmail: result.googleEmail || null,
     });
   } catch (error: any) {
-    return sendError(res, 400, error?.message || 'Error processing OAuth callback', error);
+    return sendError(res, 400, error?.message || 'Error processing OAuth callback');
   }
 };
 

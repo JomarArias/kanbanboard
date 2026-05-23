@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto';
 import { GoogleCalendarIntegration } from '../models/GoogleCalendarIntegration.js';
+import { GoogleOAuthState } from '../models/GoogleOAuthState.js';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -7,6 +8,8 @@ const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
 const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 const STATE_TTL_MS = 10 * 60 * 1000;
+
+const REAUTH_THRESHOLD_MS = 60 * 1000;
 
 type StatePayload = {
   u: string;
@@ -23,13 +26,38 @@ type TokenResponse = {
   token_type: string;
 };
 
+type OAuthConfig = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  stateSecret: string;
+  tokenEncryptionKey: string;
+};
+
+export type GoogleTokenRuntime = {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresAt: Date;
+  scope: string;
+  tokenType: string;
+};
+
+export type GoogleIntegrationRuntimeStatus = {
+  connected: boolean;
+  accessTokenExpired?: boolean;
+  requiresReauthorization: boolean;
+  reason?: 'not_connected' | 'access_token_expired';
+  googleEmail?: string | null;
+  token?: GoogleTokenRuntime;
+};
+
 const getRequiredEnv = (name: string): string => {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Missing required env var: ${name}`);
   return value;
 };
 
-const getOAuthConfig = () => ({
+const getOAuthConfig = (): OAuthConfig => ({
   clientId: getRequiredEnv('GOOGLE_OAUTH_CLIENT_ID'),
   clientSecret: getRequiredEnv('GOOGLE_OAUTH_CLIENT_SECRET'),
   redirectUri: getRequiredEnv('GOOGLE_OAUTH_REDIRECT_URI'),
@@ -37,16 +65,32 @@ const getOAuthConfig = () => ({
   tokenEncryptionKey: getRequiredEnv('GOOGLE_TOKEN_ENCRYPTION_KEY'),
 });
 
+const ensureSecureLength = (label: string, value: string, minLength = 32) => {
+  if (value.length < minLength) {
+    throw new Error(`${label} must be at least ${minLength} characters`);
+  }
+};
+
+export const validateGoogleOAuthConfig = (): OAuthConfig => {
+  const cfg = getOAuthConfig();
+  ensureSecureLength('GOOGLE_OAUTH_STATE_SECRET', cfg.stateSecret);
+  ensureSecureLength('GOOGLE_TOKEN_ENCRYPTION_KEY', cfg.tokenEncryptionKey);
+  return cfg;
+};
+
 const toBase64Url = (value: string) => Buffer.from(value, 'utf8').toString('base64url');
 const fromBase64Url = (value: string) => Buffer.from(value, 'base64url').toString('utf8');
 
 const signState = (payload: string, stateSecret: string) =>
   createHmac('sha256', stateSecret).update(payload).digest('base64url');
 
+const hashState = (state: string) => createHash('sha256').update(state).digest('base64url');
+
 const getAesKey = (tokenEncryptionKey: string): Buffer =>
   createHash('sha256').update(tokenEncryptionKey).digest();
 
-const encryptSecret = (plainText: string, tokenEncryptionKey: string): string => {
+export const encryptOAuthToken = (plainText: string): string => {
+  const { tokenEncryptionKey } = validateGoogleOAuthConfig();
   const iv = randomBytes(12);
   const key = getAesKey(tokenEncryptionKey);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
@@ -55,7 +99,8 @@ const encryptSecret = (plainText: string, tokenEncryptionKey: string): string =>
   return `${iv.toString('base64url')}.${authTag.toString('base64url')}.${encrypted.toString('base64url')}`;
 };
 
-const decryptSecret = (encryptedValue: string, tokenEncryptionKey: string): string => {
+export const decryptOAuthToken = (encryptedValue: string): string => {
+  const { tokenEncryptionKey } = validateGoogleOAuthConfig();
   const [ivB64, authTagB64, cipherTextB64] = encryptedValue.split('.');
   if (!ivB64 || !authTagB64 || !cipherTextB64) throw new Error('Invalid encrypted token format');
 
@@ -71,8 +116,8 @@ const decryptSecret = (encryptedValue: string, tokenEncryptionKey: string): stri
   return decrypted.toString('utf8');
 };
 
-export const createGoogleOAuthState = (userId: string): string => {
-  const { stateSecret } = getOAuthConfig();
+export const createGoogleOAuthState = async (userId: string): Promise<string> => {
+  const { stateSecret } = validateGoogleOAuthConfig();
   const now = Date.now();
   const payload: StatePayload = {
     u: userId,
@@ -83,11 +128,19 @@ export const createGoogleOAuthState = (userId: string): string => {
 
   const payloadB64 = toBase64Url(JSON.stringify(payload));
   const signature = signState(payloadB64, stateSecret);
-  return `${payloadB64}.${signature}`;
+  const state = `${payloadB64}.${signature}`;
+
+  await GoogleOAuthState.create({
+    userId,
+    stateHash: hashState(state),
+    expiresAt: new Date(payload.exp),
+  });
+
+  return state;
 };
 
-export const parseAndValidateGoogleOAuthState = (state: string): StatePayload => {
-  const { stateSecret } = getOAuthConfig();
+export const parseAndValidateGoogleOAuthState = async (state: string): Promise<StatePayload> => {
+  const { stateSecret } = validateGoogleOAuthConfig();
   const [payloadB64, signature] = state.split('.');
   if (!payloadB64 || !signature) throw new Error('Invalid OAuth state format');
 
@@ -98,14 +151,30 @@ export const parseAndValidateGoogleOAuthState = (state: string): StatePayload =>
   if (!parsed?.u || !parsed?.exp || !parsed?.iat || !parsed?.n) {
     throw new Error('Invalid OAuth state payload');
   }
-  if (Date.now() > parsed.exp) throw new Error('OAuth state expired');
+
+  const now = Date.now();
+  if (parsed.iat > now + 60 * 1000) throw new Error('Invalid OAuth state issued time');
+  if (now > parsed.exp) throw new Error('OAuth state expired');
+
+  const usedState = await GoogleOAuthState.findOneAndUpdate(
+    {
+      stateHash: hashState(state),
+      userId: parsed.u,
+      usedAt: null,
+      expiresAt: { $gt: new Date() },
+    },
+    { $set: { usedAt: new Date() } },
+    { new: true }
+  );
+
+  if (!usedState) throw new Error('OAuth state is invalid, expired, or already used');
 
   return parsed;
 };
 
-export const buildGoogleConsentUrl = (userId: string): string => {
-  const { clientId, redirectUri } = getOAuthConfig();
-  const state = createGoogleOAuthState(userId);
+export const buildGoogleConsentUrl = async (userId: string): Promise<string> => {
+  const { clientId, redirectUri } = validateGoogleOAuthConfig();
+  const state = await createGoogleOAuthState(userId);
 
   const query = new URLSearchParams({
     client_id: clientId,
@@ -122,7 +191,7 @@ export const buildGoogleConsentUrl = (userId: string): string => {
 };
 
 const exchangeCodeForTokens = async (code: string): Promise<TokenResponse> => {
-  const { clientId, clientSecret, redirectUri } = getOAuthConfig();
+  const { clientId, clientSecret, redirectUri } = validateGoogleOAuthConfig();
 
   const body = new URLSearchParams({
     code,
@@ -140,7 +209,7 @@ const exchangeCodeForTokens = async (code: string): Promise<TokenResponse> => {
 
   const json = await response.json();
   if (!response.ok) {
-    throw new Error(`Google token exchange failed: ${JSON.stringify(json)}`);
+    throw new Error(`Google token exchange failed with status ${response.status}`);
   }
 
   return json as TokenResponse;
@@ -157,14 +226,13 @@ const fetchGoogleUserEmail = async (accessToken: string): Promise<string | undef
 };
 
 export const saveGoogleTokensFromCallback = async (code: string, state: string) => {
-  const parsedState = parseAndValidateGoogleOAuthState(state);
+  const parsedState = await parseAndValidateGoogleOAuthState(state);
   const tokens = await exchangeCodeForTokens(code);
 
   if (!tokens.refresh_token) {
     throw new Error('Google did not return refresh_token. Ensure access_type=offline and prompt=consent.');
   }
 
-  const { tokenEncryptionKey } = getOAuthConfig();
   const accessTokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
   const googleEmail = await fetchGoogleUserEmail(tokens.access_token);
 
@@ -173,8 +241,8 @@ export const saveGoogleTokensFromCallback = async (code: string, state: string) 
     {
       $set: {
         googleEmail: googleEmail || null,
-        accessTokenEncrypted: encryptSecret(tokens.access_token, tokenEncryptionKey),
-        refreshTokenEncrypted: encryptSecret(tokens.refresh_token, tokenEncryptionKey),
+        accessTokenEncrypted: encryptOAuthToken(tokens.access_token),
+        refreshTokenEncrypted: encryptOAuthToken(tokens.refresh_token),
         accessTokenExpiresAt,
         scope: tokens.scope,
         tokenType: tokens.token_type || 'Bearer',
@@ -200,13 +268,43 @@ export const getGoogleCalendarConnectionStatus = async (userId: string) => {
   };
 };
 
+export const getGoogleIntegrationRuntimeStatus = async (userId: string): Promise<GoogleIntegrationRuntimeStatus> => {
+  const integration = await GoogleCalendarIntegration.findOne({ userId });
+  if (!integration) {
+    return {
+      connected: false,
+      accessTokenExpired: false,
+      requiresReauthorization: true,
+      reason: 'not_connected'
+    };
+  }
+
+  const token: GoogleTokenRuntime = {
+    accessToken: decryptOAuthToken(integration.accessTokenEncrypted),
+    refreshToken: decryptOAuthToken(integration.refreshTokenEncrypted),
+    accessTokenExpiresAt: integration.accessTokenExpiresAt,
+    scope: integration.scope,
+    tokenType: integration.tokenType,
+  };
+
+  const accessTokenExpired = token.accessTokenExpiresAt.getTime() <= Date.now() + REAUTH_THRESHOLD_MS;
+
+  return {
+    connected: true,
+    accessTokenExpired,
+    requiresReauthorization: false,
+    reason: accessTokenExpired ? 'access_token_expired' : undefined,
+    googleEmail: integration.googleEmail || null,
+    token,
+  };
+};
+
 export const disconnectGoogleCalendar = async (userId: string) => {
   const integration = await GoogleCalendarIntegration.findOne({ userId });
   if (!integration) return { disconnected: true, existed: false };
 
   try {
-    const { tokenEncryptionKey } = getOAuthConfig();
-    const refreshToken = decryptSecret(integration.refreshTokenEncrypted, tokenEncryptionKey);
+    const refreshToken = decryptOAuthToken(integration.refreshTokenEncrypted);
 
     await fetch(GOOGLE_REVOKE_URL, {
       method: 'POST',
@@ -214,7 +312,7 @@ export const disconnectGoogleCalendar = async (userId: string) => {
       body: new URLSearchParams({ token: refreshToken }).toString(),
     });
   } catch (error) {
-    console.error('Google token revocation failed', error);
+    console.error('Google token revocation failed');
   }
 
   await GoogleCalendarIntegration.deleteOne({ userId });
