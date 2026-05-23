@@ -12,6 +12,7 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import pushTokenRoutes from "./routes/push-token.routes.js";
+import googleCalendarRoutes from "./routes/google-calendar.routes.js";
 
 const app = express();
 
@@ -36,6 +37,7 @@ const apiRouter = express.Router();
 
 // User routes (sync, profile, admin) — auth handled per-route inside
 apiRouter.use('/users', userRoutes);
+apiRouter.use('/google-calendar', googleCalendarRoutes);
 
 // Workspace routes — auth handled inside
 apiRouter.use(workspaceRoutes);
