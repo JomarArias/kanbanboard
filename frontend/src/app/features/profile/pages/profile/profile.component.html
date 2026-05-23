@@ -82,6 +82,62 @@
 
                 <div class="section-divider"></div>
 
+                <div class="google-calendar-section">
+                    <div class="field-group">
+                        <label class="field-label">Google Calendar</label>
+                        <span class="field-hint">
+                            Vincula tu cuenta para crear reuniones del CRM en tu calendario corporativo.
+                        </span>
+                    </div>
+
+                    <div *ngIf="googleLoading" class="google-calendar-status text-sm">
+                        Consultando estado de conexión...
+                    </div>
+
+                    <div *ngIf="!googleLoading && googleStatusError" class="google-calendar-error text-sm">
+                        {{ googleStatusError }}
+                    </div>
+
+                    <div *ngIf="!googleLoading && !googleStatusError && !googleStatus.connected" class="google-calendar-status">
+                        <div class="status-chip status-disconnected">
+                            <span class="status-dot-off"></span>
+                            Google Calendar no vinculado
+                        </div>
+                        <p-button
+                            label="Vincular Google Calendar"
+                            icon="pi pi-link"
+                            styleClass="w-full mt-2"
+                            [loading]="googleConnecting"
+                            [disabled]="googleConnecting || googleDisconnecting"
+                            (onClick)="connectGoogleCalendar()">
+                        </p-button>
+                    </div>
+
+                    <div *ngIf="!googleLoading && !googleStatusError && googleStatus.connected" class="google-calendar-status">
+                        <div class="status-chip status-connected">
+                            <span class="status-dot-on"></span>
+                            Google Calendar vinculado
+                        </div>
+                        <span class="google-email" *ngIf="googleStatus.googleEmail">
+                            Cuenta: {{ googleStatus.googleEmail }}
+                        </span>
+                        <span class="field-hint" *ngIf="!googleStatus.googleEmail">
+                            Cuenta vinculada sin correo reportado por Google.
+                        </span>
+                        <p-button
+                            label="Desvincular Google Calendar"
+                            icon="pi pi-unlink"
+                            severity="danger"
+                            styleClass="w-full mt-2"
+                            [loading]="googleDisconnecting"
+                            [disabled]="googleConnecting || googleDisconnecting"
+                            (onClick)="disconnectGoogleCalendar()">
+                        </p-button>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
                 <!-- Meta info -->
                 <div class="meta-grid">
                     <div class="meta-item">

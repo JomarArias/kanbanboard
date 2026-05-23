@@ -155,6 +155,65 @@
     }
 }
 
+.google-calendar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.google-calendar-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.google-calendar-error {
+    color: #ef4444;
+    font-weight: 500;
+}
+
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 9999px;
+    width: fit-content;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.status-connected {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-disconnected {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-dot-on,
+.status-dot-off {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+}
+
+.status-dot-on {
+    background-color: #22c55e;
+}
+
+.status-dot-off {
+    background-color: #ef4444;
+}
+
+.google-email {
+    font-size: 0.82rem;
+    color: var(--text-color-secondary);
+    word-break: break-word;
+}
+
 // ─── Meta Grid ──────────────────────────────────────────────────
 .meta-grid {
     display: grid;

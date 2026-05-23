@@ -7,6 +7,11 @@ import {
   saveGoogleTokensFromCallback,
 } from '../services/google-oauth.service.js';
 
+const getFrontendProfileUrl = (): string => {
+  const baseUrl = process.env.FRONTEND_URL?.trim() || 'http://localhost:4200';
+  return `${baseUrl.replace(/\/+$/, '')}/profile`;
+};
+
 export const getGoogleCalendarConnectUrl = async (_req: Request, res: Response) => {
   try {
     const userId = res.locals.user._id.toString();
@@ -18,27 +23,25 @@ export const getGoogleCalendarConnectUrl = async (_req: Request, res: Response) 
 };
 
 export const googleCalendarOAuthCallback = async (req: Request, res: Response) => {
+  const profileUrl = getFrontendProfileUrl();
+
   try {
     const code = req.query.code as string | undefined;
     const state = req.query.state as string | undefined;
     const oauthError = req.query.error as string | undefined;
 
     if (oauthError) {
-      return sendError(res, 400, `Google OAuth error: ${oauthError}`);
+      return res.redirect(`${profileUrl}?googleCalendar=error`);
     }
 
     if (!code || !state) {
-      return sendError(res, 400, 'Missing code or state in OAuth callback');
+      return res.redirect(`${profileUrl}?googleCalendar=error`);
     }
 
-    const result = await saveGoogleTokensFromCallback(code, state);
-    return res.status(200).json({
-      ok: true,
-      connected: true,
-      googleEmail: result.googleEmail || null,
-    });
+    await saveGoogleTokensFromCallback(code, state);
+    return res.redirect(`${profileUrl}?googleCalendar=connected`);
   } catch (error: any) {
-    return sendError(res, 400, error?.message || 'Error processing OAuth callback');
+    return res.redirect(`${profileUrl}?googleCalendar=error`);
   }
 };
 

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -15,6 +15,7 @@ import { DividerModule } from 'primeng/divider';
 import { environment } from '../../../../../environments/environment';
 import { FirebaseAuthService } from '../../../../core/services/firebase-auth.service';
 import { KanbanService } from '../../../../core/services/kanban.service';
+import { GoogleCalendarConnectionStatus, GoogleCalendarService } from '../../../../core/services/google-calendar.service';
 
 interface UserProfile {
     _id: string;
@@ -45,11 +46,19 @@ export class ProfileComponent implements OnInit {
     private messageService = inject(MessageService);
     private auth = inject(FirebaseAuthService);
     private kanbanService = inject(KanbanService);
+    private googleCalendarService = inject(GoogleCalendarService);
+    private route = inject(ActivatedRoute);
+    private router = inject(Router);
 
     profile: UserProfile | null = null;
     loading = false;
     saving = false;
     isUploadingAvatar = false;
+    googleLoading = false;
+    googleConnecting = false;
+    googleDisconnecting = false;
+    googleStatusError = '';
+    googleStatus: GoogleCalendarConnectionStatus = { connected: false };
 
     editName = '';
     editPicture = '';
@@ -57,6 +66,35 @@ export class ProfileComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadProfile();
+        this.loadGoogleCalendarStatus();
+        this.handleGoogleCalendarCallbackFeedback();
+    }
+
+    private handleGoogleCalendarCallbackFeedback() {
+        const state = this.route.snapshot.queryParamMap.get('googleCalendar');
+        if (!state) return;
+
+        if (state === 'connected') {
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Correcto',
+                detail: 'Google Calendar vinculado correctamente'
+            });
+            this.loadGoogleCalendarStatus();
+        } else if (state === 'error') {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No se pudo completar la vinculación con Google Calendar'
+            });
+        }
+
+        void this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { googleCalendar: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+        });
     }
 
     loadProfile() {
@@ -72,6 +110,71 @@ export class ProfileComponent implements OnInit {
             error: () => {
                 this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el perfil' });
                 this.loading = false;
+            }
+        });
+    }
+
+    loadGoogleCalendarStatus() {
+        this.googleLoading = true;
+        this.googleStatusError = '';
+
+        this.googleCalendarService.getStatus().subscribe({
+            next: (status) => {
+                this.googleStatus = status;
+                this.googleLoading = false;
+            },
+            error: (err) => {
+                this.googleStatusError = err?.error?.message || 'No se pudo consultar el estado de Google Calendar';
+                this.googleLoading = false;
+            }
+        });
+    }
+
+    connectGoogleCalendar() {
+        this.googleConnecting = true;
+
+        this.googleCalendarService.getConnectUrl().subscribe({
+            next: ({ authUrl }) => {
+                this.googleConnecting = false;
+                if (!authUrl) {
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se recibió URL de autorización' });
+                    return;
+                }
+
+                window.location.href = authUrl;
+            },
+            error: (err) => {
+                this.googleConnecting = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: err?.error?.message || 'No se pudo iniciar la vinculación con Google Calendar'
+                });
+            }
+        });
+    }
+
+    disconnectGoogleCalendar() {
+        this.googleDisconnecting = true;
+
+        this.googleCalendarService.disconnect().subscribe({
+            next: () => {
+                this.googleDisconnecting = false;
+                this.googleStatus = { connected: false };
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Correcto',
+                    detail: 'Google Calendar desvinculado correctamente'
+                });
+                this.loadGoogleCalendarStatus();
+            },
+            error: (err) => {
+                this.googleDisconnecting = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: err?.error?.message || 'No se pudo desvincular Google Calendar'
+                });
             }
         });
     }
