@@ -24,3 +24,25 @@
   left: auto !important;
   right: 1.25rem !important;
 }
+
+@media (max-width: 768px) {
+  .notification-panel.p-overlaypanel {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .notifications-clear-confirm.p-confirmpopup {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+    left: 1rem !important;
+    right: 1rem !important;
+  }
+
+  .notifications-clear-confirm.p-confirmpopup::before,
+  .notifications-clear-confirm.p-confirmpopup::after {
+    right: 6.25rem !important;
+  }
+}
