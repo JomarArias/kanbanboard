@@ -927,16 +927,17 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.meetingRequestService.create(payload)
       .pipe(finalize(() => { this.isSavingMeetingRequest = false; }))
       .subscribe({
-        next: () => {
+        next: (created) => {
+          const googleLinkHint = created.googleEventHtmlLink ? ' Ya puedes verlo en Google Calendar.' : '';
           this.messageService.add({
             severity: 'success',
             summary: 'Correcto',
-            detail: 'Solicitud de cita creada correctamente'
+            detail: `Cita creada y sincronizada con Google Calendar.${googleLinkHint}`
           });
           this.displayMeetingRequestDialog = false;
         },
         error: (err) => {
-          const message = err?.error?.message || 'No se pudo crear la solicitud de cita';
+          const message = err?.error?.message || 'No se pudo crear ni sincronizar la solicitud de cita';
           this.messageService.add({ severity: 'error', summary: 'Error', detail: message });
         }
       });

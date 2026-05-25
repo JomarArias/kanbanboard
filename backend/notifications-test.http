@@ -1,6 +1,137 @@
-GET http://localhost:3000/api/notifications
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImM5YTBjMWRlYWEyN2JjNjMyNTUzYmM4MWEyMmQ4NzY1MWM3MTMyY2IiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiSnVzaXQgVEIiLCJwaWN0dXJlIjoiaHR0cHM6Ly9yZXMuY2xvdWRpbmFyeS5jb20vZGZ1bHY2czNmL2ltYWdlL3VwbG9hZC92MTc3NDA0NjE5Ni9rYW5iYW4vcHJvZmlsZXMvaW04eW1jd3BoYW9ha2x3YXBuY3EuanBnIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2RhcHBlcmthbmJhbiIsImF1ZCI6ImRhcHBlcmthbmJhbiIsImF1dGhfdGltZSI6MTc3OTM0NTIyNiwidXNlcl9pZCI6IjFLaG1RYzlsNWlTQ1pJcXh0bVhNZFBENEU4OTMiLCJzdWIiOiIxS2htUWM5bDVpU0NaSXF4dG1YTWRQRDRFODkzIiwiaWF0IjoxNzc5MzQ1MjI2LCJleHAiOjE3NzkzNDg4MjYsImVtYWlsIjoianVzaXR0b2xlZG9iNTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTYxNjgxMzg5Mjc5MjY2NzM1MjQiXSwiZW1haWwiOlsianVzaXR0b2xlZG9iNTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.C5Y_tiz9A6UNKfr9SflKcZEnnNYV7FScPXxg2KU-gIXqByefGXErPB2HeDb0TMFLqTLz2js2ijOr4H3-JTKFB5-jNAaHmeR4m_EMaDM2cuNFBOQlFMDU0xWUzPbKva0lkLM5emFOmtddZi4DKngZ6efhtIhgzq-eMu-tfOQVNSdlAFyRCztUB2N1vUnlh0XRyOIbu_GpkQs7jHCJ5GyXvfyfJKnlFtCj5Or1AngNmTIkdw_czTt8DM_irZzvnoUUrLYySFAG_kJyOtGZKnqh2dqskK0TwYV7dFLxYxC-2GK1uYWj_lhrmujqc4E9d78c-r7V9Nc2j-x6BrhSLuKZqQ
+@baseUrl = http://localhost:3000/api
+@tokenUserA = eyJhbGciOiJSUzI1NiIsImtpZCI6ImM5YTBjMWRlYWEyN2JjNjMyNTUzYmM4MWEyMmQ4NzY1MWM3MTMyY2IiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiSnVzaXQgVEIiLCJwaWN0dXJlIjoiaHR0cHM6Ly9yZXMuY2xvdWRpbmFyeS5jb20vZGZ1bHY2czNmL2ltYWdlL3VwbG9hZC92MTc3NDA0NjE5Ni9rYW5iYW4vcHJvZmlsZXMvaW04eW1jd3BoYW9ha2x3YXBuY3EuanBnIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2RhcHBlcmthbmJhbiIsImF1ZCI6ImRhcHBlcmthbmJhbiIsImF1dGhfdGltZSI6MTc3OTY4MDY0OSwidXNlcl9pZCI6IjFLaG1RYzlsNWlTQ1pJcXh0bVhNZFBENEU4OTMiLCJzdWIiOiIxS2htUWM5bDVpU0NaSXF4dG1YTWRQRDRFODkzIiwiaWF0IjoxNzc5NjgwNjQ5LCJleHAiOjE3Nzk2ODQyNDksImVtYWlsIjoianVzaXR0b2xlZG9iNTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTYxNjgxMzg5Mjc5MjY2NzM1MjQiXSwiZW1haWwiOlsianVzaXR0b2xlZG9iNTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.uIQe_7VoOkDamhQGbkWySAjDP96OnItIHkXMIgqwSK7Dtw4E0esFk5SDoD6nZMlJRF1GQZf1mygJZBHA2CFjTeDlZWzuw4eTEbriWz2vHGqTnw-HE96_3g9thsCE32_MBOWsGigx_RwGeLcUl4TWtK7HnWNReK1ajG-UPv2rtbB3dOzTgPe4E0k25t7bxI8pwSWbS_PMBODkHIlar1WYJm6KgVIIYQchRN_97zzX5cYQKjbNNEYrsidQDHunx9nj60j_RsinIbwi5K8hRSusO8N-siLwETmYWFGnO1LWhMCtB75Lds6Wh6y-jLF8AolQ5OvRcMMoeCwXOa6FtFj6dw
+@tokenUserB = eyJhbGciOiJSUzI1NiIsImtpZCI6ImM5YTBjMWRlYWEyN2JjNjMyNTUzYmM4MWEyMmQ4NzY1MWM3MTMyY2IiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiSnVzaXQgVG9sZWRvIEJlcm5hbCIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJRW9kQ0tkQmU5VWJiTHRkak9kMnhMcENQV052cjlPN3pwT0J6MnpyRndZMjE5b2c9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZGFwcGVya2FuYmFuIiwiYXVkIjoiZGFwcGVya2FuYmFuIiwiYXV0aF90aW1lIjoxNzc5NjgxMTY2LCJ1c2VyX2lkIjoicWc5dTZEeE15aGRyNHJ1MzFMbzdzN3FqenJtMiIsInN1YiI6InFnOXU2RHhNeWhkcjRydTMxTG83czdxanpybTIiLCJpYXQiOjE3Nzk2ODExNjYsImV4cCI6MTc3OTY4NDc2NiwiZW1haWwiOiJqdXNpdHBsYXllckBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExMjMwNTA5MTA5OTY0NDMzNjM1MiJdLCJlbWFpbCI6WyJqdXNpdHBsYXllckBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.KBHMPCpPuIXQpSZngtzY2r4vGzS-iQfGeo_cArjGHm5DDZe_cXKqbxEBJWM0hxSiog3YcKoS71BBfU_YVabGNb61YpAwnOXp674dZ94L7189A3hqYbQX72L_dc2-SqsPxUPCaEOd9_Wy_HhvMUEXkkOOD-dV2vp0898biRtg1PyB-RNDxSDCZ7rVz9yNC8w-BRHHVhaCaprUgK8DCqKzS0tmwNzGjtVNb4d3anEZXR8aEEJr3B9hlu2RDJPjdwwuFBNNl0HsdpgeFlOq0zQ2LPBVM_BYVFs-jzpNoodSGhaZPA4fAAsTbQxHipQ7p-yfS0tu2MV5a1akQuFbogI9kQ
+@meetingIdA = 6a13caa7d843fb3b372f4b0c
+@googleReusedCallbackUrl = http://localhost:3000/api/google-calendar/callback?state=REEMPLAZA_STATE&code=REEMPLAZA_CODE
+@usedState = eyJ1IjoiNmEwZTdkYzQ1MTU1YTRkYTVkOTQ0YzA1IiwibiI6IjQzMTIwMTFhOThhZGY3ODdmMGVjY2RiZmIzMjAzNGNlIiwiaWF0IjoxNzc5Njg0MDI2NjIxLCJleHAiOjE3Nzk2ODQ2MjY2MjF9.4yN9OafHGGED_yZ-sQd4iTyJU_qUzs16rQGu_DSaW6s
 
-###
-PATCH http://localhost:3000/api/notifications/6a0ea834c2c49adba9753275/read
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImM5YTBjMWRlYWEyN2JjNjMyNTUzYmM4MWEyMmQ4NzY1MWM3MTMyY2IiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiSnVzaXQgVEIiLCJwaWN0dXJlIjoiaHR0cHM6Ly9yZXMuY2xvdWRpbmFyeS5jb20vZGZ1bHY2czNmL2ltYWdlL3VwbG9hZC92MTc3NDA0NjE5Ni9rYW5iYW4vcHJvZmlsZXMvaW04eW1jd3BoYW9ha2x3YXBuY3EuanBnIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2RhcHBlcmthbmJhbiIsImF1ZCI6ImRhcHBlcmthbmJhbiIsImF1dGhfdGltZSI6MTc3OTM0NTIyNiwidXNlcl9pZCI6IjFLaG1RYzlsNWlTQ1pJcXh0bVhNZFBENEU4OTMiLCJzdWIiOiIxS2htUWM5bDVpU0NaSXF4dG1YTWRQRDRFODkzIiwiaWF0IjoxNzc5MzQ1MjI2LCJleHAiOjE3NzkzNDg4MjYsImVtYWlsIjoianVzaXR0b2xlZG9iNTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTYxNjgxMzg5Mjc5MjY2NzM1MjQiXSwiZW1haWwiOlsianVzaXR0b2xlZG9iNTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.C5Y_tiz9A6UNKfr9SflKcZEnnNYV7FScPXxg2KU-gIXqByefGXErPB2HeDb0TMFLqTLz2js2ijOr4H3-JTKFB5-jNAaHmeR4m_EMaDM2cuNFBOQlFMDU0xWUzPbKva0lkLM5emFOmtddZi4DKngZ6efhtIhgzq-eMu-tfOQVNSdlAFyRCztUB2N1vUnlh0XRyOIbu_GpkQs7jHCJ5GyXvfyfJKnlFtCj5Or1AngNmTIkdw_czTt8DM_irZzvnoUUrLYySFAG_kJyOtGZKnqh2dqskK0TwYV7dFLxYxC-2GK1uYWj_lhrmujqc4E9d78c-r7V9Nc2j-x6BrhSLuKZqQ
+### ======================================================================
+### SPRINT 5 - GOOGLE CALENDAR + MEETING REQUESTS (MVP)
+### Ejecuta en orden. Reemplaza variables de arriba.
+### ======================================================================
+
+### 0) Health check
+GET {{baseUrl}}/
+
+### 1) Desvincular Google (preparar caso "sin Google vinculado")
+DELETE {{baseUrl}}/google-calendar/disconnect
+Authorization: Bearer {{tokenUserA}}
+
+### 2) Intentar crear cita SIN Google vinculado (debe fallar)
+POST {{baseUrl}}/meeting-requests
+Authorization: Bearer {{tokenUserA}}
+Content-Type: application/json
+
+{
+  "prospectName": "Juan Perez",
+  "prospectEmail": "juan@mail.com",
+  "prospectPhone": "9991234567",
+  "title": "Demo CRM - sin vinculo",
+  "description": "Prueba sin Google vinculado",
+  "startAt": "2026-05-30T16:00:00.000Z",
+  "endAt": "2026-05-30T16:30:00.000Z"
+}
+
+### 3) Obtener auth URL para vincular Google
+GET {{baseUrl}}/google-calendar/connect
+Authorization: Bearer {{tokenUserA}}
+
+### 4) Abrir authUrl en navegador y autorizar.
+### Luego validar estado de conexion:
+GET {{baseUrl}}/google-calendar/status
+Authorization: Bearer {{tokenUserA}}
+
+### 5) Crear cita CON Google vinculado (debe sincronizar)
+POST {{baseUrl}}/meeting-requests
+Authorization: Bearer {{tokenUserA}}
+Content-Type: application/json
+
+{
+  "prospectName": "Juan Perez",
+  "prospectEmail": "juan@mail.com",
+  "prospectPhone": "9991234567",
+  "title": "Demo CRM - con Google",
+  "description": "Prueba de sincronizacion Sprint 5",
+  "startAt": "2026-05-31T16:00:00.000Z",
+  "endAt": "2026-05-31T16:30:00.000Z"
+}
+
+### Esperado:
+### - HTTP 201
+### - guardar _id como meetingIdA
+### - googleEventId con valor
+### - syncStatus = "synced"
+
+### 6) Listar solicitudes propias
+GET {{baseUrl}}/meeting-requests
+Authorization: Bearer {{tokenUserA}}
+
+### 7) Ver una solicitud propia --------
+GET {{baseUrl}}/meeting-requests/{{meetingIdA}}
+Authorization: Bearer {{tokenUserA}}
+
+### 8) Reintento sync manual (idempotencia)
+POST {{baseUrl}}/meeting-requests/{{meetingIdA}}/sync-google
+Authorization: Bearer {{tokenUserA}}
+Content-Type: application/json
+
+{}
+
+### Esperado:
+### - HTTP 200
+### - alreadySynced = true
+### - no crear evento duplicado en Google Calendar
+
+### 9) Seguridad ownership - usuario B no puede ver solicitud de A
+GET {{baseUrl}}/meeting-requests/{{meetingIdA}}
+Authorization: Bearer {{tokenUserB}}
+
+### Esperado: 404
+
+### 10) Seguridad ownership - usuario B no puede sincronizar solicitud de A
+POST {{baseUrl}}/meeting-requests/{{meetingIdA}}/sync-google
+Authorization: Bearer {{tokenUserB}}
+Content-Type: application/json
+
+{}
+
+### Esperado: 404
+
+### 11) Cancelar solicitud (usuario A)
+PATCH {{baseUrl}}/meeting-requests/{{meetingIdA}}/cancel
+Authorization: Bearer {{tokenUserA}}
+Content-Type: application/json
+
+{}
+
+### Esperado:
+### - HTTP 200
+### - status = "cancelled"
+
+### 12) Intentar sync de solicitud cancelada
+POST {{baseUrl}}/meeting-requests/{{meetingIdA}}/sync-google
+Authorization: Bearer {{tokenUserA}}
+Content-Type: application/json
+
+{}
+
+### Esperado: 400 (no se puede sincronizar cancelada)
+
+### 13) (Opcional) Probar anti-reuso de state OAuth
+### Copia la callback URL real usada por navegador una vez exitosa, pegala
+### en @googleReusedCallbackUrl y ejecuta esta request.
+GET {{googleReusedCallbackUrl}}
+
+### Esperado:
+### - ok: false
+### - message: "OAuth state is invalid, expired, or already used"
+
+### 14) (Opcional - rapido) Anti-reuso usando solo state ya usado
+### Paso A: ejecuta request 3 y copia el "state" del authUrl.
+### Paso B: autoriza en navegador para que ese state quede consumido.
+### Paso C: pega ese state en @usedState y ejecuta:
+GET {{baseUrl}}/google-calendar/callback?state={{usedState}}&code=fake-code
+
+### Esperado:
+### - ok: false
+### - message: "OAuth state is invalid, expired, or already used"

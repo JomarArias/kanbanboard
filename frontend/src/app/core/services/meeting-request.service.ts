@@ -18,6 +18,10 @@ export interface MeetingRequest {
   endAt: string;
   status: MeetingRequestStatus;
   googleEventId?: string | null;
+  googleEventHtmlLink?: string | null;
+  syncStatus: 'pending' | 'synced' | 'failed';
+  syncError?: string | null;
+  syncedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,5 +59,12 @@ export class MeetingRequestService {
 
   cancel(id: string): Observable<MeetingRequest> {
     return this.http.patch<MeetingRequest>(`${this.apiUrl}/meeting-requests/${id}/cancel`, {});
+  }
+
+  syncGoogle(id: string): Observable<{ ok: boolean; alreadySynced: boolean; meetingRequest: MeetingRequest }> {
+    return this.http.post<{ ok: boolean; alreadySynced: boolean; meetingRequest: MeetingRequest }>(
+      `${this.apiUrl}/meeting-requests/${id}/sync-google`,
+      {}
+    );
   }
 }

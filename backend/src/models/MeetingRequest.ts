@@ -1,6 +1,7 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
 export type MeetingRequestStatus = 'pending' | 'cancelled';
+export type MeetingRequestSyncStatus = 'pending' | 'synced' | 'failed';
 
 export interface IMeetingRequest extends Document {
   createdBy: Types.ObjectId;
@@ -14,6 +15,10 @@ export interface IMeetingRequest extends Document {
   endAt: Date;
   status: MeetingRequestStatus;
   googleEventId?: string | null;
+  googleEventHtmlLink?: string | null;
+  syncStatus: MeetingRequestSyncStatus;
+  syncError?: string | null;
+  syncedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -76,6 +81,26 @@ const MeetingRequestSchema = new Schema<IMeetingRequest>(
       type: String,
       default: null,
       trim: true,
+    },
+    googleEventHtmlLink: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    syncStatus: {
+      type: String,
+      enum: ['pending', 'synced', 'failed'],
+      default: 'pending',
+      index: true,
+    },
+    syncError: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    syncedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
