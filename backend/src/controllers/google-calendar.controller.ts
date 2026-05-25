@@ -51,7 +51,7 @@ export const getGoogleCalendarStatus = async (_req: Request, res: Response) => {
     const status = await getGoogleCalendarConnectionStatus(userId);
     return res.json(status);
   } catch (error) {
-    return sendError(res, 500, 'Error fetching Google Calendar connection status', error);
+    return sendError(res, 500, 'Error fetching Google Calendar connection status');
   }
 };
 
@@ -61,6 +61,6 @@ export const unlinkGoogleCalendar = async (_req: Request, res: Response) => {
     const result = await disconnectGoogleCalendar(userId);
     return res.json(result);
   } catch (error) {
-    return sendError(res, 500, 'Error disconnecting Google Calendar', error);
+    return sendError(res, 500, 'Error disconnecting Google Calendar');
   }
 };

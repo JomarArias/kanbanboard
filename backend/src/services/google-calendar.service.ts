@@ -1,4 +1,5 @@
 import { MeetingRequest } from '../models/MeetingRequest.js';
+import type { IMeetingRequest } from '../models/MeetingRequest.js';
 import { GoogleCalendarIntegration } from '../models/GoogleCalendarIntegration.js';
 import {
   encryptOAuthToken,
@@ -32,7 +33,7 @@ export class GoogleCalendarNotLinkedError extends Error {}
 export class GoogleCalendarReauthorizationRequiredError extends Error {}
 export class GoogleCalendarSyncError extends Error {}
 
-const buildEventDescription = (meeting: any): string => {
+const buildEventDescription = (meeting: IMeetingRequest): string => {
   const lines = [
     meeting.description || 'Sin descripción',
     '',
@@ -44,7 +45,7 @@ const buildEventDescription = (meeting: any): string => {
   return lines.join('\n').trim();
 };
 
-const mapMeetingRequestToGoogleEvent = (meeting: any): GoogleEventPayload => {
+const mapMeetingRequestToGoogleEvent = (meeting: IMeetingRequest): GoogleEventPayload => {
   const payload: GoogleEventPayload = {
     summary: meeting.title,
     description: buildEventDescription(meeting),
