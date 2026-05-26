@@ -34,6 +34,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ColorPickerModule } from 'primeng/colorpicker';
 import { MeetingRequestService } from '../../../../core/services/meeting-request.service';
+import { WorkflowEmailMetadata } from '../../../../core/services/kanban.service';
 
 @Component({
   selector: 'app-kanban-board',
@@ -1012,10 +1013,11 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       next: (res) => {
         card.listId = targetListId;
         card.order = res.order;
-        this.loadCards();
-        this.loadAuditLogs();
         delete this.processingCardIds[normalizedCardId];
         delete this.processingWorkflowCardIds[normalizedCardId];
+        this.showWorkflowEmailToast(res.workflowEmail);
+        this.loadCards();
+        this.loadAuditLogs();
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' });
@@ -1035,5 +1037,45 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     if (!key || this.processingCardIds[key]) return;
     const current = this.workflowEmailPreferences[key];
     this.workflowEmailPreferences[key] = current === false ? true : false;
+  }
+
+  private showWorkflowEmailToast(workflowEmail?: WorkflowEmailMetadata) {
+    if (!workflowEmail) return;
+
+    if (workflowEmail.sent === true) {
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Correo enviado',
+        detail: 'El correo automático fue enviado correctamente.'
+      });
+      return;
+    }
+
+    switch (workflowEmail.skippedReason) {
+      case 'disabled_by_user':
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Correo omitido',
+          detail: 'La tarjeta se movió sin enviar correo automático.'
+        });
+        return;
+      case 'missing_recipient':
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Correo no enviado',
+          detail: 'La tarjeta se movió, pero el prospecto no tiene correo registrado.'
+        });
+        return;
+      case 'send_failed':
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Correo no enviado',
+          detail: workflowEmail.errorMessage || 'La tarjeta se movió, pero no se pudo enviar el correo automático.'
+        });
+        return;
+      case 'not_applicable':
+      default:
+        return;
+    }
   }
 }

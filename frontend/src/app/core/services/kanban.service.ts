@@ -5,6 +5,27 @@ import { environment } from '../../../environments/environment';
 import { Kanban } from '../models/kanban.model';
 import { WorkspaceService } from './workspace.service';
 
+export type WorkflowEmailSkippedReason =
+    | 'not_applicable'
+    | 'disabled_by_user'
+    | 'missing_recipient'
+    | 'send_failed';
+
+export type WorkflowEmailMetadata = {
+    applicable: boolean;
+    requested: boolean;
+    attempted: boolean;
+    sent: boolean;
+    skippedReason?: WorkflowEmailSkippedReason;
+    errorMessage?: string;
+};
+
+export type MoveCardResponse = {
+    ok: boolean;
+    order: string;
+    workflowEmail?: WorkflowEmailMetadata;
+};
+
 @Injectable({
     providedIn: 'root'
 })
@@ -63,7 +84,7 @@ export class KanbanService {
         prevOrder?: string,
         nextOrder?: string,
         sendEmail?: boolean
-    ): Observable<{ ok: boolean, order: string }> {
+    ): Observable<MoveCardResponse> {
         const workspaceId = this.workspaceService.getActiveWorkspaceId();
         const payload: {
             cardId: string;
@@ -78,7 +99,7 @@ export class KanbanService {
             payload.sendEmail = sendEmail;
         }
 
-        return this.http.put<{ ok: boolean, order: string }>(`${this.apiUrl}/cards/move`, payload);
+        return this.http.put<MoveCardResponse>(`${this.apiUrl}/cards/move`, payload);
     }
 
     // ── BANDEJA DE ARCHIVADOS ─────────────────────────────────────────────────

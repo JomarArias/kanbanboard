@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { KanbanService } from '../../../core/services/kanban.service';
+import { KanbanService, MoveCardResponse } from '../../../core/services/kanban.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { Kanban } from '../../../core/models/kanban.model';
 import { AuditLog } from '../../../core/models/audit-log.model';
@@ -37,7 +37,7 @@ export class KanbanFacadeService {
     prevOrder?: string,
     nextOrder?: string,
     sendEmail?: boolean
-  ): Observable<{ ok: boolean, order: string }> {
+  ): Observable<MoveCardResponse> {
     return this.kanbanService.moveCard(cardId, listId, prevOrder, nextOrder, sendEmail);
   }
 

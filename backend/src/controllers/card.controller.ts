@@ -272,7 +272,12 @@ export const moveCard = async (req: Request, res: Response) => {
     );
 
     try {
-      getIO().to(`workspace:${workspaceId}`).emit("card:moved", { cardId, listId, order: result.order });
+      getIO().to(`workspace:${workspaceId}`).emit("card:moved", {
+        cardId,
+        listId,
+        order: result.order,
+        workflowEmail: result.workflowEmail
+      });
     } catch (e) {
       console.error("Socket error emitting card:moved", e);
     }

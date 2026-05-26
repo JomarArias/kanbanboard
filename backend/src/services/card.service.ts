@@ -2,6 +2,55 @@ import { Card } from '../models/card.js';
 import { LexoRank } from 'lexorank';
 import { saveAuditLog } from './audit.service.js';
 import { sendCardWorkflowEmail } from './email.service.js';
+import { normalizeWorkflowEmailError } from '../utils/workflow-email-error.util.js';
+
+export type WorkflowEmailSkippedReason =
+  | "not_applicable"
+  | "disabled_by_user"
+  | "missing_recipient"
+  | "send_failed";
+
+export type WorkflowEmailMetadata = {
+  applicable: boolean;
+  requested: boolean;
+  attempted: boolean;
+  sent: boolean;
+  errorCode?: string;
+  skippedReason?: WorkflowEmailSkippedReason;
+  errorMessage?: string;
+};
+
+const getInitialWorkflowEmailMetadata = (
+  applicable: boolean,
+  requested: boolean
+): WorkflowEmailMetadata => {
+  if (!applicable) {
+    return {
+      applicable: false,
+      requested: false,
+      attempted: false,
+      sent: false,
+      skippedReason: "not_applicable"
+    };
+  }
+
+  if (!requested) {
+    return {
+      applicable: true,
+      requested: false,
+      attempted: false,
+      sent: false,
+      skippedReason: "disabled_by_user"
+    };
+  }
+
+  return {
+    applicable: true,
+    requested: true,
+    attempted: false,
+    sent: false
+  };
+};
 
 export const listCardsByList = async (listId: string, workspaceId: string) => {
   const cards = await Card.find({ listId, workspaceId, archived: false })
@@ -458,8 +507,16 @@ export const moveCard = async (
   const hasRealStageChange = previousListId !== listId;
   const workflowStage = listId === 'inProgress' || listId === 'done' ? listId : null;
   const prospectEmail = cardBeforeMove.prospectEmail?.trim();
+  const isWorkflowDestination = workflowStage !== null;
+  const isApplicable = isWorkflowDestination && hasRealStageChange;
+  const workflowEmail = getInitialWorkflowEmailMetadata(isApplicable, sendEmail);
 
-  if (sendEmail && hasRealStageChange && workflowStage && prospectEmail) {
+  if (isApplicable && sendEmail && !prospectEmail) {
+    workflowEmail.skippedReason = "missing_recipient";
+  }
+
+  if (isApplicable && sendEmail && workflowStage && prospectEmail) {
+    workflowEmail.attempted = true;
     try {
       await sendCardWorkflowEmail(
         prospectEmail,
@@ -469,12 +526,27 @@ export const moveCard = async (
           cardTitle: cardBeforeMove.title
         }
       );
+      workflowEmail.sent = true;
     } catch (error) {
-      console.error('Error sending workflow email (moveCard):', error);
+      const normalized = normalizeWorkflowEmailError(error);
+      console.error("Error sending workflow email (moveCard):", {
+        cardId,
+        workflowStage,
+        recipient: prospectEmail,
+        previousListId,
+        targetListId: listId,
+        errorCode: normalized.code,
+        logMessage: normalized.logMessage,
+        error
+      });
+      workflowEmail.sent = false;
+      workflowEmail.skippedReason = "send_failed";
+      workflowEmail.errorCode = normalized.code;
+      workflowEmail.errorMessage = normalized.userMessage;
     }
   }
 
-  return { ok: true, order };
+  return { ok: true, order, workflowEmail };
 };
 
 type MoveCardRealtimeInput = {
@@ -494,6 +566,7 @@ type MoveCardRealtimeResult = {
   order: string;
   version: number;
   updatedAt: Date;
+  workflowEmail: WorkflowEmailMetadata;
 };
 
 type ServiceError = Error & {
@@ -597,7 +670,54 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
       if (!retryCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
 
       await saveAuditLog("MOVE", `Tarjeta "${retryCard.title}" movida a ${targetListId}`, performedById || undefined, workspaceId);
-      return { cardId: retryCard.id, listId: retryCard.listId, order: retryCard.order, version: retryCard.version, updatedAt: retryCard.updatedAt };
+      const retryWorkflowStage = targetListId === "inProgress" || targetListId === "done" ? targetListId : null;
+      const retryApplicable = retryWorkflowStage !== null && currentCard.listId !== targetListId;
+      const retryWorkflowEmail = getInitialWorkflowEmailMetadata(retryApplicable, sendEmail);
+      const retryProspectEmail = currentCard.prospectEmail?.trim();
+
+      if (retryApplicable && sendEmail && !retryProspectEmail) {
+        retryWorkflowEmail.skippedReason = "missing_recipient";
+      }
+
+      if (retryApplicable && sendEmail && retryWorkflowStage && retryProspectEmail) {
+        retryWorkflowEmail.attempted = true;
+        try {
+          await sendCardWorkflowEmail(
+            retryProspectEmail,
+            retryWorkflowStage,
+            {
+              prospectName: currentCard.prospectName,
+              cardTitle: currentCard.title
+            }
+          );
+          retryWorkflowEmail.sent = true;
+        } catch (error) {
+          const normalized = normalizeWorkflowEmailError(error);
+          console.error("Error sending workflow email (moveCardRealtime retry):", {
+            cardId,
+            workflowStage: retryWorkflowStage,
+            recipient: retryProspectEmail,
+            previousListId: currentCard.listId,
+            targetListId,
+            errorCode: normalized.code,
+            logMessage: normalized.logMessage,
+            error
+          });
+          retryWorkflowEmail.sent = false;
+          retryWorkflowEmail.skippedReason = "send_failed";
+          retryWorkflowEmail.errorCode = normalized.code;
+          retryWorkflowEmail.errorMessage = normalized.userMessage;
+        }
+      }
+
+      return {
+        cardId: retryCard.id,
+        listId: retryCard.listId,
+        order: retryCard.order,
+        version: retryCard.version,
+        updatedAt: retryCard.updatedAt,
+        workflowEmail: retryWorkflowEmail
+      };
     }
 
     throw buildServiceError("La tarjeta cambio y tu vista esta desactualizada", 409, "conflict", {
@@ -611,8 +731,16 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
   const hasRealStageChange = previousListId !== targetListId;
   const workflowStage = targetListId === 'inProgress' || targetListId === 'done' ? targetListId : null;
   const prospectEmail = currentCard.prospectEmail?.trim();
+  const isWorkflowDestination = workflowStage !== null;
+  const isApplicable = isWorkflowDestination && hasRealStageChange;
+  const workflowEmail = getInitialWorkflowEmailMetadata(isApplicable, sendEmail);
 
-  if (sendEmail && hasRealStageChange && workflowStage && prospectEmail) {
+  if (isApplicable && sendEmail && !prospectEmail) {
+    workflowEmail.skippedReason = "missing_recipient";
+  }
+
+  if (isApplicable && sendEmail && workflowStage && prospectEmail) {
+    workflowEmail.attempted = true;
     try {
       await sendCardWorkflowEmail(
         prospectEmail,
@@ -622,10 +750,32 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
           cardTitle: currentCard.title
         }
       );
+      workflowEmail.sent = true;
     } catch (error) {
-      console.error('Error sending workflow email (moveCardRealtime):', error);
+      const normalized = normalizeWorkflowEmailError(error);
+      console.error("Error sending workflow email (moveCardRealtime):", {
+        cardId,
+        workflowStage,
+        recipient: prospectEmail,
+        previousListId,
+        targetListId,
+        errorCode: normalized.code,
+        logMessage: normalized.logMessage,
+        error
+      });
+      workflowEmail.sent = false;
+      workflowEmail.skippedReason = "send_failed";
+      workflowEmail.errorCode = normalized.code;
+      workflowEmail.errorMessage = normalized.userMessage;
     }
   }
 
-  return { cardId: updatedCard.id, listId: updatedCard.listId, order: updatedCard.order, version: updatedCard.version, updatedAt: updatedCard.updatedAt };
+  return {
+    cardId: updatedCard.id,
+    listId: updatedCard.listId,
+    order: updatedCard.order,
+    version: updatedCard.version,
+    updatedAt: updatedCard.updatedAt,
+    workflowEmail
+  };
 };
