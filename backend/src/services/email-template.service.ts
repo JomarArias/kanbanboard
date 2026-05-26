@@ -38,7 +38,8 @@ const loadTemplate = async (templateName: string) => {
   }
 
   if (!rawTemplate || !resolvedPath) {
-    throw new Error(`Email template not found: ${filename}`);
+    const searchedPaths = TEMPLATE_DIR_CANDIDATES.map((baseDir) => path.resolve(baseDir, filename)).join(", ");
+    throw new Error(`Email template not found: ${filename}. Searched in: ${searchedPaths}`);
   }
 
   const compiled = Handlebars.compile<TemplateData>(rawTemplate);
