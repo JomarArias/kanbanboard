@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { renderEmailTemplate } from './email-template.service.js';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
@@ -19,32 +20,26 @@ type CardWorkflowTemplateData = {
     cardTitle: string;
 };
 
-const buildWorkflowEmailTemplate = (stage: CardWorkflowStage, data: CardWorkflowTemplateData) => {
+const buildWorkflowEmailTemplate = async (stage: CardWorkflowStage, data: CardWorkflowTemplateData) => {
     const safeName = data.prospectName?.trim() || 'cliente';
     const safeTitle = data.cardTitle?.trim() || 'tu solicitud';
 
     if (stage === 'inProgress') {
         return {
             subject: `Seguimiento de ${safeTitle}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-                    <h2>Hola ${safeName},</h2>
-                    <p>Estamos avanzando con <strong>${safeTitle}</strong>.</p>
-                    <p>En breve compartiremos la propuesta y próximos pasos.</p>
-                </div>
-            `
+            html: await renderEmailTemplate('proposal', {
+                prospectName: safeName,
+                cardTitle: safeTitle
+            })
         };
     }
 
     return {
         subject: `Cierre de ${safeTitle}`,
-        html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-                <h2>Hola ${safeName},</h2>
-                <p>Hemos cerrado exitosamente <strong>${safeTitle}</strong>.</p>
-                <p>Gracias por confiar en nosotros.</p>
-            </div>
-        `
+        html: await renderEmailTemplate('closing', {
+            prospectName: safeName,
+            cardTitle: safeTitle
+        })
     };
 };
 
@@ -86,7 +81,14 @@ export const sendCardWorkflowEmail = async (
     const normalizedEmail = toEmail?.trim();
     if (!normalizedEmail) return;
 
-    const template = buildWorkflowEmailTemplate(stage, data);
+    let template: { subject: string; html: string };
+    try {
+        // Keep template/render issues isolated from card state transitions.
+        template = await buildWorkflowEmailTemplate(stage, data);
+    } catch (error) {
+        console.error('Error rendering workflow email template:', error);
+        throw error;
+    }
 
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.warn('SMTP credentials not configured, falling back to console logging.');
