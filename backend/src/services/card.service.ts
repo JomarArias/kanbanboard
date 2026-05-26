@@ -389,7 +389,8 @@ export const moveCard = async (
   workspaceId: string,
   performedById?: string,
   prevOrder?: string,
-  nextOrder?: string
+  nextOrder?: string,
+  sendEmail: boolean = true
 ) => {
   const cardBeforeMove = await Card.findOne({ _id: cardId, workspaceId });
   if (!cardBeforeMove) {
@@ -458,7 +459,7 @@ export const moveCard = async (
   const workflowStage = listId === 'inProgress' || listId === 'done' ? listId : null;
   const prospectEmail = cardBeforeMove.prospectEmail?.trim();
 
-  if (hasRealStageChange && workflowStage && prospectEmail) {
+  if (sendEmail && hasRealStageChange && workflowStage && prospectEmail) {
     try {
       await sendCardWorkflowEmail(
         prospectEmail,
@@ -484,6 +485,7 @@ type MoveCardRealtimeInput = {
   expectedVersion: number;
   workspaceId: string;
   performedById?: string | null;
+  sendEmail?: boolean;
 };
 
 type MoveCardRealtimeResult = {
@@ -520,7 +522,16 @@ const getNeighborCard = async (cardId: string, targetListId: string, workspaceId
 };
 
 export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<MoveCardRealtimeResult> => {
-  const { cardId, targetListId, beforeCardId = null, afterCardId = null, expectedVersion, workspaceId, performedById } = input;
+  const {
+    cardId,
+    targetListId,
+    beforeCardId = null,
+    afterCardId = null,
+    expectedVersion,
+    workspaceId,
+    performedById,
+    sendEmail = true
+  } = input;
 
   const currentCard = await Card.findById(cardId);
   if (!currentCard) throw buildServiceError("Tarjeta no encontrada", 404, "not_found");
@@ -601,7 +612,7 @@ export const moveCardRealtime = async (input: MoveCardRealtimeInput): Promise<Mo
   const workflowStage = targetListId === 'inProgress' || targetListId === 'done' ? targetListId : null;
   const prospectEmail = currentCard.prospectEmail?.trim();
 
-  if (hasRealStageChange && workflowStage && prospectEmail) {
+  if (sendEmail && hasRealStageChange && workflowStage && prospectEmail) {
     try {
       await sendCardWorkflowEmail(
         prospectEmail,

@@ -969,7 +969,10 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       }
     }
 
-    this.kanbanFacade.moveCard(card._id, targetListId, prevOrder, nextOrder).subscribe({
+    // Sprint 2.2: plumbing only. Keep undefined to preserve current default backend behavior.
+    const sendEmail: boolean | undefined = undefined;
+
+    this.kanbanFacade.moveCard(card._id, targetListId, prevOrder, nextOrder, sendEmail).subscribe({
       next: (res) => {
         card.listId = targetListId;
         card.order = res.order;

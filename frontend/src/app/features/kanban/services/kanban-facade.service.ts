@@ -31,8 +31,14 @@ export class KanbanFacadeService {
     return this.kanbanService.deleteCard(id);
   }
 
-  moveCard(cardId: string, listId: string, prevOrder?: string, nextOrder?: string): Observable<{ ok: boolean, order: string }> {
-    return this.kanbanService.moveCard(cardId, listId, prevOrder, nextOrder);
+  moveCard(
+    cardId: string,
+    listId: string,
+    prevOrder?: string,
+    nextOrder?: string,
+    sendEmail?: boolean
+  ): Observable<{ ok: boolean, order: string }> {
+    return this.kanbanService.moveCard(cardId, listId, prevOrder, nextOrder, sendEmail);
   }
 
   uploadCardImage(file: File): Observable<{ imageUrl: string; publicId: string }> {

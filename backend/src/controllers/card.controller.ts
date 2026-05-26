@@ -243,7 +243,7 @@ export const deleteCard = async (req: Request, res: Response) => {
 
 export const moveCard = async (req: Request, res: Response) => {
   try {
-    const { cardId, listId, prevOrder, nextOrder } = req.body ?? {};
+    const { cardId, listId, prevOrder, nextOrder, sendEmail } = req.body ?? {};
     const workspaceId = res.locals.workspaceId as string;
     const performedById = res.locals.user._id;
 
@@ -255,7 +255,21 @@ export const moveCard = async (req: Request, res: Response) => {
       return sendError(res, 400, "cardId invalido");
     }
 
-    const result = await cardService.moveCard(cardId, listId, workspaceId, performedById, prevOrder, nextOrder);
+    if (sendEmail !== undefined && typeof sendEmail !== "boolean") {
+      return sendError(res, 400, "sendEmail debe ser booleano");
+    }
+
+    const shouldSendEmail = sendEmail ?? true;
+
+    const result = await cardService.moveCard(
+      cardId,
+      listId,
+      workspaceId,
+      performedById,
+      prevOrder,
+      nextOrder,
+      shouldSendEmail
+    );
 
     try {
       getIO().to(`workspace:${workspaceId}`).emit("card:moved", { cardId, listId, order: result.order });

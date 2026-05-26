@@ -38,6 +38,7 @@ type MoveRequestPayload = {
   afterCardId?: string | null;
   expectedVersion: number;
   workspaceId: string;
+  sendEmail?: boolean;
 };
 
 const cacheOperation = (operationId: string, payload: unknown) => {
@@ -164,7 +165,16 @@ export const registerCardSocketHandlers = (io: Server, socket: Socket) => {
         return;
       }
 
-      const { operationId, cardId, targetListId, beforeCardId = null, afterCardId = null, expectedVersion, workspaceId } = payload;
+      const {
+        operationId,
+        cardId,
+        targetListId,
+        beforeCardId = null,
+        afterCardId = null,
+        expectedVersion,
+        workspaceId,
+        sendEmail = true
+      } = payload;
 
       if (!isValidObjectId(cardId)) {
         socket.emit("card:move:rejected", { operationId, reason: "validation", message: "cardId invalido" });
@@ -186,6 +196,10 @@ export const registerCardSocketHandlers = (io: Server, socket: Socket) => {
         socket.emit("card:move:rejected", { operationId, reason: "validation", message: "workspaceId is required" });
         return;
       }
+      if (payload.sendEmail !== undefined && typeof payload.sendEmail !== "boolean") {
+        socket.emit("card:move:rejected", { operationId, reason: "validation", message: "sendEmail debe ser booleano" });
+        return;
+      }
 
       const result = await moveCardRealtime({
         cardId,
@@ -194,7 +208,8 @@ export const registerCardSocketHandlers = (io: Server, socket: Socket) => {
         afterCardId,
         expectedVersion,
         workspaceId,
-        performedById: currentUserId
+        performedById: currentUserId,
+        sendEmail
       });
 
       const acceptedPayload = { operationId, ...result };

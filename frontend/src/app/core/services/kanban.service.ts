@@ -57,11 +57,28 @@ export class KanbanService {
         return this.http.delete<void>(`${this.apiUrl}/cards/${id}`, this.getWorkspaceParams());
     }
 
-    moveCard(cardId: string, listId: string, prevOrder?: string, nextOrder?: string): Observable<{ ok: boolean, order: string }> {
+    moveCard(
+        cardId: string,
+        listId: string,
+        prevOrder?: string,
+        nextOrder?: string,
+        sendEmail?: boolean
+    ): Observable<{ ok: boolean, order: string }> {
         const workspaceId = this.workspaceService.getActiveWorkspaceId();
-        return this.http.put<{ ok: boolean, order: string }>(`${this.apiUrl}/cards/move`, {
-            cardId, listId, prevOrder, nextOrder, workspaceId
-        });
+        const payload: {
+            cardId: string;
+            listId: string;
+            prevOrder?: string;
+            nextOrder?: string;
+            workspaceId: string | null;
+            sendEmail?: boolean;
+        } = { cardId, listId, prevOrder, nextOrder, workspaceId };
+
+        if (sendEmail !== undefined) {
+            payload.sendEmail = sendEmail;
+        }
+
+        return this.http.put<{ ok: boolean, order: string }>(`${this.apiUrl}/cards/move`, payload);
     }
 
     // ── BANDEJA DE ARCHIVADOS ─────────────────────────────────────────────────
