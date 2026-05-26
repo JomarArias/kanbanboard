@@ -18,6 +18,8 @@ import { TooltipModule } from 'primeng/tooltip';
 export class KanbanCardComponent {
   @Input() card!: Kanban;
   @Input() workflowEmailEnabled: boolean = true;
+  @Input() isProcessing: boolean = false;
+  @Input() isWorkflowProcessing: boolean = false;
   @Input() editingUser?: string | null;
   @Input() members: any[] = [];
   @Input() isViewer: boolean = false;
@@ -160,6 +162,7 @@ export class KanbanCardComponent {
   onToggleWorkflowEmail(event: Event) {
     event.preventDefault();
     event.stopPropagation();
+    if (this.isProcessing) return;
     this.workflowEmailToggle.emit(this.normalizeCardId(this.card?._id));
   }
 

@@ -24,6 +24,11 @@
     --card-action-gap: 0.4rem;
 }
 
+.kanban-card--processing {
+    opacity: 0.95;
+    transition: opacity 160ms ease;
+}
+
 .card-top-strip {
     height: 44px;
     margin: -0.75rem -0.75rem 0.75rem -0.75rem;
@@ -145,6 +150,45 @@
     color: currentColor !important;
     font-size: 1rem;
     line-height: 1;
+}
+
+.workflow-email-toggle--processing {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.workflow-status-slot {
+    min-height: 1.6rem;
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+}
+
+.workflow-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 9999px;
+    padding: 0.15rem 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-2px);
+    transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
+}
+
+.workflow-status-slot--active .workflow-status-pill {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.workflow-status-pill__spinner {
+    font-size: 0.68rem;
 }
 
 .assignee-avatar__img {

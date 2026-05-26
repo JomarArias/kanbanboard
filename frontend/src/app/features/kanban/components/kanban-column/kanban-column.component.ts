@@ -26,6 +26,8 @@ export class KanbanColumnComponent {
   @Input() isLoading: boolean = false;
   @Input() isViewer: boolean = false;
   @Input() workflowEmailPreferences: { [cardId: string]: boolean } = {};
+  @Input() processingCardIds: { [cardId: string]: boolean } = {};
+  @Input() processingWorkflowCardIds: { [cardId: string]: boolean } = {};
   @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
   @Output() addCard = new EventEmitter<void>();
   @Output() editCard = new EventEmitter<Kanban>();
@@ -61,6 +63,14 @@ export class KanbanColumnComponent {
 
   isWorkflowEmailEnabled(cardId: unknown): boolean {
     return this.workflowEmailPreferences[this.normalizeCardId(cardId)] !== false;
+  }
+
+  isCardProcessing(cardId: unknown): boolean {
+    return this.processingCardIds[this.normalizeCardId(cardId)] === true;
+  }
+
+  isWorkflowProcessing(cardId: unknown): boolean {
+    return this.processingWorkflowCardIds[this.normalizeCardId(cardId)] === true;
   }
 
   private normalizeCardId(value: unknown): string {

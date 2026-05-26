@@ -1,5 +1,6 @@
 <div class="kanban-card p-3 bg-white rounded shadow-sm mb-2 cursor-move hover:shadow-md transition-shadow group relative"
-    [class.new-card]="card.isNew" [class.opacity-50]="!!editingUser" (mouseenter)="onMouseEnter()"
+    [class.new-card]="card.isNew" [class.opacity-50]="!!editingUser" [class.kanban-card--processing]="isProcessing"
+    (mouseenter)="onMouseEnter()"
     (mouseleave)="onMouseLeave()">
 
     <div class="card-top-strip" *ngIf="getHeaderColor() as headerColor" [style.backgroundColor]="headerColor"></div>
@@ -54,6 +55,13 @@
         </span>
     </div>
 
+    <div class="workflow-status-slot" [class.workflow-status-slot--active]="isWorkflowProcessing">
+        <span class="workflow-status-pill">
+            <i class="pi pi-spinner pi-spin workflow-status-pill__spinner"></i>
+            Enviando correo
+        </span>
+    </div>
+
     <div class="flex items-center justify-between mt-3">
         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" *ngIf="!editingUser && !isViewer">
             <p-button (click)="onEdit()" class="text-blue-500 hover:text-blue-700 text-sm"
@@ -69,6 +77,8 @@
         [class.workflow-email-toggle--enabled]="workflowEmailEnabled"
         [class.workflow-email-toggle--disabled]="!workflowEmailEnabled"
         [class.workflow-email-toggle--solo]="!assignee"
+        [class.workflow-email-toggle--processing]="isProcessing"
+        [disabled]="isProcessing"
         [attr.aria-pressed]="workflowEmailEnabled"
         [pTooltip]="workflowEmailEnabled ? 'Correo workflow activado' : 'Correo workflow desactivado'"
         tooltipPosition="top"

@@ -87,6 +87,7 @@
             (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
             [workflowEmailPreferences]="workflowEmailPreferences" (workflowEmailToggle)="onToggleWorkflowEmail($event)"
+            [processingCardIds]="processingCardIds" [processingWorkflowCardIds]="processingWorkflowCardIds"
             [labelsExpandedGlobal]="labelsExpandedGlobal" (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
@@ -96,6 +97,7 @@
             (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
             (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
             (stopEditing)="onStopEditing($event)" [workflowEmailPreferences]="workflowEmailPreferences"
+            [processingCardIds]="processingCardIds" [processingWorkflowCardIds]="processingWorkflowCardIds"
             (workflowEmailToggle)="onToggleWorkflowEmail($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
             (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
@@ -107,6 +109,7 @@
                 (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
                 (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
                 (stopEditing)="onStopEditing($event)" [workflowEmailPreferences]="workflowEmailPreferences"
+                [processingCardIds]="processingCardIds" [processingWorkflowCardIds]="processingWorkflowCardIds"
                 (workflowEmailToggle)="onToggleWorkflowEmail($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
                 (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
             </app-kanban-column>

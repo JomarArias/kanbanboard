@@ -187,6 +187,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   _lastCreatedCardId?: string;
   isViewer: boolean = false;
   workflowEmailPreferences: { [cardId: string]: boolean } = {};
+  processingCardIds: { [cardId: string]: boolean } = {};
+  processingWorkflowCardIds: { [cardId: string]: boolean } = {};
 
   private getWorkflowEmailPreference(cardId: unknown): boolean {
     const key = this.normalizeCardId(cardId);
@@ -966,15 +968,21 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   }
 
   drop(event: CdkDragDrop<Kanban[]>) {
+    const card = event.item.data as Kanban;
+    const normalizedCardId = this.normalizeCardId(card._id);
+    if (!normalizedCardId || this.processingCardIds[normalizedCardId]) {
+      return;
+    }
+
+    const previousListId = event.previousContainer.id;
+    const targetListId = event.container.id;
+
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
       transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
     }
 
-    const card = event.item.data as Kanban;
-    const normalizedCardId = this.normalizeCardId(card._id);
-    const targetListId = event.container.id;
     const prevCard = event.container.data[event.currentIndex - 1];
     const nextCard = event.container.data[event.currentIndex + 1];
 
@@ -993,8 +1001,12 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     }
 
     const sendEmail = this.getWorkflowEmailPreference(normalizedCardId);
-    // TEMP DEBUG: remove after validating workflow email toggle in QA.
-    console.debug('[workflow-email] drop', { cardId: normalizedCardId, sendEmail, targetListId });
+    const isWorkflowProcessing = sendEmail && previousListId !== targetListId
+      && (targetListId === 'inProgress' || targetListId === 'done');
+    this.processingCardIds[normalizedCardId] = true;
+    if (isWorkflowProcessing) {
+      this.processingWorkflowCardIds[normalizedCardId] = true;
+    }
 
     this.kanbanFacade.moveCard(normalizedCardId, targetListId, prevOrder, nextOrder, sendEmail).subscribe({
       next: (res) => {
@@ -1002,10 +1014,14 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
         card.order = res.order;
         this.loadCards();
         this.loadAuditLogs();
+        delete this.processingCardIds[normalizedCardId];
+        delete this.processingWorkflowCardIds[normalizedCardId];
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo mover la tarjeta' });
         this.loadCards();
+        delete this.processingCardIds[normalizedCardId];
+        delete this.processingWorkflowCardIds[normalizedCardId];
       }
     });
   }
@@ -1016,9 +1032,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   onToggleWorkflowEmail(cardId: string) {
     const key = this.normalizeCardId(cardId);
+    if (!key || this.processingCardIds[key]) return;
     const current = this.workflowEmailPreferences[key];
     this.workflowEmailPreferences[key] = current === false ? true : false;
-    // TEMP DEBUG: remove after validating workflow email toggle in QA.
-    console.debug('[workflow-email] toggle', { cardId: key, enabled: this.workflowEmailPreferences[key] !== false });
   }
 }
