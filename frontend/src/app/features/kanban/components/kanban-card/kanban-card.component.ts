@@ -17,6 +17,7 @@ import { TooltipModule } from 'primeng/tooltip';
 })
 export class KanbanCardComponent {
   @Input() card!: Kanban;
+  @Input() workflowEmailEnabled: boolean = true;
   @Input() editingUser?: string | null;
   @Input() members: any[] = [];
   @Input() isViewer: boolean = false;
@@ -41,6 +42,7 @@ export class KanbanCardComponent {
   @Output() archive = new EventEmitter<string>();
   @Output() startEditing = new EventEmitter<string>();
   @Output() stopEditing = new EventEmitter<string>();
+  @Output() workflowEmailToggle = new EventEmitter<string>();
 
   // Referencia al botón de basura para anclar el popup exactamente ahí
   @ViewChild('deleteBtn', { read: ElementRef }) deleteBtn!: ElementRef;
@@ -153,5 +155,27 @@ export class KanbanCardComponent {
 
   isDoneCard(): boolean {
     return this.card?.listId === "done"
+  }
+
+  onToggleWorkflowEmail(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.workflowEmailToggle.emit(this.normalizeCardId(this.card?._id));
+  }
+
+  private normalizeCardId(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+
+    if (value && typeof value === 'object') {
+      const maybe = value as { _id?: unknown; $oid?: unknown; toString?: () => string };
+      if (maybe._id !== undefined) return this.normalizeCardId(maybe._id);
+      if (maybe.$oid !== undefined) return this.normalizeCardId(maybe.$oid);
+
+      const str = maybe.toString?.();
+      if (str && str !== '[object Object]') return str;
+    }
+
+    return '';
   }
 }

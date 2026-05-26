@@ -64,6 +64,23 @@
     </div>
 
     <button
+        type="button"
+        class="workflow-email-toggle"
+        [class.workflow-email-toggle--enabled]="workflowEmailEnabled"
+        [class.workflow-email-toggle--disabled]="!workflowEmailEnabled"
+        [class.workflow-email-toggle--solo]="!assignee"
+        [attr.aria-pressed]="workflowEmailEnabled"
+        [pTooltip]="workflowEmailEnabled ? 'Correo workflow activado' : 'Correo workflow desactivado'"
+        tooltipPosition="top"
+        appendTo="body"
+        (pointerdown)="$event.stopPropagation()"
+        (mousedown)="$event.stopPropagation()"
+        (touchstart)="$event.stopPropagation()"
+        (click)="onToggleWorkflowEmail($event)">
+        <i class="pi pi-envelope"></i>
+    </button>
+
+    <button
         *ngIf="assignee"
         #assigneeBtn
         type="button"

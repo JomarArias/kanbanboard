@@ -12,8 +12,10 @@
             <div cdkDrag [cdkDragData]="card" class="mb-3" [cdkDragDisabled]="!!editingUsers[card._id] || isViewer">
                 <app-kanban-card [card]="card" [editingUser]="editingUsers[card._id]" [members]="members"
                     [isViewer]="isViewer" [labelsExpandedGlobal]="labelsExpandedGlobal"
+                    [workflowEmailEnabled]="isWorkflowEmailEnabled(card._id)"
                     (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal.emit()" (edit)="onEditCard($event)"
                     (delete)="onDeleteCard($event)" (archive)="onArchiveCard($event)"
+                    (workflowEmailToggle)="onWorkflowEmailToggle($event)"
                     (startEditing)="startEditing.emit($event)" (stopEditing)="stopEditing.emit($event)">
                 </app-kanban-card>
                 <div *cdkDragPlaceholder

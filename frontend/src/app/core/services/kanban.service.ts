@@ -77,6 +77,8 @@ export class KanbanService {
         if (sendEmail !== undefined) {
             payload.sendEmail = sendEmail;
         }
+        // TEMP DEBUG: remove after validating sendEmail payload in QA.
+        console.debug('[workflow-email] request payload', payload);
 
         return this.http.put<{ ok: boolean, order: string }>(`${this.apiUrl}/cards/move`, payload);
     }

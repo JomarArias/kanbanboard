@@ -86,6 +86,7 @@
             [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('todo')"
             (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)" (archiveCard)="onArchiveCard($event)"
             (startEditing)="onStartEditing($event)" (stopEditing)="onStopEditing($event)"
+            [workflowEmailPreferences]="workflowEmailPreferences" (workflowEmailToggle)="onToggleWorkflowEmail($event)"
             [labelsExpandedGlobal]="labelsExpandedGlobal" (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
@@ -94,7 +95,8 @@
             [members]="workspaceMembers" [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)"
             (addCard)="onAddCard('inProgress')" (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
             (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
-            (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
+            (stopEditing)="onStopEditing($event)" [workflowEmailPreferences]="workflowEmailPreferences"
+            (workflowEmailToggle)="onToggleWorkflowEmail($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
             (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
         </app-kanban-column>
 
@@ -104,7 +106,8 @@
                 [isViewer]="isViewer" [isLoading]="isLoadingCards" (drop)="drop($event)" (addCard)="onAddCard('done')"
                 (editCard)="onEditCard($event)" (deleteCard)="onDeleteCard($event)"
                 (archiveCard)="onArchiveCard($event)" (startEditing)="onStartEditing($event)"
-                (stopEditing)="onStopEditing($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
+                (stopEditing)="onStopEditing($event)" [workflowEmailPreferences]="workflowEmailPreferences"
+                (workflowEmailToggle)="onToggleWorkflowEmail($event)" [labelsExpandedGlobal]="labelsExpandedGlobal"
                 (toggleLabelsExpandedGlobal)="toggleLabelsExpandedGlobal()">
             </app-kanban-column>
 
@@ -373,4 +376,5 @@
             : 'h-[80vh] w-full rounded border object-cover'" />
         </div>
     </p-dialog>
+
 </div>

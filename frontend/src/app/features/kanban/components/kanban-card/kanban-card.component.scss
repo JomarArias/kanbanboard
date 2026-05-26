@@ -18,6 +18,10 @@
 
 .kanban-card {
     overflow: hidden;
+    --card-action-size: 2.25rem;
+    --card-action-bottom: 0.75rem;
+    --card-action-right: 0.75rem;
+    --card-action-gap: 0.4rem;
 }
 
 .card-top-strip {
@@ -85,10 +89,10 @@
 
 .assignee-avatar {
     position: absolute;
-    right: 0.75rem;
-    bottom: 0.75rem;
-    width: 2.25rem;
-    height: 2.25rem;
+    right: var(--card-action-right);
+    bottom: var(--card-action-bottom);
+    width: var(--card-action-size);
+    height: var(--card-action-size);
     border-radius: 9999px;
     background: white;
     border: 2px solid #e5e7eb;
@@ -97,6 +101,50 @@
     align-items: center;
     justify-content: center;
     pointer-events: auto;
+}
+
+.workflow-email-toggle {
+    position: absolute;
+    right: calc(var(--card-action-right) + var(--card-action-size) + var(--card-action-gap));
+    bottom: var(--card-action-bottom);
+    width: var(--card-action-size);
+    height: var(--card-action-size);
+    border-radius: 9999px;
+    border: 2px solid #d1d5db;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111827;
+    pointer-events: auto;
+}
+
+.workflow-email-toggle--enabled {
+    color: #166534;
+    border-color: #86efac;
+    background: #dcfce7;
+}
+
+.workflow-email-toggle--disabled {
+    color: #111827;
+    border-color: #d1d5db;
+    background: #f3f4f6;
+}
+
+.workflow-email-toggle--disabled .pi {
+    color: #111827 !important;
+    opacity: 1 !important;
+    -webkit-text-stroke: 0.2px #111827;
+}
+
+.workflow-email-toggle--solo {
+    right: var(--card-action-right);
+}
+
+.workflow-email-toggle .pi {
+    color: currentColor !important;
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .assignee-avatar__img {

@@ -25,11 +25,13 @@ export class KanbanColumnComponent {
   @Input() members: any[] = [];
   @Input() isLoading: boolean = false;
   @Input() isViewer: boolean = false;
+  @Input() workflowEmailPreferences: { [cardId: string]: boolean } = {};
   @Output() drop = new EventEmitter<CdkDragDrop<Kanban[]>>();
   @Output() addCard = new EventEmitter<void>();
   @Output() editCard = new EventEmitter<Kanban>();
   @Output() deleteCard = new EventEmitter<string>();
   @Output() archiveCard = new EventEmitter<string>();
+  @Output() workflowEmailToggle = new EventEmitter<string>();
   @Output() startEditing = new EventEmitter<string>();
   @Output() stopEditing = new EventEmitter<string>();
 
@@ -51,5 +53,29 @@ export class KanbanColumnComponent {
   }
   onArchiveCard(cardId: string) {
     this.archiveCard.emit(cardId);
+  }
+
+  onWorkflowEmailToggle(cardId: string) {
+    this.workflowEmailToggle.emit(cardId);
+  }
+
+  isWorkflowEmailEnabled(cardId: unknown): boolean {
+    return this.workflowEmailPreferences[this.normalizeCardId(cardId)] !== false;
+  }
+
+  private normalizeCardId(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+
+    if (value && typeof value === 'object') {
+      const maybe = value as { _id?: unknown; $oid?: unknown; toString?: () => string };
+      if (maybe._id !== undefined) return this.normalizeCardId(maybe._id);
+      if (maybe.$oid !== undefined) return this.normalizeCardId(maybe.$oid);
+
+      const str = maybe.toString?.();
+      if (str && str !== '[object Object]') return str;
+    }
+
+    return '';
   }
 }

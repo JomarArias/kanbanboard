@@ -186,6 +186,28 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   myRole?: string;
   _lastCreatedCardId?: string;
   isViewer: boolean = false;
+  workflowEmailPreferences: { [cardId: string]: boolean } = {};
+
+  private getWorkflowEmailPreference(cardId: unknown): boolean {
+    const key = this.normalizeCardId(cardId);
+    return this.workflowEmailPreferences[key] !== false;
+  }
+
+  private normalizeCardId(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+
+    if (value && typeof value === 'object') {
+      const maybe = value as { _id?: unknown; $oid?: unknown; toString?: () => string };
+      if (maybe._id !== undefined) return this.normalizeCardId(maybe._id);
+      if (maybe.$oid !== undefined) return this.normalizeCardId(maybe.$oid);
+
+      const str = maybe.toString?.();
+      if (str && str !== '[object Object]') return str;
+    }
+
+    return '';
+  }
 
   private normalizeAssigneeId(value: Kanban['assigneeId']): string | undefined {
     if (!value) return undefined;
@@ -951,6 +973,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     }
 
     const card = event.item.data as Kanban;
+    const normalizedCardId = this.normalizeCardId(card._id);
     const targetListId = event.container.id;
     const prevCard = event.container.data[event.currentIndex - 1];
     const nextCard = event.container.data[event.currentIndex + 1];
@@ -969,10 +992,11 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Sprint 2.2: plumbing only. Keep undefined to preserve current default backend behavior.
-    const sendEmail: boolean | undefined = undefined;
+    const sendEmail = this.getWorkflowEmailPreference(normalizedCardId);
+    // TEMP DEBUG: remove after validating workflow email toggle in QA.
+    console.debug('[workflow-email] drop', { cardId: normalizedCardId, sendEmail, targetListId });
 
-    this.kanbanFacade.moveCard(card._id, targetListId, prevOrder, nextOrder, sendEmail).subscribe({
+    this.kanbanFacade.moveCard(normalizedCardId, targetListId, prevOrder, nextOrder, sendEmail).subscribe({
       next: (res) => {
         card.listId = targetListId;
         card.order = res.order;
@@ -988,5 +1012,13 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   onAddCard(listId: string) {
     this.addCard(listId);
+  }
+
+  onToggleWorkflowEmail(cardId: string) {
+    const key = this.normalizeCardId(cardId);
+    const current = this.workflowEmailPreferences[key];
+    this.workflowEmailPreferences[key] = current === false ? true : false;
+    // TEMP DEBUG: remove after validating workflow email toggle in QA.
+    console.debug('[workflow-email] toggle', { cardId: key, enabled: this.workflowEmailPreferences[key] !== false });
   }
 }
