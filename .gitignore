@@ -79,3 +79,9 @@ resumenEjecutivo-Modulo-1.md
 resumenEjecutivo-Modulo-2.md
 resumenEjecutivo-Modulo-3.md
 resumenEjecutivo-Modulos-Extras.md
+
+backend/request.http
+backend/src/jobs/reminder.job.ts
+archivos MD/
+docs/
+marco-teorico.md

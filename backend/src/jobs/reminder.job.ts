@@ -8,6 +8,7 @@ const DEFAULT_REMINDER_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 horas
 const intervalMs = Number(process.env.REMINDER_JOB_INTERVAL_MS || DEFAULT_INTERVAL_MS);
 const dueSoonHours = Number(process.env.REMINDER_DUE_SOON_HOURS || DEFAULT_DUE_SOON_HOURS);
 const reminderCooldownMs = Number(process.env.REMINDER_COOLDOWN_MS || DEFAULT_REMINDER_COOLDOWN_MS);
+const appTimeZone = process.env.APP_TIME_ZONE || "America/Cancun";
 
 let timer: NodeJS.Timeout | null = null;
 let isRunning = false;
@@ -17,9 +18,19 @@ const canSendReminder = (lastReminderSentAt?: Date | null) => {
   return Date.now() - new Date(lastReminderSentAt).getTime() >= reminderCooldownMs;
 };
 
+const getYmdInTimezone = (date: Date, timeZone: string): string => {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+};
+
 const buildReminderPayload = (cardTitle: string, dueDate: Date) => {
-  const now = new Date();
-  const isOverdue = dueDate.getTime() < now.getTime();
+  const dueYmd = getYmdInTimezone(dueDate, appTimeZone);
+  const todayYmd = getYmdInTimezone(new Date(), appTimeZone);
+  const isOverdue = dueYmd < todayYmd;
 
   if (isOverdue) {
     return {
